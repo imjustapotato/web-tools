@@ -471,13 +471,15 @@ function buildDayOptionsMarkup(selectedValue = '0') {
     }).join('');
 }
 
-function addSecondaryDayDropdown(selectedValue = '0') {
+function addSecondaryDayDropdown(selectedValue = '0', startValue = '', endValue = '') {
     const row = document.createElement('div');
     row.className = 'secondary-day-row';
     row.innerHTML = `
         <select class="field-input secondary-day-select" aria-label="Secondary day">
             ${buildDayOptionsMarkup(selectedValue)}
         </select>
+        <input type="text" class="field-input secondary-start-input" aria-label="Secondary start time" placeholder="07:30" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 13:30)" value="${startValue}">
+        <input type="text" class="field-input secondary-end-input" aria-label="Secondary end time" placeholder="09:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 14:30)" value="${endValue}">
         <button type="button" class="remove-secondary-day-btn" aria-label="Remove secondary day">−</button>
     `;
 
@@ -489,13 +491,34 @@ function addSecondaryDayDropdown(selectedValue = '0') {
     secondaryDaysContainer.appendChild(row);
 }
 
-function getSelectedDays() {
+function getScheduleEntries() {
     const primaryDay = Number.parseInt(document.getElementById('course-day').value, 10);
-    const secondaryDays = Array.from(secondaryDaysContainer.querySelectorAll('.secondary-day-select'))
-        .map((selectEl) => Number.parseInt(selectEl.value, 10))
-        .filter((value) => Number.isInteger(value));
+    const primaryStart = document.getElementById('course-start').value.trim();
+    const primaryEnd = document.getElementById('course-end').value.trim();
 
-    return Array.from(new Set([primaryDay, ...secondaryDays]));
+    const entries = [
+        {
+            day: primaryDay,
+            start: primaryStart,
+            end: primaryEnd,
+            source: 'primary'
+        }
+    ];
+
+    const secondaryRows = Array.from(secondaryDaysContainer.querySelectorAll('.secondary-day-row'));
+    secondaryRows.forEach((row) => {
+        const day = Number.parseInt(row.querySelector('.secondary-day-select')?.value, 10);
+        const start = row.querySelector('.secondary-start-input')?.value.trim() || '';
+        const end = row.querySelector('.secondary-end-input')?.value.trim() || '';
+        entries.push({
+            day,
+            start,
+            end,
+            source: 'secondary'
+        });
+    });
+
+    return entries;
 }
 
 function openEditModal(index) {
@@ -1037,31 +1060,57 @@ form.addEventListener('submit', (e) => {
     e.preventDefault();
 
     const name = document.getElementById('course-name').value;
-    const selectedDays = getSelectedDays();
-    const start = document.getElementById('course-start').value;
-    const end = document.getElementById('course-end').value;
+    const entries = getScheduleEntries();
     const room = document.getElementById('course-room').value;
     const section = courseSectionInput.value;
 
-    if (selectedDays.length === 0) {
+    if (entries.length === 0) {
         alert('Pick at least one day.');
         return;
     }
 
-    if (timeToPixels(start) >= timeToPixels(end)) {
-        alert('Time glitch: Start time must be before End time.');
+    const invalidEntry = entries.find((entry) => {
+        if (!Number.isInteger(entry.day) || entry.day < 0 || entry.day > 5) {
+            return true;
+        }
+        if (!isValidTime(entry.start) || !isValidTime(entry.end)) {
+            return true;
+        }
+        return timeToPixels(entry.start) >= timeToPixels(entry.end);
+    });
+
+    if (invalidEntry) {
+        alert('Time glitch: each day must have valid Start/End time and Start must be before End.');
         return;
     }
 
-    const hasAnyConflict = selectedDays.some((day) => Boolean(hasConflict(day, start, end)));
+    const dedupedEntries = [];
+    const seenKeys = new Set();
+    entries.forEach((entry) => {
+        const key = `${entry.day}|${entry.start}|${entry.end}`;
+        if (!seenKeys.has(key)) {
+            seenKeys.add(key);
+            dedupedEntries.push(entry);
+        }
+    });
+
+    const hasAnyConflict = dedupedEntries.some((entry) => Boolean(hasConflict(entry.day, entry.start, entry.end)));
     if (hasAnyConflict) {
         if (!confirm('Wait up! One or more selected days overlap with existing classes. Do you still want to plot all selected days?')) {
             return;
         }
     }
 
-    selectedDays.forEach((day) => {
-        classes.push({ name, day, start, end, room, section, color: selectedColor });
+    dedupedEntries.forEach((entry) => {
+        classes.push({
+            name,
+            day: entry.day,
+            start: entry.start,
+            end: entry.end,
+            room,
+            section,
+            color: selectedColor
+        });
     });
     renderSchedule();
 
@@ -1125,7 +1174,9 @@ editModal.addEventListener('click', (e) => {
 });
 
 addSecondaryDayBtn.addEventListener('click', () => {
-    addSecondaryDayDropdown();
+    const primaryStart = document.getElementById('course-start').value.trim();
+    const primaryEnd = document.getElementById('course-end').value.trim();
+    addSecondaryDayDropdown('0', primaryStart, primaryEnd);
 });
 
 window.removeClass = (index) => {

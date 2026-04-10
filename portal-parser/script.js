@@ -28,6 +28,15 @@ let panning = false;
 const dropzone = document.getElementById('dropzone');
 const wrapper = document.getElementById('graph-wrapper');
 const container = document.getElementById('graph-container');
+const controls = document.getElementById('controls');
+const copyBtn = document.getElementById('copy-btn');
+const resetBtn = document.getElementById('reset-btn');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const zoomResetBtn = document.getElementById('zoom-reset');
+const fullViewBtn = document.getElementById('full-view-btn');
+const fullViewCloseBtn = document.getElementById('full-view-close');
+let isFullView = false;
 
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
@@ -44,17 +53,17 @@ fileInput.addEventListener('change', (e) => {
 
 dropzone.addEventListener('dragover', (e) => {
     e.preventDefault();
-    dropzone.classList.add('border-emerald-400', 'bg-slate-800');
+    dropzone.classList.add('is-dragover');
 });
 
 dropzone.addEventListener('dragleave', (e) => {
     e.preventDefault();
-    dropzone.classList.remove('border-emerald-400', 'bg-slate-800');
+    dropzone.classList.remove('is-dragover');
 });
 
 dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
-    dropzone.classList.remove('border-emerald-400', 'bg-slate-800');
+    dropzone.classList.remove('is-dragover');
     if (e.dataTransfer.files.length) {
         handleFile(e.dataTransfer.files[0]);
     }
@@ -126,7 +135,7 @@ async function parseAndRender(html) {
     });
 
     if (courses.length === 0) {
-        container.innerHTML = "<p class=\"text-rose-500 font-bold\">Error: Couldn't extract course data. Ensure this is a valid portal HTML/MHTML export.</p>";
+        container.innerHTML = '<p class="status-message status-message--error">Error: Couldn\'t extract course data. Ensure this is a valid portal HTML/MHTML export.</p>';
         return;
     }
 
@@ -142,10 +151,8 @@ async function parseAndRender(html) {
     });
 
     mermaidRawCode = mermaidCode;
-    const controls = document.getElementById('controls');
-    controls.classList.remove('hidden');
-    controls.classList.add('flex');
-    container.innerHTML = '<p class="text-emerald-400 animate-pulse">Rendering Skill Tree...</p>';
+    controls.classList.remove('is-hidden');
+    container.innerHTML = '<p class="status-message status-message--loading">Rendering Skill Tree...</p>';
 
     try {
         const { svg } = await window.mermaid.render('mermaid-svg', mermaidCode);
@@ -153,7 +160,7 @@ async function parseAndRender(html) {
         resetZoom();
     } catch (err) {
         console.error('Mermaid error:', err);
-        container.innerHTML = '<p class="text-rose-500">Failed to render graph visually. You can still copy the raw code.</p>';
+        container.innerHTML = '<p class="status-message status-message--error">Failed to render graph visually. You can still copy the raw code.</p>';
     }
 }
 
@@ -176,13 +183,16 @@ wrapper.addEventListener('mousedown', (e) => {
     startX = e.clientX - pointX;
     startY = e.clientY - pointY;
     panning = true;
+    wrapper.classList.add('is-panning');
 });
 
 wrapper.addEventListener('mouseup', () => {
     panning = false;
+    wrapper.classList.remove('is-panning');
 });
 wrapper.addEventListener('mouseleave', () => {
     panning = false;
+    wrapper.classList.remove('is-panning');
 });
 
 wrapper.addEventListener('mousemove', (e) => {
@@ -220,19 +230,23 @@ wrapper.addEventListener('wheel', (e) => {
     setTransform();
 });
 
-document.getElementById('zoom-in').addEventListener('click', () => {
+zoomInBtn.addEventListener('click', () => {
     scale = Math.min(scale * 1.3, 8);
     setTransform();
 });
 
-document.getElementById('zoom-out').addEventListener('click', () => {
+zoomOutBtn.addEventListener('click', () => {
     scale = Math.max(scale / 1.3, 0.1);
     setTransform();
 });
 
-document.getElementById('zoom-reset').addEventListener('click', resetZoom);
+zoomResetBtn.addEventListener('click', resetZoom);
 
-document.getElementById('copy-btn').addEventListener('click', () => {
+copyBtn.addEventListener('click', () => {
+    if (!mermaidRawCode) {
+        return;
+    }
+
     const el = document.createElement('textarea');
     el.value = mermaidRawCode;
     document.body.appendChild(el);
@@ -240,21 +254,45 @@ document.getElementById('copy-btn').addEventListener('click', () => {
     document.execCommand('copy');
     document.body.removeChild(el);
 
-    const btn = document.getElementById('copy-btn');
-    const originalText = btn.innerText;
-    btn.innerText = 'Copied!';
-    btn.classList.replace('text-slate-200', 'text-emerald-400');
+    const originalText = copyBtn.innerText;
+    copyBtn.innerText = 'Copied!';
+    copyBtn.classList.add('is-success');
     setTimeout(() => {
-        btn.innerText = originalText;
-        btn.classList.replace('text-emerald-400', 'text-slate-200');
+        copyBtn.innerText = originalText;
+        copyBtn.classList.remove('is-success');
     }, 2000);
 });
 
-document.getElementById('reset-btn').addEventListener('click', () => {
-    container.innerHTML = '<p id="status-text" class="text-slate-500 italic mt-10">Waiting for MHTML file...</p>';
-    const controls = document.getElementById('controls');
-    controls.classList.add('hidden');
-    controls.classList.remove('flex');
+fullViewBtn.addEventListener('click', () => {
+    if (!mermaidRawCode) {
+        return;
+    }
+
+    wrapper.classList.add('is-fullscreen');
+    document.body.classList.add('modal-open');
+    isFullView = true;
+});
+
+function closeFullView() {
+    wrapper.classList.remove('is-fullscreen');
+    document.body.classList.remove('modal-open');
+    isFullView = false;
+}
+
+fullViewCloseBtn.addEventListener('click', closeFullView);
+
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isFullView) {
+        closeFullView();
+    }
+});
+
+resetBtn.addEventListener('click', () => {
+    container.innerHTML = '<p id="status-text" class="status-text">Waiting for MHTML file...</p>';
+    controls.classList.add('is-hidden');
     mermaidRawCode = '';
+    panning = false;
+    wrapper.classList.remove('is-panning');
+    closeFullView();
     resetZoom();
 });

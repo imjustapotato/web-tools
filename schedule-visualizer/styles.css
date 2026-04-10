@@ -299,10 +299,16 @@ body.page-leaving {
     display: flex;
     align-items: center;
     gap: 0.4rem;
+    flex-wrap: wrap;
 }
 
 .secondary-day-select {
-    flex: 1;
+    flex: 1 1 9rem;
+}
+
+.secondary-start-input,
+.secondary-end-input {
+    flex: 1 1 6.25rem;
 }
 
 .remove-secondary-day-btn {
@@ -317,6 +323,7 @@ body.page-leaving {
     justify-content: center;
     font-size: 0.95rem;
     line-height: 1;
+    flex: 0 0 auto;
 }
 
 .remove-secondary-day-btn:hover {
