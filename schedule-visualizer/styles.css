@@ -1,7 +1,36 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
 
+:root {
+    --page-transition-ms: 320ms;
+}
+
+@view-transition {
+    navigation: auto;
+}
+
 body {
     font-family: 'Open Sans', sans-serif;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity var(--page-transition-ms) ease, transform var(--page-transition-ms) ease;
+}
+
+body.page-ready {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.page-leaving {
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    body {
+        opacity: 1;
+        transform: none;
+        transition: none;
+    }
 }
 
 .app-shell {

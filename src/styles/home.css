@@ -19,6 +19,11 @@
     --motion-slow: 12s;
     --motion-mid: 9s;
     --motion-fast: 7.5s;
+    --page-transition-ms: 340ms;
+}
+
+@view-transition {
+    navigation: auto;
 }
 
 * {
@@ -28,14 +33,17 @@
 html,
 body {
     min-height: 100%;
-    height: 100%;
+}
+
+html {
+    scrollbar-gutter: stable;
 }
 
 body {
     margin: 0;
     font-family: 'Open Sans', sans-serif;
     color: var(--text);
-    min-height: 100dvh;
+    min-height: 100vh;
     background:
         radial-gradient(circle at 18% 10%, rgba(82, 227, 172, 0.18), transparent 36%),
         radial-gradient(circle at 80% 18%, rgba(80, 215, 255, 0.14), transparent 34%),
@@ -44,14 +52,27 @@ body {
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
-    background-attachment: fixed;
-    overflow: hidden;
+    background-attachment: scroll;
+    overflow-x: hidden;
+    overflow-y: auto;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity var(--page-transition-ms) ease, transform var(--page-transition-ms) ease;
+}
+
+body.page-ready {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+body.page-leaving {
+    opacity: 0;
+    transform: translateY(10px);
 }
 
 .home-shell {
     position: relative;
     min-height: 100vh;
-    min-height: 100dvh;
     display: grid;
     place-items: center;
     padding: 2rem;
@@ -59,7 +80,7 @@ body {
 }
 
 .aurora-base {
-    position: absolute;
+    position: fixed;
     inset: -18% -12%;
     background:
         conic-gradient(from 210deg at 22% 18%, rgba(82, 227, 172, 0.26), transparent 36%),
@@ -73,7 +94,7 @@ body {
 }
 
 .home-glow {
-    position: absolute;
+    position: fixed;
     border-radius: 999px;
     filter: blur(var(--glow-blur));
     opacity: 0.8;
@@ -157,6 +178,8 @@ body {
     background-clip: text;
     color: transparent;
     -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 0 rgba(134, 239, 172, 0);
+    animation: heroGlow 5.8s ease-in-out infinite;
 }
 
 .hero-copy {
@@ -187,9 +210,10 @@ body {
         linear-gradient(180deg, rgba(12, 20, 38, 0.86), rgba(12, 20, 38, 0.62)),
         radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 40%);
     color: var(--text);
-    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, background 180ms ease;
+    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, background 220ms ease, filter 220ms ease;
     position: relative;
     overflow: hidden;
+    will-change: transform;
 }
 
 .tool-card::after {
@@ -201,12 +225,32 @@ body {
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.06);
     filter: blur(10px);
+    transition: transform 260ms ease, opacity 260ms ease;
 }
 
 .tool-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-6px) scale(1.012);
     border-color: rgba(148, 163, 184, 0.42);
-    box-shadow: 0 18px 48px rgba(3, 10, 25, 0.46);
+    box-shadow: 0 22px 56px rgba(3, 10, 25, 0.5);
+    filter: saturate(1.06);
+}
+
+.tool-card:hover::after,
+.tool-card:focus-visible::after,
+.tool-card[aria-current='true']::after {
+    transform: translate3d(-0.7rem, -0.7rem, 0) scale(1.08);
+    opacity: 0.95;
+}
+
+.tool-card:focus-visible {
+    outline: 2px solid rgba(80, 215, 255, 0.7);
+    outline-offset: 3px;
+}
+
+.tool-card[aria-current='true'] {
+    transform: translateY(-5px) scale(1.01);
+    border-color: rgba(148, 163, 184, 0.5);
+    box-shadow: 0 20px 52px rgba(3, 10, 25, 0.5);
 }
 
 .tool-card-primary {
@@ -259,6 +303,17 @@ body {
     51% { transform: translate3d(2.4%, -1.8%, 0) scale(1.08); opacity: 0.87; }
     69% { transform: translate3d(-2.1%, 1.5%, 0) scale(1.06); opacity: 0.81; }
     100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.7; }
+}
+
+@keyframes heroGlow {
+    0%, 100% {
+        filter: drop-shadow(0 0 0 rgba(80, 215, 255, 0));
+        text-shadow: 0 0 0 rgba(80, 215, 255, 0);
+    }
+    50% {
+        filter: drop-shadow(0 0 20px rgba(80, 215, 255, 0.28));
+        text-shadow: 0 0 22px rgba(80, 215, 255, 0.22), 0 0 36px rgba(134, 239, 172, 0.17);
+    }
 }
 
 @media (max-width: 760px) {
@@ -320,6 +375,13 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    body {
+        opacity: 1 !important;
+        transform: none !important;
+        transition: none !important;
+    }
+
+    .hero-card h1,
     .aurora-base,
     .home-glow,
     .tool-card {
