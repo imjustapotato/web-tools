@@ -8,6 +8,8 @@ const START_HOUR = 7;
 const END_HOUR = 22;
 const PIXELS_PER_HOUR = 72;
 const HEADER_HEIGHT_PX = 40;
+const EXPORT_PNG_SCALE = 1;
+const EXPORT_CAPTURE_SCALE_BASE = 2;
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
 
@@ -727,8 +729,8 @@ async function exportCurrentTimetablePng() {
         const baseHeaderHeight = HEADER_HEIGHT_PX;
 
         const horizontalStretch = 1;
-        const verticalStretch = 1.2;
-        const exportRowHeight = Math.round(PIXELS_PER_HOUR * verticalStretch);
+        // Keep export geometry deterministic and isolated from responsive live view rules.
+        const exportRowHeight = PIXELS_PER_HOUR;
 
         const exportWidth = Math.max(Math.round(baseWidth * horizontalStretch), 1220);
         const exportHeaderHeight = Math.max(40, Math.round(baseHeaderHeight * 1.05));
@@ -746,6 +748,7 @@ async function exportCurrentTimetablePng() {
         exportClone.style.height = `${exportHeight}px`;
         exportClone.style.background = '#1e293b';
         exportClone.style.overflow = 'hidden';
+        exportClone.setAttribute('data-export', 'true');
 
         const daysHeader = exportClone.querySelector('.days-header');
         const timeAxisWrap = exportClone.querySelector('.time-axis-wrap');
@@ -796,10 +799,8 @@ async function exportCurrentTimetablePng() {
             Array.from(blocksLayer.children).forEach((block) => {
                 const topPx = parsePx(block.style.top);
                 const heightPx = parsePx(block.style.height);
-                const exportHeightPx = Math.max(1, Math.round(heightPx * verticalStretch));
-                const exportTopPx = Math.round(topPx * verticalStretch);
-                const isSmallExport = exportHeightPx < 120;
-                const isMediumExport = exportHeightPx >= 120 && exportHeightPx < 180;
+                const exportHeightPx = Math.max(1, Math.round(heightPx));
+                const exportTopPx = Math.round(topPx);
 
                 block.style.top = `${exportTopPx}px`;
                 block.style.height = `${exportHeightPx}px`;
@@ -819,37 +820,33 @@ async function exportCurrentTimetablePng() {
                     codeEl.style.overflow = 'visible';
                     codeEl.style.textOverflow = 'clip';
                     codeEl.style.lineHeight = '1.2';
-                    codeEl.style.fontSize = isSmallExport ? '0.7rem' : isMediumExport ? '0.76rem' : '0.82rem';
+                    codeEl.style.fontSize = '0.82rem';
                 }
 
                 if (titleEl) {
                     titleEl.classList.remove('truncate');
                     titleEl.classList.remove('wrap');
-                    titleEl.style.display = isSmallExport ? '-webkit-box' : 'block';
+                    titleEl.style.display = 'block';
                     titleEl.style.whiteSpace = 'normal';
                     titleEl.style.overflow = 'visible';
                     titleEl.style.textOverflow = 'clip';
-                    titleEl.style.webkitLineClamp = isSmallExport ? '1' : isMediumExport ? '2' : 'unset';
-                    titleEl.style.lineClamp = isSmallExport ? '1' : isMediumExport ? '2' : 'unset';
-                    titleEl.style.webkitBoxOrient = isSmallExport ? 'vertical' : 'unset';
+                    titleEl.style.webkitLineClamp = 'unset';
+                    titleEl.style.lineClamp = 'unset';
+                    titleEl.style.webkitBoxOrient = 'unset';
                     titleEl.style.lineHeight = '1.24';
-                    titleEl.style.fontSize = isSmallExport ? '0.58rem' : isMediumExport ? '0.63rem' : '0.68rem';
+                    titleEl.style.fontSize = '0.68rem';
                 }
 
                 if (metaEl) {
                     metaEl.style.whiteSpace = 'normal';
                     metaEl.style.overflow = 'visible';
                     metaEl.style.textOverflow = 'clip';
-                    metaEl.style.fontSize = isSmallExport ? '0.56rem' : isMediumExport ? '0.61rem' : '0.66rem';
+                    metaEl.style.fontSize = '0.66rem';
                 }
 
                 if (tagsWrap) {
                     tagsWrap.style.overflow = 'visible';
                     tagsWrap.style.rowGap = '0.22rem';
-                }
-
-                if (isSmallExport && tagEls.length > 1) {
-                    Array.from(tagEls).slice(1).forEach((tag) => tag.remove());
                 }
 
                 tagEls.forEach((tagEl) => {
@@ -859,10 +856,10 @@ async function exportCurrentTimetablePng() {
                     tagEl.style.justifyContent = 'center';
                     tagEl.style.verticalAlign = 'middle';
                     tagEl.style.height = 'auto';
-                    tagEl.style.minHeight = isSmallExport ? '1.2rem' : isMediumExport ? '1.34rem' : '1.48rem';
-                    tagEl.style.padding = isSmallExport ? '0.12rem 0.34rem' : isMediumExport ? '0.15rem 0.4rem' : '0.18rem 0.45rem';
+                    tagEl.style.minHeight = '1.48rem';
+                    tagEl.style.padding = '0.18rem 0.45rem';
                     tagEl.style.lineHeight = '1';
-                    tagEl.style.fontSize = isSmallExport ? '0.53rem' : isMediumExport ? '0.56rem' : '0.58rem';
+                    tagEl.style.fontSize = '0.58rem';
                     tagEl.style.transform = 'none';
                     tagEl.style.maxWidth = 'none';
                     tagEl.style.whiteSpace = 'nowrap';
@@ -875,7 +872,7 @@ async function exportCurrentTimetablePng() {
         document.body.appendChild(exportClone);
 
         const sourceCanvas = await window.html2canvas(exportClone, {
-            scale: 2,
+            scale: EXPORT_CAPTURE_SCALE_BASE * EXPORT_PNG_SCALE,
             useCORS: true,
             backgroundColor: '#1e293b',
             width: exportWidth,

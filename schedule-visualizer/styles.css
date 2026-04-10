@@ -714,6 +714,31 @@ body.page-leaving {
     text-overflow: ellipsis;
 }
 
+[data-export="true"] .schedule-block-code,
+[data-export="true"] .schedule-block-title,
+[data-export="true"] .schedule-block-meta {
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
+[data-export="true"] .schedule-block-title {
+    display: block !important;
+    -webkit-line-clamp: unset !important;
+    line-clamp: unset !important;
+    -webkit-box-orient: unset !important;
+}
+
+[data-export="true"] .schedule-block-tags {
+    overflow: visible !important;
+}
+
+[data-export="true"] .schedule-tag {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+}
+
 .block-actions {
     display: flex;
     gap: 0.15rem;
