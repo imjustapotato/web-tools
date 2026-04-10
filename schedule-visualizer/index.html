@@ -33,6 +33,9 @@
                 <span class="iconify btn-icon" data-icon="mdi:tablet-dashboard" aria-hidden="true"></span>
                 Full Preview
             </button>
+            <div class="header-note warning-box" role="note" aria-live="polite">
+                Note: You may want to save your schedule to a JSON, then drop it here again if you wish to edit and export. I designed this web tool to not save files on any server or the browser.
+            </div>
             <button id="export-png-btn" class="btn btn-export">
                 <span class="iconify btn-icon" data-icon="mdi:export" aria-hidden="true"></span>
                 Export PNG
@@ -58,11 +61,11 @@
                     <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
                     Snapshot Name
                 </label>
-                <input type="text" id="schedule-name" placeholder="Schedule Name" class="field-input">
+                <input type="text" id="schedule-name" placeholder="whats it gonna be?" class="field-input">
                 <div class="snapshot-actions">
                     <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
                         <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
-                        Save
+                        Save JSON
                     </button>
                     <button type="button" id="import-json-btn" class="btn btn-sm btn-load">
                         <span class="iconify btn-icon" data-icon="mdi:file-import-outline" aria-hidden="true"></span>
@@ -129,7 +132,7 @@
                     <div class="half-field">
                         <label class="field-label with-margin">
                             <span class="iconify label-icon" data-icon="mdi:door-open" aria-hidden="true"></span>
-                            Room / Type
+                            Room / Mode
                         </label>
                         <input type="text" id="course-room" placeholder="F/E | ONLINE" class="field-input">
                     </div>
@@ -168,7 +171,7 @@
             </form>
 
             <div class="stats-section">
-                <h3 class="stats-label">Total Units Plotted</h3>
+                <h3 class="stats-label">Total</h3>
                 <div class="stats-value" id="class-count">0</div>
                 <p class="stats-note">classes plotted</p>
 
