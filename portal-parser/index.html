@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FEU Tech Curriculum Mapper</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body class="bg-slate-900 text-slate-200 min-h-screen flex flex-col items-center p-8 overflow-hidden">
+    <a href="../index.html" class="home-fab" aria-label="Return to homepage">Home</a>
+
+    <header class="text-center mb-6">
+        <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-2">
+            Curriculum Skill Tree Extractor
+        </h1>
+        <p class="text-slate-400">Drag & drop your FEU Tech <code class="bg-slate-800 text-emerald-400 px-2 py-1 rounded text-sm">.mhtml</code> file to map your pre-reqs.</p>
+    </header>
+
+    <div id="dropzone" class="w-full max-w-2xl h-24 border-2 border-dashed border-slate-600 rounded-xl flex items-center justify-center mb-6 hover:border-emerald-400 hover:bg-slate-800/50 transition cursor-pointer shadow-lg bg-slate-800/20 shrink-0">
+        <div class="text-center pointer-events-none flex items-center gap-3">
+            <svg class="w-8 h-8 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+            <span class="text-slate-400 font-medium">Drop Program Curriculum.mhtml here</span>
+        </div>
+    </div>
+
+    <div id="controls" class="hidden flex-wrap gap-4 mb-4 w-full max-w-[95vw] justify-between items-center shrink-0">
+        <div class="flex space-x-2">
+            <button id="copy-btn" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 px-4 py-2 rounded-lg font-medium text-sm transition text-slate-200 shadow-sm">
+                Copy Mermaid Code
+            </button>
+            <button id="reset-btn" class="bg-rose-900/30 hover:bg-rose-900/50 border border-rose-800 px-4 py-2 rounded-lg font-medium text-sm transition text-rose-300 shadow-sm">
+                Reset App
+            </button>
+        </div>
+
+        <div class="flex space-x-1 items-center bg-slate-800 p-1.5 rounded-lg border border-slate-700 shadow-sm">
+            <span class="text-slate-400 text-xs px-2 uppercase tracking-wide font-bold mr-1">Viewport</span>
+            <button id="zoom-out" class="w-8 h-8 flex items-center justify-center hover:bg-slate-700 rounded text-slate-300 font-bold transition">-</button>
+            <button id="zoom-reset" class="px-3 py-1 hover:bg-slate-700 rounded text-slate-300 text-sm font-medium transition">Reset View</button>
+            <button id="zoom-in" class="w-8 h-8 flex items-center justify-center hover:bg-slate-700 rounded text-slate-300 font-bold transition">+</button>
+        </div>
+    </div>
+
+    <div id="graph-wrapper" class="w-full max-w-[95vw] flex-1 min-h-[50vh] overflow-hidden bg-slate-800 rounded-2xl border border-slate-700 shadow-2xl relative cursor-grab active:cursor-grabbing no-scrollbar">
+        <div id="graph-container" class="w-full h-full flex justify-center items-center transform-gpu transition-transform duration-75 ease-out">
+            <p id="status-text" class="text-slate-500 italic mt-10">Waiting for MHTML file...</p>
+        </div>
+    </div>
+
+    <script type="module" src="./script.js"></script>
+</body>
+</html>
