@@ -113,6 +113,10 @@ const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
 const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 const exportPngBtn = document.getElementById('export-png-btn');
 const jsonDropZone = document.getElementById('json-drop-zone');
+const courseDayInput = document.getElementById('course-day');
+const courseStartInput = document.getElementById('course-start');
+const courseEndInput = document.getElementById('course-end');
+const courseRoomInput = document.getElementById('course-room');
 const courseSectionInput = document.getElementById('course-section');
 const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
 const secondaryDaysContainer = document.getElementById('secondary-days-container');
@@ -135,7 +139,18 @@ const editCourseStart = document.getElementById('edit-course-start');
 const editCourseEnd = document.getElementById('edit-course-end');
 const editCourseRoom = document.getElementById('edit-course-room');
 const editCourseSection = document.getElementById('edit-course-section');
+const editExtendRelated = document.getElementById('edit-extend-related');
 const editCancelBtn = document.getElementById('edit-cancel-btn');
+const toastStack = document.getElementById('toast-stack');
+const messageModal = document.getElementById('message-modal');
+const messageModalTitle = document.getElementById('message-modal-title');
+const messageModalBody = document.getElementById('message-modal-body');
+const messageModalInputWrap = document.getElementById('message-modal-input-wrap');
+const messageModalInput = document.getElementById('message-modal-input');
+const messageModalCancel = document.getElementById('message-modal-cancel');
+const messageModalConfirm = document.getElementById('message-modal-confirm');
+
+const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
 
 const DAY_OPTIONS = [
     { value: '0', label: 'Monday' },
@@ -147,6 +162,7 @@ const DAY_OPTIONS = [
 ];
 
 let mobileViewMode = 'plotter';
+let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
 
 function createIconMarkup(iconName) {
     return `<span class="iconify label-icon" data-icon="${iconName}" aria-hidden="true"></span>`;
@@ -200,10 +216,159 @@ function setStatus(message, tone = 'info') {
         managerStatus.classList.add('tone-success');
     }
     managerStatus.innerText = message;
+
+    if (!toastStack) {
+        return;
+    }
+
+    const toast = document.createElement('div');
+    toast.className = `toast tone-${tone}`;
+    toast.innerHTML = `
+        <span class="toast-message">${escapeHtml(message)}</span>
+        <button type="button" class="toast-dismiss" aria-label="Dismiss message">×</button>
+    `;
+
+    const removeToast = () => {
+        toast.classList.remove('show');
+        window.setTimeout(() => toast.remove(), 220);
+    };
+
+    toast.querySelector('.toast-dismiss')?.addEventListener('click', removeToast);
+    toastStack.appendChild(toast);
+    requestAnimationFrame(() => toast.classList.add('show'));
+    window.setTimeout(removeToast, 3600);
 }
+
+function normalizeCourseIdentity(name) {
+    return String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function setEditExtendRelatedState(isEnabled) {
+    editExtendRelatedState = Boolean(isEnabled);
+    localStorage.setItem(EDIT_EXTEND_RELATED_KEY, editExtendRelatedState ? '1' : '0');
+    if (editExtendRelated) {
+        editExtendRelated.checked = editExtendRelatedState;
+    }
+}
+
+let activeMessageDialog = null;
+let activeMessageKeydownHandler = null;
+
+function closeMessageDialog(result) {
+    if (!activeMessageDialog) {
+        return;
+    }
+
+    const { resolve } = activeMessageDialog;
+    activeMessageDialog = null;
+
+    if (activeMessageKeydownHandler) {
+        document.removeEventListener('keydown', activeMessageKeydownHandler);
+        activeMessageKeydownHandler = null;
+    }
+
+    messageModal?.classList.add('hidden');
+    document.body.style.overflow = '';
+    resolve(result);
+}
+
+function openMessageDialog({
+    title = 'Message',
+    message = '',
+    mode = 'alert',
+    confirmText = 'OK',
+    cancelText = 'Cancel',
+    defaultValue = '',
+    placeholder = ''
+} = {}) {
+    if (!messageModal || !messageModalTitle || !messageModalBody || !messageModalInputWrap || !messageModalInput || !messageModalCancel || !messageModalConfirm) {
+        if (mode === 'confirm') {
+            return Promise.resolve(false);
+        }
+        if (mode === 'prompt') {
+            return Promise.resolve(null);
+        }
+        return Promise.resolve(true);
+    }
+
+    if (activeMessageDialog) {
+        closeMessageDialog(mode === 'prompt' ? null : false);
+    }
+
+    return new Promise((resolve) => {
+        activeMessageDialog = { resolve, mode };
+        messageModalTitle.innerText = title;
+        messageModalBody.innerText = message;
+        messageModalConfirm.innerText = confirmText;
+        messageModalCancel.innerText = cancelText;
+        messageModalCancel.classList.toggle('hidden', mode === 'alert');
+        messageModalInputWrap.classList.toggle('hidden', mode !== 'prompt');
+        messageModalInput.value = defaultValue;
+        messageModalInput.placeholder = placeholder;
+
+        messageModal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+
+        const focusTarget = mode === 'prompt' ? messageModalInput : messageModalConfirm;
+        window.requestAnimationFrame(() => focusTarget.focus());
+
+        activeMessageKeydownHandler = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                closeMessageDialog(mode === 'prompt' ? null : false);
+            }
+            if (event.key === 'Enter' && mode !== 'alert' && document.activeElement !== messageModalInput) {
+                event.preventDefault();
+                closeMessageDialog(mode === 'prompt' ? messageModalInput.value : true);
+            }
+        };
+
+        document.addEventListener('keydown', activeMessageKeydownHandler);
+    });
+}
+
+function showAlertDialog(message, title = 'Notice') {
+    return openMessageDialog({ title, message, mode: 'alert', confirmText: 'OK' });
+}
+
+function showConfirmDialog(message, title = 'Confirm') {
+    return openMessageDialog({ title, message, mode: 'confirm', confirmText: 'Confirm', cancelText: 'Cancel' });
+}
+
+function showPromptDialog(message, defaultValue = '', title = 'Prompt') {
+    return openMessageDialog({ title, message, mode: 'prompt', confirmText: 'Submit', cancelText: 'Cancel', defaultValue, placeholder: defaultValue });
+}
+
+messageModalCancel?.addEventListener('click', () => closeMessageDialog(activeMessageDialog?.mode === 'prompt' ? null : false));
+messageModalConfirm?.addEventListener('click', () => {
+    if (!activeMessageDialog) {
+        return;
+    }
+    closeMessageDialog(activeMessageDialog.mode === 'prompt' ? messageModalInput.value : true);
+});
+messageModal?.addEventListener('click', (event) => {
+    if (event.target === messageModal) {
+        closeMessageDialog(activeMessageDialog?.mode === 'prompt' ? null : false);
+    }
+});
+messageModalInput?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        closeMessageDialog(messageModalInput.value);
+    }
+});
 
 function normalizeDroppedFiles(fileList) {
     return Array.from(fileList).filter((file) => file.name.toLowerCase().endsWith('.json') || file.type === 'application/json');
+}
+
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 function isMobileViewport() {
@@ -471,36 +636,96 @@ function buildDayOptionsMarkup(selectedValue = '0') {
     }).join('');
 }
 
-function addSecondaryDayDropdown(selectedValue = '0', startValue = '', endValue = '') {
+function maybePrefillOnlineMode(dayValue, roomInput) {
+    if (!roomInput || !(dayValue === '1' || dayValue === '4')) {
+        return;
+    }
+
+    if (!roomInput.value.trim()) {
+        roomInput.value = 'ONLINE';
+    }
+}
+
+function buildSecondaryDayRow({ day = '0', start = '', end = '', room = '', section = '' } = {}) {
     const row = document.createElement('div');
-    row.className = 'secondary-day-row';
+    row.className = 'secondary-day-row secondary-day-enter';
     row.innerHTML = `
-        <select class="field-input secondary-day-select" aria-label="Secondary day">
-            ${buildDayOptionsMarkup(selectedValue)}
-        </select>
-        <input type="text" class="field-input secondary-start-input" aria-label="Secondary start time" placeholder="07:30" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 13:30)" value="${startValue}">
-        <input type="text" class="field-input secondary-end-input" aria-label="Secondary end time" placeholder="09:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 14:30)" value="${endValue}">
-        <button type="button" class="remove-secondary-day-btn" aria-label="Remove secondary day">−</button>
+        <div class="secondary-day-header-row">
+            <div class="secondary-days-title secondary-days-title-inline">Another Day?</div>
+            <button type="button" class="remove-secondary-day-btn" aria-label="Remove secondary day">−</button>
+        </div>
+        <div class="secondary-day-grid">
+            <div class="secondary-field">
+                <label class="field-label with-margin">Day</label>
+                <select class="field-input secondary-day-select" aria-label="Secondary day">
+                    ${buildDayOptionsMarkup(day)}
+                </select>
+            </div>
+            <div class="secondary-field">
+                <label class="field-label with-margin">Start (24H)</label>
+                <input type="text" class="field-input secondary-start-input" aria-label="Secondary start time" placeholder="07:30" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 13:30)" value="${escapeHtml(start)}">
+            </div>
+            <div class="secondary-field">
+                <label class="field-label with-margin">End (24H)</label>
+                <input type="text" class="field-input secondary-end-input" aria-label="Secondary end time" placeholder="09:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 14:30)" value="${escapeHtml(end)}">
+            </div>
+            <div class="secondary-field">
+                <label class="field-label with-margin">Room / Mode</label>
+                <input type="text" class="field-input secondary-room-input" aria-label="Secondary room or mode" placeholder="F/E | ONLINE" value="${escapeHtml(room)}">
+            </div>
+            <div class="secondary-field secondary-field-wide">
+                <label class="field-label with-margin">Section</label>
+                <input type="text" class="field-input secondary-section-input" aria-label="Secondary section" placeholder="TW/TC/TF/TX/H" value="${escapeHtml(section)}">
+            </div>
+        </div>
     `;
 
+    const daySelect = row.querySelector('.secondary-day-select');
+    const roomInput = row.querySelector('.secondary-room-input');
     const removeBtn = row.querySelector('.remove-secondary-day-btn');
+
+    const syncRowDefaults = () => {
+        maybePrefillOnlineMode(daySelect.value, roomInput);
+    };
+
+    daySelect.addEventListener('change', syncRowDefaults);
     removeBtn.addEventListener('click', () => {
-        row.remove();
+        row.classList.add('secondary-day-removing');
+        window.setTimeout(() => row.remove(), 220);
     });
 
     secondaryDaysContainer.appendChild(row);
+    window.requestAnimationFrame(() => row.classList.remove('secondary-day-enter'));
+    syncRowDefaults();
+    return row;
+}
+
+function addSecondaryDayDropdown(selectedValue = '0', startValue = '', endValue = '') {
+    const primaryRoom = courseRoomInput?.value.trim() || '';
+    const primarySection = courseSectionInput?.value.trim() || '';
+    buildSecondaryDayRow({
+        day: selectedValue,
+        start: startValue,
+        end: endValue,
+        room: primaryRoom,
+        section: primarySection
+    });
 }
 
 function getScheduleEntries() {
-    const primaryDay = Number.parseInt(document.getElementById('course-day').value, 10);
-    const primaryStart = document.getElementById('course-start').value.trim();
-    const primaryEnd = document.getElementById('course-end').value.trim();
+    const primaryDay = Number.parseInt(courseDayInput.value, 10);
+    const primaryStart = courseStartInput.value.trim();
+    const primaryEnd = courseEndInput.value.trim();
+    const primaryRoom = courseRoomInput.value.trim();
+    const primarySection = courseSectionInput.value.trim();
 
     const entries = [
         {
             day: primaryDay,
             start: primaryStart,
             end: primaryEnd,
+            room: primaryRoom,
+            section: primarySection,
             source: 'primary'
         }
     ];
@@ -510,10 +735,14 @@ function getScheduleEntries() {
         const day = Number.parseInt(row.querySelector('.secondary-day-select')?.value, 10);
         const start = row.querySelector('.secondary-start-input')?.value.trim() || '';
         const end = row.querySelector('.secondary-end-input')?.value.trim() || '';
+        const room = row.querySelector('.secondary-room-input')?.value.trim() || '';
+        const section = row.querySelector('.secondary-section-input')?.value.trim() || '';
         entries.push({
             day,
             start,
             end,
+            room,
+            section,
             source: 'secondary'
         });
     });
@@ -534,6 +763,7 @@ function openEditModal(index) {
     editCourseEnd.value = target.end;
     editCourseRoom.value = target.room || '';
     editCourseSection.value = target.section || '';
+    setEditExtendRelatedState(editExtendRelatedState);
     editModal.classList.remove('hidden');
 }
 
@@ -613,7 +843,7 @@ function saveSnapshot() {
     setStatus(`Saved and downloaded ${snapshotName}.`, 'success');
 }
 
-function loadSelectedSchedule() {
+async function loadSelectedSchedule() {
     const selected = getActiveSchedule();
     if (!selected) {
         setStatus('Select a saved schedule first.', 'error');
@@ -621,7 +851,7 @@ function loadSelectedSchedule() {
     }
 
     if (hasUnsavedChanges()) {
-        const ok = confirm('You have unsaved plotted changes. Replace current schedule with selected one?');
+        const ok = await showConfirmDialog('You have unsaved plotted changes. Replace current schedule with selected one?', 'Replace Current Schedule?');
         if (!ok) {
             return;
         }
@@ -660,14 +890,14 @@ function overwriteSelectedSchedule() {
     setStatus(`Overwrote and downloaded ${selected.name}.`, 'success');
 }
 
-function deleteSelectedSchedule() {
+async function deleteSelectedSchedule() {
     const selected = getActiveSchedule();
     if (!selected) {
         setStatus('Select a saved schedule to delete.', 'error');
         return;
     }
 
-    if (!confirm(`Delete ${selected.name} from the in-app saved list?`)) {
+    if (!await showConfirmDialog(`Delete ${selected.name} from the in-app saved list?`, 'Delete Saved Schedule?')) {
         return;
     }
 
@@ -705,7 +935,7 @@ async function importScheduleFiles(fileList) {
     renderSavedSchedulesList();
     if (importedCount > 0) {
         setStatus(`Imported ${importedCount} schedule${importedCount === 1 ? '' : 's'}.`, 'success');
-        alert('Loaded your JSON file, scroll down to load and manage.');
+        await showAlertDialog('Loaded your JSON file. Scroll down to load and manage.', 'Import Complete');
         return;
     }
 
@@ -727,7 +957,7 @@ async function exportCurrentTimetablePng() {
     }
 
     const defaultName = getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
-    const promptName = window.prompt('Enter Schedule Name for export:', defaultName);
+    const promptName = await showPromptDialog('Enter schedule name for export.', defaultName, 'Export PNG');
     if (promptName === null) {
         setStatus('PNG export canceled.', 'info');
         return;
@@ -814,14 +1044,28 @@ async function exportCurrentTimetablePng() {
         }
 
         if (blocksLayer) {
-            const parsePx = (value) => {
-                const parsed = Number.parseFloat(String(value || '0').replace('px', ''));
-                return Number.isFinite(parsed) ? parsed : 0;
+            const parseCssNumber = (value, fallback = 0) => {
+                if (typeof value === 'number' && Number.isFinite(value)) {
+                    return value;
+                }
+
+                const rawText = String(value ?? '').trim();
+                if (!rawText) {
+                    return fallback;
+                }
+
+                const numericMatch = rawText.match(/-?\d+(?:\.\d+)?/);
+                if (!numericMatch) {
+                    return fallback;
+                }
+
+                const parsed = Number.parseFloat(numericMatch[0]);
+                return Number.isFinite(parsed) ? parsed : fallback;
             };
 
             Array.from(blocksLayer.children).forEach((block) => {
-                const topPx = parsePx(block.style.top);
-                const heightPx = parsePx(block.style.height);
+                const topPx = parseCssNumber(block.style.top);
+                const heightPx = parseCssNumber(block.style.height);
                 const exportHeightPx = Math.max(1, Math.round(heightPx));
                 const exportTopPx = Math.round(topPx);
 
@@ -1056,16 +1300,14 @@ function renderSchedule() {
     syncActionStates();
 }
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name = document.getElementById('course-name').value;
     const entries = getScheduleEntries();
-    const room = document.getElementById('course-room').value;
-    const section = courseSectionInput.value;
 
     if (entries.length === 0) {
-        alert('Pick at least one day.');
+        await showAlertDialog('Pick at least one day.', 'Missing Day');
         return;
     }
 
@@ -1080,14 +1322,14 @@ form.addEventListener('submit', (e) => {
     });
 
     if (invalidEntry) {
-        alert('Time glitch: each day must have valid Start/End time and Start must be before End.');
+        await showAlertDialog('Time glitch: each day must have valid Start/End time and Start must be before End.', 'Invalid Time');
         return;
     }
 
     const dedupedEntries = [];
     const seenKeys = new Set();
     entries.forEach((entry) => {
-        const key = `${entry.day}|${entry.start}|${entry.end}`;
+        const key = `${entry.day}|${entry.start}|${entry.end}|${entry.room}|${entry.section}`;
         if (!seenKeys.has(key)) {
             seenKeys.add(key);
             dedupedEntries.push(entry);
@@ -1096,7 +1338,7 @@ form.addEventListener('submit', (e) => {
 
     const hasAnyConflict = dedupedEntries.some((entry) => Boolean(hasConflict(entry.day, entry.start, entry.end)));
     if (hasAnyConflict) {
-        if (!confirm('Wait up! One or more selected days overlap with existing classes. Do you still want to plot all selected days?')) {
+        if (!await showConfirmDialog('Wait up! One or more selected days overlap with existing classes. Do you still want to plot all selected days?', 'Schedule Conflict')) {
             return;
         }
     }
@@ -1107,8 +1349,8 @@ form.addEventListener('submit', (e) => {
             day: entry.day,
             start: entry.start,
             end: entry.end,
-            room,
-            section,
+            room: entry.room,
+            section: entry.section,
             color: selectedColor
         });
     });
@@ -1117,10 +1359,11 @@ form.addEventListener('submit', (e) => {
     document.getElementById('course-name').value = '';
     document.getElementById('course-room').value = '';
     courseSectionInput.value = '';
+    secondaryDaysContainer.innerHTML = '';
     document.getElementById('course-name').focus();
 });
 
-editForm.addEventListener('submit', (e) => {
+editForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     if (editingIndex === null || !classes[editingIndex]) {
@@ -1128,38 +1371,69 @@ editForm.addEventListener('submit', (e) => {
         return;
     }
 
+    setEditExtendRelatedState(editExtendRelated?.checked);
+
     const name = editCourseName.value.trim();
     const day = Number.parseInt(editCourseDay.value, 10);
     const start = editCourseStart.value.trim();
     const end = editCourseEnd.value.trim();
     const room = editCourseRoom.value.trim();
     const section = editCourseSection.value.trim();
+    const extendRelated = editExtendRelatedState;
+    const activeBlock = classes[editingIndex];
 
     if (!name) {
-        alert('Subject is required.');
+        await showAlertDialog('Subject is required.', 'Missing Subject');
         return;
     }
     if (!isValidTime(start) || !isValidTime(end) || timeToPixels(start) >= timeToPixels(end)) {
-        alert('Time glitch: Start time must be before End time.');
+        await showAlertDialog('Time glitch: Start time must be before End time.', 'Invalid Time');
         return;
     }
 
     const conflict = hasConflict(day, start, end, editingIndex);
     if (conflict) {
-        if (!confirm(`Wait up! This overlaps with ${conflict.name}. Do you still want to save?`)) {
+        if (!await showConfirmDialog(`Wait up! This overlaps with ${conflict.name}. Do you still want to save?`, 'Schedule Conflict')) {
             return;
         }
     }
 
-    classes[editingIndex] = {
-        ...classes[editingIndex],
-        name,
-        day,
-        start,
-        end,
-        room,
-        section
-    };
+    if (extendRelated) {
+        const groupKey = normalizeCourseIdentity(activeBlock.name);
+        const relatedIndexes = classes
+            .map((block, index) => ({ block, index }))
+            .filter(({ block }) => normalizeCourseIdentity(block.name) === groupKey)
+            .map(({ index }) => index);
+
+        classes[editingIndex] = {
+            ...classes[editingIndex],
+            name,
+            day,
+            start,
+            end,
+            room,
+            section
+        };
+
+        relatedIndexes.filter((index) => index !== editingIndex).forEach((index) => {
+            classes[index] = {
+                ...classes[index],
+                name,
+                room,
+                section
+            };
+        });
+    } else {
+        classes[editingIndex] = {
+            ...classes[editingIndex],
+            name,
+            day,
+            start,
+            end,
+            room,
+            section
+        };
+    }
 
     closeEditModal();
     renderSchedule();
@@ -1185,8 +1459,8 @@ window.removeClass = (index) => {
 };
 window.openEditModal = openEditModal;
 
-document.getElementById('clear-btn').addEventListener('click', () => {
-    if (confirm('Nuke the entire schedule?')) {
+document.getElementById('clear-btn').addEventListener('click', async () => {
+    if (await showConfirmDialog('Nuke the entire schedule?', 'Clear Schedule?')) {
         classes = [];
         renderSchedule();
         setStatus('Cleared plotted schedule.', 'info');
@@ -1226,6 +1500,16 @@ mobilePreviewModal?.addEventListener('click', (event) => {
         closeMobileFullPreview();
     }
 });
+
+editExtendRelated?.addEventListener('change', () => {
+    setEditExtendRelatedState(editExtendRelated.checked);
+});
+
+courseDayInput?.addEventListener('change', () => {
+    maybePrefillOnlineMode(courseDayInput.value, courseRoomInput);
+});
+
+setEditExtendRelatedState(editExtendRelatedState);
 
 window.addEventListener('resize', () => {
     applyLiveTimetableMetrics();

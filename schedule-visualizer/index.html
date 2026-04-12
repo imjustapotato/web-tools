@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Schedule Plotter</title>
+    <title>Schedule Plotter and Visualizer</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
@@ -51,6 +51,8 @@
         <p class="mobile-warning-text">Best experience is on desktop. Mobile editing is supported but can feel tight.</p>
         <button id="mobile-warning-ack-btn" type="button" class="btn btn-sm btn-load">I Understand</button>
     </section>
+
+    <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
     <div class="app-content">
         <aside class="sidebar-panel custom-scrollbar">
@@ -120,14 +122,6 @@
                     </div>
                 </div>
 
-                <div class="secondary-days-panel">
-                    <button type="button" id="add-secondary-day-btn" class="btn btn-sm btn-load secondary-day-trigger">
-                        <span class="iconify btn-icon" data-icon="mdi:calendar-plus" aria-hidden="true"></span>
-                        Add Secondary Day
-                    </button>
-                    <div id="secondary-days-container" class="secondary-days-list"></div>
-                </div>
-
                 <div class="split-fields">
                     <div class="half-field">
                         <label class="field-label with-margin">
@@ -143,6 +137,16 @@
                         </label>
                         <input type="text" id="course-section" placeholder="TW/TC/TF/TX/H" class="field-input">
                     </div>
+                </div>
+
+                <div class="secondary-days-panel">
+                    <div class="secondary-days-header-row">
+                        <button type="button" id="add-secondary-day-btn" class="btn btn-sm btn-load secondary-day-trigger">
+                            <span class="iconify btn-icon" data-icon="mdi:calendar-plus" aria-hidden="true"></span>
+                            Add Secondary Day
+                        </button>
+                    </div>
+                    <div id="secondary-days-container" class="secondary-days-list"></div>
                 </div>
 
                 <div>
@@ -278,6 +282,14 @@
                     </div>
                 </div>
 
+                <label class="edit-extend-toggle">
+                    <input type="checkbox" id="edit-extend-related">
+                    <span>
+                        Extend edits to same subject course
+                        <small>Remember this choice for the next edit session.</small>
+                    </span>
+                </label>
+
                 <div class="split-fields">
                     <div class="half-field">
                         <label class="field-label with-margin">
@@ -306,6 +318,20 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div id="message-modal" class="message-modal hidden" role="dialog" aria-modal="true" aria-labelledby="message-modal-title" aria-describedby="message-modal-body">
+        <div class="message-card">
+            <h3 id="message-modal-title" class="section-title modal-title">Message</h3>
+            <p id="message-modal-body" class="message-body"></p>
+            <div id="message-modal-input-wrap" class="message-input-wrap hidden">
+                <input id="message-modal-input" type="text" class="field-input">
+            </div>
+            <div class="modal-actions">
+                <button type="button" id="message-modal-cancel" class="btn btn-clear">Cancel</button>
+                <button type="button" id="message-modal-confirm" class="btn btn-save">OK</button>
+            </div>
         </div>
     </div>
 
