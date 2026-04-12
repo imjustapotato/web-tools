@@ -149,6 +149,10 @@ const messageModalInputWrap = document.getElementById('message-modal-input-wrap'
 const messageModalInput = document.getElementById('message-modal-input');
 const messageModalCancel = document.getElementById('message-modal-cancel');
 const messageModalConfirm = document.getElementById('message-modal-confirm');
+const colorPicker = document.getElementById('color-picker');
+const editModalCard = editModal?.querySelector('.modal-card');
+const mobilePreviewCard = mobilePreviewModal?.querySelector('.mobile-preview-card');
+const messageModalCard = messageModal?.querySelector('.message-card');
 
 const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
 
@@ -163,6 +167,74 @@ const DAY_OPTIONS = [
 
 let mobileViewMode = 'plotter';
 let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
+let pendingAddedCount = 0;
+let pendingEditedIndexes = [];
+
+function hasGsap() {
+    return typeof window.gsap !== 'undefined';
+}
+
+function animatePressFeedback(targetEl) {
+    if (!targetEl || !hasGsap()) {
+        return;
+    }
+
+    window.gsap.killTweensOf(targetEl);
+    window.gsap.fromTo(targetEl,
+        { scale: 0.95 },
+        { scale: 1, duration: 0.24, ease: 'back.out(2)' }
+    );
+}
+
+function animateModalIn(modalEl, cardEl) {
+    if (!modalEl) {
+        return;
+    }
+
+    modalEl.classList.remove('hidden');
+    if (!hasGsap()) {
+        return;
+    }
+
+    window.gsap.killTweensOf([modalEl, cardEl]);
+    window.gsap.set(modalEl, { opacity: 0 });
+    window.gsap.set(cardEl, { opacity: 0, y: -16, scale: 0.965 });
+    window.gsap.to(modalEl, { opacity: 1, duration: 0.22, ease: 'power2.out' });
+    window.gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' });
+}
+
+function animateModalOut(modalEl, cardEl, onComplete) {
+    if (!modalEl || modalEl.classList.contains('hidden')) {
+        onComplete?.();
+        return;
+    }
+
+    if (!hasGsap()) {
+        modalEl.classList.add('hidden');
+        onComplete?.();
+        return;
+    }
+
+    window.gsap.killTweensOf([modalEl, cardEl]);
+    const timeline = window.gsap.timeline({
+        onComplete: () => {
+            modalEl.classList.add('hidden');
+            onComplete?.();
+        }
+    });
+
+    timeline.to(cardEl, { opacity: 0, y: 12, scale: 0.97, duration: 0.18, ease: 'power2.in' });
+    timeline.to(modalEl, { opacity: 0, duration: 0.16, ease: 'power2.in' }, '<');
+}
+
+function setupButtonFeedbackDelegation() {
+    document.addEventListener('click', (event) => {
+        const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn');
+        if (targetButton) {
+            animatePressFeedback(targetButton);
+        }
+    });
+}
 
 function createIconMarkup(iconName) {
     return `<span class="iconify label-icon" data-icon="${iconName}" aria-hidden="true"></span>`;
@@ -171,6 +243,170 @@ function createIconMarkup(iconName) {
 function getRingClass(colorClass) {
     const hue = String(colorClass || '').replace(/^bg-/, '').replace(/-\d+$/, '');
     return hue ? `ring-${hue}-400` : 'ring-emerald-400';
+}
+
+function initColorSelectorHighlight() {
+    if (!colorPicker || colorPicker.querySelector('.color-selector-highlight')) {
+        return;
+    }
+
+    const highlight = document.createElement('div');
+    highlight.className = 'color-selector-highlight';
+    colorPicker.appendChild(highlight);
+}
+
+function animateColorSelectorTo(buttonEl, immediate = false) {
+    if (!colorPicker || !buttonEl) {
+        return;
+    }
+
+    const highlight = colorPicker.querySelector('.color-selector-highlight');
+    if (!highlight) {
+        return;
+    }
+
+    const pickerRect = colorPicker.getBoundingClientRect();
+    const buttonRect = buttonEl.getBoundingClientRect();
+    const nextX = buttonRect.left - pickerRect.left;
+    const nextY = buttonRect.top - pickerRect.top;
+
+    if (!hasGsap() || immediate) {
+        highlight.style.opacity = '1';
+        highlight.style.width = `${buttonRect.width}px`;
+        highlight.style.height = `${buttonRect.height}px`;
+        highlight.style.transform = `translate(${nextX}px, ${nextY}px)`;
+        return;
+    }
+
+    window.gsap.to(highlight, {
+        opacity: 1,
+        x: nextX,
+        y: nextY,
+        width: buttonRect.width,
+        height: buttonRect.height,
+        duration: 0.28,
+        ease: 'power3.out'
+    });
+}
+
+function getBlockGlowColor(colorClass) {
+    const hue = String(colorClass || '').replace(/^bg-/, '').split('-')[0];
+    const glowMap = {
+        emerald: 'rgba(16, 185, 129, 0.45)',
+        cyan: 'rgba(6, 182, 212, 0.45)',
+        indigo: 'rgba(99, 102, 241, 0.45)',
+        purple: 'rgba(147, 51, 234, 0.45)',
+        rose: 'rgba(244, 63, 94, 0.45)',
+        amber: 'rgba(245, 158, 11, 0.45)',
+        sky: 'rgba(14, 165, 233, 0.45)',
+        lime: 'rgba(132, 204, 22, 0.45)',
+        pink: 'rgba(236, 72, 153, 0.45)',
+        teal: 'rgba(20, 184, 166, 0.45)'
+    };
+
+    return glowMap[hue] || 'rgba(16, 185, 129, 0.45)';
+}
+
+function bindBlockHoverAnimation(blockEl, colorClass) {
+    if (!blockEl) {
+        return;
+    }
+
+    const glowColor = getBlockGlowColor(colorClass);
+    blockEl.addEventListener('mouseenter', () => {
+        if (!hasGsap()) {
+            return;
+        }
+        window.gsap.to(blockEl, {
+            y: -2,
+            scale: 1.01,
+            boxShadow: `0 18px 32px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 18px ${glowColor}`,
+            duration: 0.22,
+            ease: 'power2.out'
+        });
+    });
+
+    blockEl.addEventListener('mouseleave', () => {
+        if (!hasGsap()) {
+            return;
+        }
+        window.gsap.to(blockEl, {
+            y: 0,
+            scale: 1,
+            boxShadow: '0 0 0 rgba(0,0,0,0)',
+            duration: 0.2,
+            ease: 'power2.out'
+        });
+    });
+}
+
+function animateAddedBlocks(blockElements) {
+    if (!hasGsap() || !Array.isArray(blockElements) || blockElements.length === 0) {
+        return;
+    }
+
+    const timeline = window.gsap.timeline();
+    timeline.fromTo(blockElements,
+        {
+            autoAlpha: 0,
+            x: -10,
+            y: -16,
+            scale: 0.975,
+            rotateX: -4,
+            transformOrigin: '50% 100%',
+            filter: 'saturate(1.12) blur(3px) brightness(0.95)'
+        },
+        {
+            autoAlpha: 1,
+            x: 0,
+            y: 0,
+            scale: 1,
+            rotateX: 0,
+            filter: 'saturate(1) blur(0px) brightness(1)',
+            duration: 0.46,
+            ease: 'power3.out',
+            stagger: { each: 0.07 }
+        }
+    );
+
+    timeline.fromTo(blockElements,
+        {
+            boxShadow: '0 0 0 rgba(0,0,0,0), 0 0 0 rgba(0,0,0,0)'
+        },
+        {
+            boxShadow: '0 12px 24px rgba(2, 6, 23, 0.28), 0 0 12px rgba(148,163,184,0.14)',
+            duration: 0.22,
+            yoyo: true,
+            repeat: 1,
+            ease: 'power1.inOut',
+            stagger: { each: 0.06 }
+        },
+        '-=0.24'
+    );
+}
+
+function animateBlockExitAndRemove(blockEl, onComplete) {
+    if (!blockEl || !hasGsap()) {
+        onComplete?.();
+        return;
+    }
+
+    window.gsap.killTweensOf(blockEl);
+    const timeline = window.gsap.timeline({ onComplete: () => onComplete?.() });
+    timeline.to(blockEl, {
+        boxShadow: '0 0 8px rgba(255,255,255,0.14)',
+        duration: 0.08,
+        ease: 'power1.out'
+    });
+    timeline.to(blockEl, {
+        autoAlpha: 0,
+        x: 16,
+        y: -7,
+        scale: 0.965,
+        filter: 'blur(2px) saturate(0.92)',
+        duration: 0.18,
+        ease: 'power2.in'
+    }, '-=0.02');
 }
 
 function syncColorButtons(selectedBtn = null) {
@@ -189,6 +425,7 @@ function syncColorButtons(selectedBtn = null) {
     selectedColor = activeButton.dataset.color || selectedColor;
     activeButton.classList.remove('opacity-50');
     activeButton.classList.add('ring-2', 'ring-offset-2', 'ring-offset-slate-800', getRingClass(selectedColor));
+    animateColorSelectorTo(activeButton);
 }
 
 function populateSubjectOptions() {
@@ -267,9 +504,10 @@ function closeMessageDialog(result) {
         activeMessageKeydownHandler = null;
     }
 
-    messageModal?.classList.add('hidden');
-    document.body.style.overflow = '';
-    resolve(result);
+    animateModalOut(messageModal, messageModalCard, () => {
+        document.body.style.overflow = '';
+        resolve(result);
+    });
 }
 
 function openMessageDialog({
@@ -306,7 +544,7 @@ function openMessageDialog({
         messageModalInput.value = defaultValue;
         messageModalInput.placeholder = placeholder;
 
-        messageModal.classList.remove('hidden');
+        animateModalIn(messageModal, messageModalCard);
         document.body.style.overflow = 'hidden';
 
         const focusTarget = mode === 'prompt' ? messageModalInput : messageModalConfirm;
@@ -416,9 +654,12 @@ function closeMobileFullPreview() {
     if (!mobilePreviewModal || !mobilePreviewContainer) {
         return;
     }
-    mobilePreviewModal.classList.add('hidden');
-    mobilePreviewContainer.innerHTML = '';
-    document.body.style.overflow = '';
+
+    animateModalOut(mobilePreviewModal, mobilePreviewCard, () => {
+        mobilePreviewContainer.innerHTML = '';
+        mobilePreviewContainer.scrollTop = 0;
+        document.body.style.overflow = '';
+    });
 }
 
 function openMobileFullPreview() {
@@ -430,11 +671,22 @@ function openMobileFullPreview() {
     const previewClone = timetableExportArea.cloneNode(true);
     previewClone.removeAttribute('id');
     previewClone.classList.remove('custom-scrollbar');
-    previewClone.style.minHeight = '100%';
+    previewClone.style.minHeight = '0';
+    previewClone.style.height = 'auto';
+    previewClone.style.maxHeight = 'none';
     previewClone.style.overflow = 'auto';
     previewClone.style.borderRadius = '0.65rem';
+    previewClone.scrollTop = 0;
+
+    const clonePanel = previewClone.querySelector('.timetable-panel');
+    if (clonePanel) {
+        clonePanel.style.minHeight = '0';
+        clonePanel.style.height = 'auto';
+    }
+
     mobilePreviewContainer.appendChild(previewClone);
-    mobilePreviewModal.classList.remove('hidden');
+    mobilePreviewContainer.scrollTop = 0;
+    animateModalIn(mobilePreviewModal, mobilePreviewCard);
     document.body.style.overflow = 'hidden';
 }
 
@@ -764,12 +1016,12 @@ function openEditModal(index) {
     editCourseRoom.value = target.room || '';
     editCourseSection.value = target.section || '';
     setEditExtendRelatedState(editExtendRelatedState);
-    editModal.classList.remove('hidden');
+    animateModalIn(editModal, editModalCard);
 }
 
 function closeEditModal() {
     editingIndex = null;
-    editModal.classList.add('hidden');
+    animateModalOut(editModal, editModalCard);
 }
 
 function normalizeSchedulePayload(payload, fallbackName = '') {
@@ -1069,6 +1321,9 @@ async function exportCurrentTimetablePng() {
                 const exportHeightPx = Math.max(1, Math.round(heightPx));
                 const exportTopPx = Math.round(topPx);
 
+                block.style.transform = 'none';
+                block.style.filter = 'none';
+                block.style.boxShadow = 'none';
                 block.style.top = `${exportTopPx}px`;
                 block.style.height = `${exportHeightPx}px`;
                 block.style.padding = '0.55rem';
@@ -1204,23 +1459,6 @@ async function exportCurrentTimetablePng() {
     }
 }
 
-colorBtns.forEach((btn) => {
-    btn.addEventListener('click', (e) => {
-        colorBtns.forEach((b) => {
-            b.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-slate-800');
-            b.classList.add('opacity-50');
-            b.className = b.className.replace(/ring-\w+-400/g, '');
-        });
-
-        const pickedBtn = e.target;
-        selectedColor = pickedBtn.dataset.color;
-        pickedBtn.classList.remove('opacity-50');
-
-        const colorName = selectedColor.split('-')[1];
-        pickedBtn.classList.add('ring-2', 'ring-offset-2', 'ring-offset-slate-800', `ring-${colorName}-400`);
-    });
-});
-
 function initTimeAxis() {
     let html = '';
     for (let i = START_HOUR; i < END_HOUR; i++) {
@@ -1292,8 +1530,34 @@ function renderSchedule() {
             ${(c.room || c.section) ? `<div class="schedule-block-tags">${c.room ? `<span class="schedule-tag">${c.room}</span>` : ''}${c.section ? `<span class="schedule-tag">${c.section}</span>` : ''}</div>` : ''}
         `;
 
+        bindBlockHoverAnimation(block, c.color);
+
         container.appendChild(block);
     });
+
+    if (hasGsap()) {
+        if (pendingAddedCount > 0) {
+            const startIndex = Math.max(0, container.children.length - pendingAddedCount);
+            const addedEls = Array.from(container.children).slice(startIndex);
+            animateAddedBlocks(addedEls);
+        }
+
+        if (pendingEditedIndexes.length > 0) {
+            const editedEls = pendingEditedIndexes
+                .map((index) => container.children[index])
+                .filter(Boolean);
+
+            if (editedEls.length > 0) {
+                window.gsap.fromTo(editedEls,
+                    { x: -2 },
+                    { x: 0, duration: 0.2, ease: 'power2.out', stagger: 0.025 }
+                );
+            }
+        }
+    }
+
+    pendingAddedCount = 0;
+    pendingEditedIndexes = [];
 
     countDisplay.innerText = classes.length;
     localStorage.setItem('feu_schedule', JSON.stringify(classes));
@@ -1354,6 +1618,7 @@ form.addEventListener('submit', async (e) => {
             color: selectedColor
         });
     });
+    pendingAddedCount = dedupedEntries.length;
     renderSchedule();
 
     document.getElementById('course-name').value = '';
@@ -1423,6 +1688,7 @@ editForm.addEventListener('submit', async (e) => {
                 section
             };
         });
+        pendingEditedIndexes = [...relatedIndexes];
     } else {
         classes[editingIndex] = {
             ...classes[editingIndex],
@@ -1433,6 +1699,7 @@ editForm.addEventListener('submit', async (e) => {
             room,
             section
         };
+        pendingEditedIndexes = [editingIndex];
     }
 
     closeEditModal();
@@ -1454,6 +1721,15 @@ addSecondaryDayBtn.addEventListener('click', () => {
 });
 
 window.removeClass = (index) => {
+    const blockEl = container.children[index];
+    if (blockEl) {
+        animateBlockExitAndRemove(blockEl, () => {
+            classes.splice(index, 1);
+            renderSchedule();
+        });
+        return;
+    }
+
     classes.splice(index, 1);
     renderSchedule();
 };
@@ -1520,7 +1796,9 @@ initTimeAxis();
 applyLiveTimetableMetrics();
 populateSubjectOptions();
 renderSavedSchedulesList();
+initColorSelectorHighlight();
 syncColorButtons();
+setupButtonFeedbackDelegation();
 syncMobileLayoutState();
 setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
 wireDropImport();

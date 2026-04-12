@@ -575,7 +575,28 @@ body.page-leaving {
 
 .color-picker {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
+    position: relative;
+}
+
+.color-picker .color-btn {
+    position: relative;
+    z-index: 2;
+}
+
+.color-selector-highlight {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 999px;
+    border: 2px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 0 0 3px rgba(15, 23, 42, 0.95), 0 8px 16px rgba(2, 6, 23, 0.55);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 1;
 }
 
 .drop-zone {
@@ -1022,9 +1043,7 @@ body.page-leaving {
 }
 
 .schedule-block:hover {
-    transform: translateY(-2px) scale(1.01);
-    filter: brightness(1.06);
-    animation: block-lift 220ms ease forwards;
+    filter: brightness(1.02);
 }
 
 .block-action-btn {
@@ -1135,10 +1154,14 @@ body.page-leaving {
     overflow: auto;
     padding: 0.65rem;
     background: #0f172a;
+    max-height: calc(92vh - 3.5rem);
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
 }
 
 .mobile-preview-container .timetable-panel {
-    min-height: 100%;
+    min-height: 0;
+    height: auto;
 }
 
 .modal-card {
