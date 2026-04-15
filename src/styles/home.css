@@ -446,6 +446,14 @@ body.page-leaving {
     font-size: 0.96rem;
 }
 
+/* Subtle warning accent for parenthetical notes like "(Soon ...)" */
+.soon-warning {
+    color: var(--aurora-highlight-four);
+    font-weight: 600;
+    opacity: 0.95;
+    font-size: 0.95em;
+}
+
 @keyframes auroraTwinkle {
     0% { opacity: 0.7; }
     50% { opacity: 1; }
