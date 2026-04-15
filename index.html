@@ -1,35 +1,54 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Ken's Web Tools</title>
+    <link rel="stylesheet" href="./src/styles/tailwind.css">
     <link rel="stylesheet" href="./src/styles/home.css">
     <link rel="icon" href="./src/assets/logo100.png" type="image/png">
-    <script>
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
 </head>
 <body>
     <main class="home-shell">
+        <!-- Old homepage background (kept for quick fallback/reversion)
         <div class="aurora-base" aria-hidden="true"></div>
         <div class="home-glow home-glow-one"></div>
         <div class="home-glow home-glow-two"></div>
         <div class="home-glow home-glow-three"></div>
+        -->
+
+        <div class="aurora-background" aria-hidden="true">
+            <div class="aurora-stars"></div>
+
+            <div class="aurora-curtains">
+                <div class="aurora-band aurora-band-one"></div>
+                <div class="aurora-band aurora-band-two"></div>
+                <div class="aurora-band aurora-band-three"></div>
+            </div>
+
+            <div class="aurora-horizon"></div>
+
+            <div class="aurora-mountains">
+                <svg viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M0,200 L0,140 L80,90 L160,130 L260,60 L360,110 L440,50 L520,95 L620,30 L720,80 L820,20 L900,70 L980,40 L1060,85 L1160,35 L1260,90 L1360,55 L1440,80 L1440,200 Z" fill="#020510"/>
+                    <path d="M0,200 L0,160 L100,120 L200,150 L320,100 L420,140 L540,90 L640,130 L760,110 L860,145 L960,105 L1080,135 L1180,115 L1300,140 L1440,120 L1440,200 Z" fill="rgba(0,10,8,.95)"/>
+                </svg>
+            </div>
+        </div>
+
         <section class="hero-card">
             <p class="eyebrow">Kenn's Workspace</p>
             <h1>Web Tools</h1>
             <p class="hero-copy">Pick a tool that fits your need. I will add more tools as I develop them.</p>
 
             <div class="tool-grid">
-                <a class="tool-card tool-card-primary" href="./schedule-visualizer/index.html">
+                <a class="tool-card tool-card-primary" href="/schedule-visualizer/">
                     <span class="tool-kicker">Planner</span>
                     <strong>Schedule Plotter</strong>
                     <span class="tool-description">Plot class schedules, manage saved snapshots, and export PNGs. <br>(Currently supports CST Subjects but you may add custom subjects: Course Code - Subject Name)</span>
                 </a>
 
-                <a class="tool-card tool-card-secondary" href="./portal-parser/index.html">
+                <a class="tool-card tool-card-secondary" href="/portal-parser/">
                     <span class="tool-kicker">Parser</span>
                     <strong>Pre-requisite Tree / MHTML Parser</strong>
                     <span class="tool-description">Upload a portal export and map the curriculum dependency tree.</span>
@@ -44,11 +63,7 @@
         </section>
     </main>
 
-    <script src="./src/scripts/page-transition.js"></script>
-    <script src="./src/scripts/home.js"></script>
-    <script>
-        window.va = window.va || function () { (window.vaq = window.vaq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/insights/script.js"></script>
+    <script type="module" src="./src/scripts/page-transition.js"></script>
+    <script type="module" src="./src/scripts/home.js"></script>
 </body>
 </html>

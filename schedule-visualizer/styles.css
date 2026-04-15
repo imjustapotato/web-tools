@@ -854,8 +854,15 @@ body.page-leaving {
 }
 
 .grid-bg {
-    background-image: linear-gradient(to bottom, #334155 1px, transparent 1px);
-    background-size: 100% var(--hour-row-height, 60px);
+    background-image:
+        linear-gradient(to bottom, rgba(71, 85, 105, 0.66) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(71, 85, 105, 0.32) 1px, transparent 1px);
+    background-size:
+        100% var(--hour-row-height, 84px),
+        100% calc(var(--hour-row-height, 84px) / 2);
+    background-position:
+        0 0,
+        0 calc(var(--hour-row-height, 84px) / 2);
 }
 
 .manager-btn {

@@ -1,3 +1,7 @@
+import '@iconify/iconify';
+import html2canvas from 'html2canvas';
+import { gsap } from 'gsap';
+
 let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 let selectedColor = 'bg-emerald-600';
 let savedSchedules = [];
@@ -6,12 +10,52 @@ let editingIndex = null;
 
 const START_HOUR = 7;
 const END_HOUR = 22;
-const PIXELS_PER_HOUR = 72;
+const LIVE_ROW_HEIGHT_PIXELS = 84;
+const EXPORT_ROW_HEIGHT_PIXELS = 90;
 const HEADER_HEIGHT_PX = 40;
 const EXPORT_PNG_SCALE = 1;
 const EXPORT_CAPTURE_SCALE_BASE = 2;
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
+
+const EXPORT_BLOCK_BACKGROUND_BY_TAILWIND_CLASS = {
+    'bg-emerald-600': '#059669',
+    'bg-cyan-600': '#0891b2',
+    'bg-indigo-600': '#4f46e5',
+    'bg-purple-600': '#9333ea',
+    'bg-rose-600': '#e11d48',
+    'bg-amber-600': '#d97706',
+    'bg-sky-600': '#0284c7',
+    'bg-lime-600': '#65a30d',
+    'bg-pink-600': '#db2777',
+    'bg-teal-600': '#0d9488'
+};
+
+const EXPORT_FALLBACK_STYLE_ELEMENT_ID = 'export-fallback-utility-styles';
+
+function injectExportFallbackStyles(clonedDocument) {
+    if (!clonedDocument || clonedDocument.getElementById(EXPORT_FALLBACK_STYLE_ELEMENT_ID)) {
+        return;
+    }
+
+    const styleElement = clonedDocument.createElement('style');
+    styleElement.id = EXPORT_FALLBACK_STYLE_ELEMENT_ID;
+    styleElement.textContent = `
+        *, *::before, *::after { box-sizing: border-box; }
+        .relative { position: relative; }
+        .absolute { position: absolute; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: 700; }
+        .font-medium { font-weight: 500; }
+        .leading-none { line-height: 1; }
+        .mt-0\\.5 { margin-top: 0.125rem; }
+        .w-3 { width: 0.75rem; }
+        .h-3 { height: 0.75rem; }
+        .schedule-block { box-sizing: border-box; }
+    `;
+
+    clonedDocument.head.appendChild(styleElement);
+}
 
 const SUBJECT_CATALOG = [
     { code: 'CCS0001', title: 'INTRODUCTION TO COMPUTING LEC' },
@@ -171,7 +215,7 @@ let pendingAddedCount = 0;
 let pendingEditedIndexes = [];
 
 function hasGsap() {
-    return typeof window.gsap !== 'undefined';
+    return typeof gsap !== 'undefined';
 }
 
 function animatePressFeedback(targetEl) {
@@ -179,8 +223,8 @@ function animatePressFeedback(targetEl) {
         return;
     }
 
-    window.gsap.killTweensOf(targetEl);
-    window.gsap.fromTo(targetEl,
+    gsap.killTweensOf(targetEl);
+    gsap.fromTo(targetEl,
         { scale: 0.95 },
         { scale: 1, duration: 0.24, ease: 'back.out(2)' }
     );
@@ -196,11 +240,11 @@ function animateModalIn(modalEl, cardEl) {
         return;
     }
 
-    window.gsap.killTweensOf([modalEl, cardEl]);
-    window.gsap.set(modalEl, { opacity: 0 });
-    window.gsap.set(cardEl, { opacity: 0, y: -16, scale: 0.965 });
-    window.gsap.to(modalEl, { opacity: 1, duration: 0.22, ease: 'power2.out' });
-    window.gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' });
+    gsap.killTweensOf([modalEl, cardEl]);
+    gsap.set(modalEl, { opacity: 0 });
+    gsap.set(cardEl, { opacity: 0, y: -16, scale: 0.965 });
+    gsap.to(modalEl, { opacity: 1, duration: 0.22, ease: 'power2.out' });
+    gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' });
 }
 
 function animateModalOut(modalEl, cardEl, onComplete) {
@@ -215,8 +259,8 @@ function animateModalOut(modalEl, cardEl, onComplete) {
         return;
     }
 
-    window.gsap.killTweensOf([modalEl, cardEl]);
-    const timeline = window.gsap.timeline({
+    gsap.killTweensOf([modalEl, cardEl]);
+    const timeline = gsap.timeline({
         onComplete: () => {
             modalEl.classList.add('hidden');
             onComplete?.();
@@ -278,7 +322,7 @@ function animateColorSelectorTo(buttonEl, immediate = false) {
         return;
     }
 
-    window.gsap.to(highlight, {
+    gsap.to(highlight, {
         opacity: 1,
         x: nextX,
         y: nextY,
@@ -317,7 +361,7 @@ function bindBlockHoverAnimation(blockEl, colorClass) {
         if (!hasGsap()) {
             return;
         }
-        window.gsap.to(blockEl, {
+        gsap.to(blockEl, {
             y: -2,
             scale: 1.01,
             boxShadow: `0 18px 32px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 18px ${glowColor}`,
@@ -330,7 +374,7 @@ function bindBlockHoverAnimation(blockEl, colorClass) {
         if (!hasGsap()) {
             return;
         }
-        window.gsap.to(blockEl, {
+        gsap.to(blockEl, {
             y: 0,
             scale: 1,
             boxShadow: '0 0 0 rgba(0,0,0,0)',
@@ -345,7 +389,7 @@ function animateAddedBlocks(blockElements) {
         return;
     }
 
-    const timeline = window.gsap.timeline();
+    const timeline = gsap.timeline();
     timeline.fromTo(blockElements,
         {
             autoAlpha: 0,
@@ -391,8 +435,8 @@ function animateBlockExitAndRemove(blockEl, onComplete) {
         return;
     }
 
-    window.gsap.killTweensOf(blockEl);
-    const timeline = window.gsap.timeline({ onComplete: () => onComplete?.() });
+    gsap.killTweensOf(blockEl);
+    const timeline = gsap.timeline({ onComplete: () => onComplete?.() });
     timeline.to(blockEl, {
         boxShadow: '0 0 8px rgba(255,255,255,0.14)',
         duration: 0.08,
@@ -478,6 +522,12 @@ function setStatus(message, tone = 'info') {
 
 function normalizeCourseIdentity(name) {
     return String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function getExportSafeBackgroundColor(classNameText) {
+    const classNames = String(classNameText || '').split(/\s+/).filter(Boolean);
+    const backgroundClass = classNames.find((className) => className.startsWith('bg-'));
+    return EXPORT_BLOCK_BACKGROUND_BY_TAILWIND_CLASS[backgroundClass] || '#334155';
 }
 
 function setEditExtendRelatedState(isEnabled) {
@@ -703,11 +753,11 @@ function syncMobileLayoutState() {
 }
 
 function applyLiveTimetableMetrics() {
-    const bodyHeight = (END_HOUR - START_HOUR) * PIXELS_PER_HOUR;
+    const bodyHeight = (END_HOUR - START_HOUR) * LIVE_ROW_HEIGHT_PIXELS;
     const totalHeight = HEADER_HEIGHT_PX + bodyHeight;
 
     if (timetableExportArea) {
-        timetableExportArea.style.setProperty('--hour-row-height', `${PIXELS_PER_HOUR}px`);
+        timetableExportArea.style.setProperty('--hour-row-height', `${LIVE_ROW_HEIGHT_PIXELS}px`);
         timetableExportArea.style.setProperty('--timetable-height', `${totalHeight}px`);
     }
 
@@ -1235,7 +1285,8 @@ async function exportCurrentTimetablePng() {
 
         const horizontalStretch = 1;
         // Keep export geometry deterministic and isolated from responsive live view rules.
-        const exportRowHeight = PIXELS_PER_HOUR;
+        const exportRowHeight = EXPORT_ROW_HEIGHT_PIXELS;
+        const exportScaleRatio = exportRowHeight / LIVE_ROW_HEIGHT_PIXELS;
 
         const exportWidth = Math.max(Math.round(baseWidth * horizontalStretch), 1220);
         const exportHeaderHeight = Math.max(40, Math.round(baseHeaderHeight * 1.05));
@@ -1318,8 +1369,8 @@ async function exportCurrentTimetablePng() {
             Array.from(blocksLayer.children).forEach((block) => {
                 const topPx = parseCssNumber(block.style.top);
                 const heightPx = parseCssNumber(block.style.height);
-                const exportHeightPx = Math.max(1, Math.round(heightPx));
-                const exportTopPx = Math.round(topPx);
+                const exportHeightPx = Math.max(1, Math.round(heightPx * exportScaleRatio));
+                const exportTopPx = Math.round(topPx * exportScaleRatio);
 
                 block.style.transform = 'none';
                 block.style.filter = 'none';
@@ -1393,7 +1444,7 @@ async function exportCurrentTimetablePng() {
 
         document.body.appendChild(exportClone);
 
-        const sourceCanvas = await window.html2canvas(exportClone, {
+        const sourceCanvas = await html2canvas(exportClone, {
             scale: EXPORT_CAPTURE_SCALE_BASE * EXPORT_PNG_SCALE,
             useCORS: true,
             backgroundColor: '#1e293b',
@@ -1402,7 +1453,33 @@ async function exportCurrentTimetablePng() {
             windowWidth: exportWidth,
             windowHeight: exportHeight,
             scrollX: 0,
-            scrollY: 0
+            scrollY: 0,
+            onclone: (clonedDocument) => {
+                // Tailwind v4 utilities can include oklch colors, which html2canvas 1.4.1 cannot parse.
+                // Remove Tailwind styles in the clone and inject explicit fallback colors for export blocks.
+                const stylesheetLinks = clonedDocument.querySelectorAll('link[rel="stylesheet"]');
+                stylesheetLinks.forEach((linkElement) => {
+                    const href = String(linkElement.getAttribute('href') || '');
+                    if (href.includes('tailwind')) {
+                        linkElement.remove();
+                    }
+                });
+
+                injectExportFallbackStyles(clonedDocument);
+
+                const exportedBlocks = clonedDocument.querySelectorAll('#blocks-container .schedule-block');
+                exportedBlocks.forEach((blockElement) => {
+                    const backgroundColor = getExportSafeBackgroundColor(blockElement.className);
+                    blockElement.style.position = 'absolute';
+                    blockElement.style.boxSizing = 'border-box';
+                    blockElement.style.right = 'auto';
+                    blockElement.style.backgroundImage = 'none';
+                    blockElement.style.backgroundColor = backgroundColor;
+                    blockElement.style.color = '#f8fafc';
+                    blockElement.style.border = '1px solid rgba(255, 255, 255, 0.12)';
+                    blockElement.style.borderRadius = '0.5rem';
+                });
+            }
         });
 
         const titleStripHeight = Math.max(56, Math.round(sourceCanvas.height * 0.07));
@@ -1467,7 +1544,7 @@ function initTimeAxis() {
         const ampm = isPM ? 'PM' : 'AM';
         const displayHour24 = i.toString().padStart(2, '0') + ':00';
 
-        html += `<div class="relative" style="height:${PIXELS_PER_HOUR}px;">
+        html += `<div class="relative" style="height:${LIVE_ROW_HEIGHT_PIXELS}px;">
             <span class="absolute -top-3 right-2 text-right">
                 <div class="text-[11px] font-bold text-slate-300 leading-none">${displayHour24}</div>
                 <div class="text-[9px] font-medium text-slate-500 mt-0.5">${displayHour12} ${ampm}</div>
@@ -1480,7 +1557,7 @@ function initTimeAxis() {
 function timeToPixels(timeStr) {
     const [hours, minutes] = timeStr.split(':').map(Number);
     const totalHoursFromStart = (hours - START_HOUR) + (minutes / 60);
-    return totalHoursFromStart * PIXELS_PER_HOUR;
+    return totalHoursFromStart * LIVE_ROW_HEIGHT_PIXELS;
 }
 
 function renderSchedule() {
@@ -1490,7 +1567,7 @@ function renderSchedule() {
         const topPx = timeToPixels(c.start);
         const bottomPx = timeToPixels(c.end);
         const heightPx = bottomPx - topPx;
-        const isSmallCell = heightPx <= 72;
+        const isSmallCell = heightPx <= LIVE_ROW_HEIGHT_PIXELS;
         const textModeClass = isSmallCell ? 'truncate' : 'wrap';
 
         const leftPercent = c.day * (100 / 6);
@@ -1548,7 +1625,7 @@ function renderSchedule() {
                 .filter(Boolean);
 
             if (editedEls.length > 0) {
-                window.gsap.fromTo(editedEls,
+                gsap.fromTo(editedEls,
                     { x: -2 },
                     { x: 0, duration: 0.2, ease: 'power2.out', stagger: 0.025 }
                 );
