@@ -1,3 +1,9 @@
+.tool-card-tertiary {
+    background:
+        linear-gradient(180deg, rgba(255, 184, 108, 0.22), rgba(12, 20, 38, 0.74)),
+        radial-gradient(circle at top right, rgba(255, 184, 108, 0.18), transparent 42%);
+    border-color: rgba(255, 184, 108, 0.32);
+}
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
 
 :root {
