@@ -42,6 +42,82 @@ function injectExportFallbackStyles(clonedDocument) {
     styleElement.id = EXPORT_FALLBACK_STYLE_ELEMENT_ID;
     styleElement.textContent = `
         *, *::before, *::after { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
+        body { font-family: 'Open Sans', Arial, sans-serif; background: #1e293b; }
+        .timetable-canvas {
+            position: relative;
+            min-width: 700px;
+            overflow: hidden;
+            background: #1e293b;
+        }
+        .days-header {
+            position: absolute;
+            top: 0;
+            left: 5rem;
+            right: 0;
+            height: 2.5rem;
+            display: flex;
+            border-bottom: 1px solid #334155;
+            background: rgba(30, 41, 59, 0.92);
+            z-index: 20;
+        }
+        .day-cell {
+            flex: 1;
+            text-align: center;
+            padding: 0.5rem 0;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #cbd5e1;
+        }
+        .day-cell-border { border-right: 1px solid rgba(51, 65, 85, 0.7); }
+        .time-axis-wrap {
+            position: absolute;
+            top: 2.5rem;
+            left: 0;
+            width: 5rem;
+            bottom: 0;
+            border-right: 1px solid #334155;
+            background: rgba(30, 41, 59, 0.5);
+            z-index: 10;
+        }
+        .grid-layer {
+            position: absolute;
+            top: 2.5rem;
+            left: 5rem;
+            right: 0;
+            bottom: 0;
+            opacity: 0.3;
+            z-index: 0;
+        }
+        .day-dividers {
+            position: absolute;
+            top: 2.5rem;
+            left: 5rem;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            z-index: 0;
+        }
+        .day-divider { flex: 1; border-right: 1px solid rgba(51, 65, 85, 0.45); }
+        .day-divider:last-child { border-right: none; }
+        .blocks-layer {
+            position: absolute;
+            top: 2.5rem;
+            left: 5rem;
+            right: 0;
+            bottom: 0;
+            z-index: 10;
+        }
+        #time-axis { width: 100%; height: 100%; }
+        #time-axis > * {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-end;
+            padding: 0.5rem 0.5rem 0 0;
+            font-size: 0.65rem;
+            color: #94a3b8;
+            box-sizing: border-box;
+        }
         .relative { position: relative; }
         .absolute { position: absolute; }
         .text-right { text-align: right; }
@@ -51,7 +127,35 @@ function injectExportFallbackStyles(clonedDocument) {
         .mt-0\\.5 { margin-top: 0.125rem; }
         .w-3 { width: 0.75rem; }
         .h-3 { height: 0.75rem; }
-        .schedule-block { box-sizing: border-box; }
+        .schedule-block {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-sizing: border-box;
+            overflow: hidden;
+            padding: 0.55rem;
+            border-radius: 0.5rem;
+            color: #f8fafc;
+        }
+        .schedule-block-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.3rem; }
+        .schedule-block-code { font-weight: 700; font-size: 0.75rem; line-height: 1.15; color: #fff; }
+        .schedule-block-title { margin-top: 0.2rem; font-size: 0.64rem; line-height: 1.2; color: rgba(255, 255, 255, 0.88); }
+        .schedule-block-meta { font-size: 0.64rem; font-weight: 600; color: rgba(255, 255, 255, 0.92); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.2rem; }
+        .schedule-block-tags { margin-top: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.25rem; overflow: visible; }
+        .schedule-tag {
+            font-size: 0.6rem;
+            font-weight: 700;
+            background: rgba(15, 23, 42, 0.35);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 0.25rem;
+            padding: 0.1rem 0.3rem;
+            max-width: none;
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+        }
     `;
 
     clonedDocument.head.appendChild(styleElement);
@@ -1455,14 +1559,10 @@ async function exportCurrentTimetablePng() {
             scrollX: 0,
             scrollY: 0,
             onclone: (clonedDocument) => {
-                // Tailwind v4 utilities can include oklch colors, which html2canvas 1.4.1 cannot parse.
-                // Remove Tailwind styles in the clone and inject explicit fallback colors for export blocks.
+                // Remove all linked styles so html2canvas never parses Tailwind v4 oklch colors.
                 const stylesheetLinks = clonedDocument.querySelectorAll('link[rel="stylesheet"]');
                 stylesheetLinks.forEach((linkElement) => {
-                    const href = String(linkElement.getAttribute('href') || '');
-                    if (href.includes('tailwind')) {
-                        linkElement.remove();
-                    }
+                    linkElement.remove();
                 });
 
                 injectExportFallbackStyles(clonedDocument);
@@ -1471,8 +1571,13 @@ async function exportCurrentTimetablePng() {
                 exportedBlocks.forEach((blockElement) => {
                     const backgroundColor = getExportSafeBackgroundColor(blockElement.className);
                     blockElement.style.position = 'absolute';
+                    blockElement.style.display = 'flex';
+                    blockElement.style.flexDirection = 'column';
+                    blockElement.style.justifyContent = 'space-between';
                     blockElement.style.boxSizing = 'border-box';
                     blockElement.style.right = 'auto';
+                    blockElement.style.padding = '0.55rem';
+                    blockElement.style.overflow = 'hidden';
                     blockElement.style.backgroundImage = 'none';
                     blockElement.style.backgroundColor = backgroundColor;
                     blockElement.style.color = '#f8fafc';
