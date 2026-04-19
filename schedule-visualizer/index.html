@@ -52,12 +52,15 @@
         <aside class="sidebar-panel custom-scrollbar">
             <h2 class="section-title">Add Class Block</h2>
 
-            <div class="snapshot-panel">
-                <label class="field-label">
+            <div class="snapshot-name-group">
+                <label class="field-label" for="schedule-name">
                     <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
                     Snapshot Name
                 </label>
                 <input type="text" id="schedule-name" placeholder="whats it gonna be?" class="field-input">
+            </div>
+
+            <div class="snapshot-panel">
                 <div class="snapshot-actions">
                     <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
                         <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
@@ -336,6 +339,33 @@
                 <button id="mobile-preview-close-btn" type="button" class="btn btn-sm btn-clear">Close</button>
             </div>
             <div id="mobile-preview-container" class="mobile-preview-container"></div>
+        </div>
+    </div>
+
+    <div id="export-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+        <div class="modal-card export-modal-card">
+            <div class="mobile-preview-header export-modal-header">
+                <h3 id="export-modal-title">Export PNG</h3>
+                <button id="export-close-btn" type="button" class="btn btn-sm btn-clear">Close</button>
+            </div>
+            <form id="export-form" class="class-form export-form">
+                <div>
+                    <label class="field-label with-margin" for="export-name-input">Schedule Name</label>
+                    <input id="export-name-input" type="text" class="field-input" placeholder="Schedule">
+                </div>
+                <div>
+                    <label class="field-label with-margin" for="export-size-preset">Export Size</label>
+                    <select id="export-size-preset" class="field-input">
+                        <option value="desktop" selected>Desktop</option>
+                        <option value="tablet">Tablet</option>
+                        <option value="mobile">Mobile</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button id="export-cancel-btn" type="button" class="btn btn-clear">Cancel</button>
+                    <button id="export-confirm-btn" type="submit" class="btn btn-export">Export PNG</button>
+                </div>
+            </form>
         </div>
     </div>
 

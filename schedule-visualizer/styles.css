@@ -242,6 +242,10 @@ body.page-leaving {
     margin-bottom: 1rem;
 }
 
+.snapshot-name-group {
+    margin-bottom: 0.65rem;
+}
+
 .snapshot-actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1188,6 +1192,24 @@ body.page-leaving {
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
+}
+
+.export-modal-card {
+    width: min(30rem, 94vw);
+    padding: 0;
+    overflow: hidden;
+}
+
+.export-modal-header {
+    margin: 0;
+}
+
+.export-modal-header h3 {
+    margin: 0;
+}
+
+.export-form {
+    padding: 0.9rem;
 }
 
 .home-fab {

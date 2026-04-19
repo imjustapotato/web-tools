@@ -1,5 +1,5 @@
 import '@iconify/iconify';
-import html2canvas from 'html2canvas';
+import { exportScheduleAsPng } from './export/export-png.js';
 import { gsap } from 'gsap';
 
 let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
@@ -11,155 +11,9 @@ let editingIndex = null;
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
-const EXPORT_ROW_HEIGHT_PIXELS = 90;
 const HEADER_HEIGHT_PX = 40;
-const EXPORT_PNG_SCALE = 1;
-const EXPORT_CAPTURE_SCALE_BASE = 2;
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
-
-const EXPORT_BLOCK_BACKGROUND_BY_TAILWIND_CLASS = {
-    'bg-emerald-600': '#059669',
-    'bg-cyan-600': '#0891b2',
-    'bg-indigo-600': '#4f46e5',
-    'bg-purple-600': '#9333ea',
-    'bg-rose-600': '#e11d48',
-    'bg-amber-600': '#d97706',
-    'bg-sky-600': '#0284c7',
-    'bg-lime-600': '#65a30d',
-    'bg-pink-600': '#db2777',
-    'bg-teal-600': '#0d9488'
-};
-
-const EXPORT_FALLBACK_STYLE_ELEMENT_ID = 'export-fallback-utility-styles';
-
-function injectExportFallbackStyles(clonedDocument) {
-    if (!clonedDocument || clonedDocument.getElementById(EXPORT_FALLBACK_STYLE_ELEMENT_ID)) {
-        return;
-    }
-
-    const styleElement = clonedDocument.createElement('style');
-    styleElement.id = EXPORT_FALLBACK_STYLE_ELEMENT_ID;
-    styleElement.textContent = `
-        *, *::before, *::after { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; }
-        body { font-family: 'Open Sans', Arial, sans-serif; background: #1e293b; }
-        .timetable-canvas {
-            position: relative;
-            min-width: 700px;
-            overflow: hidden;
-            background: #1e293b;
-        }
-        .days-header {
-            position: absolute;
-            top: 0;
-            left: 5rem;
-            right: 0;
-            height: 2.5rem;
-            display: flex;
-            border-bottom: 1px solid #334155;
-            background: rgba(30, 41, 59, 0.92);
-            z-index: 20;
-        }
-        .day-cell {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 0;
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: #cbd5e1;
-        }
-        .day-cell-border { border-right: 1px solid rgba(51, 65, 85, 0.7); }
-        .time-axis-wrap {
-            position: absolute;
-            top: 2.5rem;
-            left: 0;
-            width: 5rem;
-            bottom: 0;
-            border-right: 1px solid #334155;
-            background: rgba(30, 41, 59, 0.5);
-            z-index: 10;
-        }
-        .grid-layer {
-            position: absolute;
-            top: 2.5rem;
-            left: 5rem;
-            right: 0;
-            bottom: 0;
-            opacity: 0.3;
-            z-index: 0;
-        }
-        .day-dividers {
-            position: absolute;
-            top: 2.5rem;
-            left: 5rem;
-            right: 0;
-            bottom: 0;
-            display: flex;
-            z-index: 0;
-        }
-        .day-divider { flex: 1; border-right: 1px solid rgba(51, 65, 85, 0.45); }
-        .day-divider:last-child { border-right: none; }
-        .blocks-layer {
-            position: absolute;
-            top: 2.5rem;
-            left: 5rem;
-            right: 0;
-            bottom: 0;
-            z-index: 10;
-        }
-        #time-axis { width: 100%; height: 100%; }
-        #time-axis > * {
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-end;
-            padding: 0.5rem 0.5rem 0 0;
-            font-size: 0.65rem;
-            color: #94a3b8;
-            box-sizing: border-box;
-        }
-        .relative { position: relative; }
-        .absolute { position: absolute; }
-        .text-right { text-align: right; }
-        .font-bold { font-weight: 700; }
-        .font-medium { font-weight: 500; }
-        .leading-none { line-height: 1; }
-        .mt-0\\.5 { margin-top: 0.125rem; }
-        .w-3 { width: 0.75rem; }
-        .h-3 { height: 0.75rem; }
-        .schedule-block {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            box-sizing: border-box;
-            overflow: hidden;
-            padding: 0.55rem;
-            border-radius: 0.5rem;
-            color: #f8fafc;
-        }
-        .schedule-block-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 0.3rem; }
-        .schedule-block-code { font-weight: 700; font-size: 0.75rem; line-height: 1.15; color: #fff; }
-        .schedule-block-title { margin-top: 0.2rem; font-size: 0.64rem; line-height: 1.2; color: rgba(255, 255, 255, 0.88); }
-        .schedule-block-meta { font-size: 0.64rem; font-weight: 600; color: rgba(255, 255, 255, 0.92); margin-top: 0.35rem; display: flex; align-items: center; gap: 0.2rem; }
-        .schedule-block-tags { margin-top: 0.3rem; display: flex; flex-wrap: wrap; gap: 0.25rem; overflow: visible; }
-        .schedule-tag {
-            font-size: 0.6rem;
-            font-weight: 700;
-            background: rgba(15, 23, 42, 0.35);
-            color: #f8fafc;
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            border-radius: 0.25rem;
-            padding: 0.1rem 0.3rem;
-            max-width: none;
-            white-space: nowrap;
-            overflow: visible;
-            text-overflow: clip;
-        }
-    `;
-
-    clonedDocument.head.appendChild(styleElement);
-}
 
 const SUBJECT_CATALOG = [
     { code: 'CCS0001', title: 'INTRODUCTION TO COMPUTING LEC' },
@@ -260,6 +114,13 @@ const loadSelectedBtn = document.getElementById('load-selected-btn');
 const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
 const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 const exportPngBtn = document.getElementById('export-png-btn');
+const exportModal = document.getElementById('export-modal');
+const exportModalCard = exportModal?.querySelector('.export-modal-card');
+const exportForm = document.getElementById('export-form');
+const exportNameInput = document.getElementById('export-name-input');
+const exportSizePresetInput = document.getElementById('export-size-preset');
+const exportCloseBtn = document.getElementById('export-close-btn');
+const exportCancelBtn = document.getElementById('export-cancel-btn');
 const jsonDropZone = document.getElementById('json-drop-zone');
 const courseDayInput = document.getElementById('course-day');
 const courseStartInput = document.getElementById('course-start');
@@ -628,12 +489,6 @@ function normalizeCourseIdentity(name) {
     return String(name || '').replace(/\s+/g, ' ').trim().toLowerCase();
 }
 
-function getExportSafeBackgroundColor(classNameText) {
-    const classNames = String(classNameText || '').split(/\s+/).filter(Boolean);
-    const backgroundClass = classNames.find((className) => className.startsWith('bg-'));
-    return EXPORT_BLOCK_BACKGROUND_BY_TAILWIND_CLASS[backgroundClass] || '#334155';
-}
-
 function setEditExtendRelatedState(isEnabled) {
     editExtendRelatedState = Boolean(isEnabled);
     localStorage.setItem(EDIT_EXTEND_RELATED_KEY, editExtendRelatedState ? '1' : '0');
@@ -705,10 +560,6 @@ function openMessageDialog({
         window.requestAnimationFrame(() => focusTarget.focus());
 
         activeMessageKeydownHandler = (event) => {
-            if (event.key === 'Escape') {
-                event.preventDefault();
-                closeMessageDialog(mode === 'prompt' ? null : false);
-            }
             if (event.key === 'Enter' && mode !== 'alert' && document.activeElement !== messageModalInput) {
                 event.preventDefault();
                 closeMessageDialog(mode === 'prompt' ? messageModalInput.value : true);
@@ -727,21 +578,12 @@ function showConfirmDialog(message, title = 'Confirm') {
     return openMessageDialog({ title, message, mode: 'confirm', confirmText: 'Confirm', cancelText: 'Cancel' });
 }
 
-function showPromptDialog(message, defaultValue = '', title = 'Prompt') {
-    return openMessageDialog({ title, message, mode: 'prompt', confirmText: 'Submit', cancelText: 'Cancel', defaultValue, placeholder: defaultValue });
-}
-
 messageModalCancel?.addEventListener('click', () => closeMessageDialog(activeMessageDialog?.mode === 'prompt' ? null : false));
 messageModalConfirm?.addEventListener('click', () => {
     if (!activeMessageDialog) {
         return;
     }
     closeMessageDialog(activeMessageDialog.mode === 'prompt' ? messageModalInput.value : true);
-});
-messageModal?.addEventListener('click', (event) => {
-    if (event.target === messageModal) {
-        closeMessageDialog(activeMessageDialog?.mode === 'prompt' ? null : false);
-    }
 });
 messageModalInput?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter') {
@@ -1351,294 +1193,44 @@ async function importScheduleFiles(fileList) {
 }
 
 async function exportCurrentTimetablePng() {
-    if (classes.length === 0) {
-        setStatus('Plot classes first before exporting PNG.', 'error');
-        return;
-    }
+    const requestedName = exportNameInput?.value.trim() || getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
+    const didExport = await exportScheduleAsPng({
+        classes,
+        timetableExportArea,
+        exportName: requestedName,
+        sizePreset: exportSizePresetInput?.value || 'desktop',
+        watermarkText: 'Schedule Creator Tool by Ken',
+        setStatus,
+        slugify,
+        formatTimestamp,
+        triggerDownload
+    });
 
-    const timetableCanvas = document.querySelector('#timetable-export-area .timetable-canvas');
-    if (!timetableCanvas) {
-        setStatus('PNG export failed: timetable area not found.', 'error');
+    if (didExport) {
+        closeExportModal();
+    }
+}
+
+function openExportModal() {
+    if (!exportModal || !exportNameInput) {
         return;
     }
 
     const defaultName = getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
-    const promptName = await showPromptDialog('Enter schedule name for export.', defaultName, 'Export PNG');
-    if (promptName === null) {
-        setStatus('PNG export canceled.', 'info');
+    exportNameInput.value = defaultName;
+    animateModalIn(exportModal, exportModalCard);
+    document.body.style.overflow = 'hidden';
+    window.requestAnimationFrame(() => exportNameInput.focus());
+}
+
+function closeExportModal() {
+    if (!exportModal) {
         return;
     }
 
-    const nameBase = promptName.trim() || defaultName;
-    const safeName = slugify(nameBase) || 'schedule';
-    const stamp = formatTimestamp();
-    const exportTitle = nameBase;
-    const exportWatermark = 'Schedule Creator Tool by Ken';
-
-    let exportClone = null;
-
-    try {
-        if (document.fonts && document.fonts.ready) {
-            await document.fonts.ready;
-        }
-
-        const baseWidth = Math.ceil(timetableCanvas.getBoundingClientRect().width || timetableCanvas.scrollWidth || 900);
-        const baseHeight = Math.ceil(timetableCanvas.getBoundingClientRect().height || timetableCanvas.scrollHeight || 940);
-        const baseAxisWidth = 80;
-        const baseHeaderHeight = HEADER_HEIGHT_PX;
-
-        const horizontalStretch = 1;
-        // Keep export geometry deterministic and isolated from responsive live view rules.
-        const exportRowHeight = EXPORT_ROW_HEIGHT_PIXELS;
-        const exportScaleRatio = exportRowHeight / LIVE_ROW_HEIGHT_PIXELS;
-
-        const exportWidth = Math.max(Math.round(baseWidth * horizontalStretch), 1220);
-        const exportHeaderHeight = Math.max(40, Math.round(baseHeaderHeight * 1.05));
-        const exportAxisWidth = Math.max(86, Math.round(baseAxisWidth * 1.1));
-        const exportBodyHeight = Math.max(1, (END_HOUR - START_HOUR) * exportRowHeight);
-        const exportHeight = exportHeaderHeight + exportBodyHeight;
-
-        exportClone = timetableCanvas.cloneNode(true);
-        exportClone.style.position = 'fixed';
-        exportClone.style.left = '-20000px';
-        exportClone.style.top = '0';
-        exportClone.style.zIndex = '-1';
-        exportClone.style.width = `${exportWidth}px`;
-        exportClone.style.minWidth = `${exportWidth}px`;
-        exportClone.style.height = `${exportHeight}px`;
-        exportClone.style.background = '#1e293b';
-        exportClone.style.overflow = 'hidden';
-        exportClone.setAttribute('data-export', 'true');
-
-        const daysHeader = exportClone.querySelector('.days-header');
-        const timeAxisWrap = exportClone.querySelector('.time-axis-wrap');
-        const gridLayer = exportClone.querySelector('.grid-layer');
-        const dayDividers = exportClone.querySelector('.day-dividers');
-        const blocksLayer = exportClone.querySelector('#blocks-container');
-        const timeAxisClone = exportClone.querySelector('#time-axis');
-
-        if (daysHeader) {
-            daysHeader.style.left = `${exportAxisWidth}px`;
-            daysHeader.style.height = `${exportHeaderHeight}px`;
-        }
-
-        if (timeAxisWrap) {
-            timeAxisWrap.style.top = `${exportHeaderHeight}px`;
-            timeAxisWrap.style.width = `${exportAxisWidth}px`;
-            timeAxisWrap.style.height = `${exportBodyHeight}px`;
-        }
-
-        [gridLayer, dayDividers, blocksLayer].forEach((layer) => {
-            if (!layer) {
-                return;
-            }
-            layer.style.top = `${exportHeaderHeight}px`;
-            layer.style.left = `${exportAxisWidth}px`;
-            layer.style.width = `${exportWidth - exportAxisWidth}px`;
-            layer.style.height = `${exportBodyHeight}px`;
-            layer.style.right = 'auto';
-            layer.style.bottom = 'auto';
-        });
-
-        if (gridLayer) {
-            gridLayer.style.backgroundSize = `100% ${exportRowHeight}px`;
-        }
-
-        if (timeAxisClone) {
-            Array.from(timeAxisClone.children).forEach((row) => {
-                row.style.height = `${exportRowHeight}px`;
-            });
-        }
-
-        if (blocksLayer) {
-            const parseCssNumber = (value, fallback = 0) => {
-                if (typeof value === 'number' && Number.isFinite(value)) {
-                    return value;
-                }
-
-                const rawText = String(value ?? '').trim();
-                if (!rawText) {
-                    return fallback;
-                }
-
-                const numericMatch = rawText.match(/-?\d+(?:\.\d+)?/);
-                if (!numericMatch) {
-                    return fallback;
-                }
-
-                const parsed = Number.parseFloat(numericMatch[0]);
-                return Number.isFinite(parsed) ? parsed : fallback;
-            };
-
-            Array.from(blocksLayer.children).forEach((block) => {
-                const topPx = parseCssNumber(block.style.top);
-                const heightPx = parseCssNumber(block.style.height);
-                const exportHeightPx = Math.max(1, Math.round(heightPx * exportScaleRatio));
-                const exportTopPx = Math.round(topPx * exportScaleRatio);
-
-                block.style.transform = 'none';
-                block.style.filter = 'none';
-                block.style.boxShadow = 'none';
-                block.style.top = `${exportTopPx}px`;
-                block.style.height = `${exportHeightPx}px`;
-                block.style.padding = '0.55rem';
-                block.style.overflow = 'visible';
-
-                // Export-only: remove live preview truncation so text uses available block space.
-                const codeEl = block.querySelector('.schedule-block-code');
-                const titleEl = block.querySelector('.schedule-block-title');
-                const metaEl = block.querySelector('.schedule-block-meta');
-                const tagsWrap = block.querySelector('.schedule-block-tags');
-                const tagEls = block.querySelectorAll('.schedule-tag');
-
-                if (codeEl) {
-                    codeEl.classList.remove('truncate');
-                    codeEl.style.whiteSpace = 'normal';
-                    codeEl.style.overflow = 'visible';
-                    codeEl.style.textOverflow = 'clip';
-                    codeEl.style.lineHeight = '1.2';
-                    codeEl.style.fontSize = '0.82rem';
-                }
-
-                if (titleEl) {
-                    titleEl.classList.remove('truncate');
-                    titleEl.classList.remove('wrap');
-                    titleEl.style.display = 'block';
-                    titleEl.style.whiteSpace = 'normal';
-                    titleEl.style.overflow = 'visible';
-                    titleEl.style.textOverflow = 'clip';
-                    titleEl.style.webkitLineClamp = 'unset';
-                    titleEl.style.lineClamp = 'unset';
-                    titleEl.style.webkitBoxOrient = 'unset';
-                    titleEl.style.lineHeight = '1.24';
-                    titleEl.style.fontSize = '0.68rem';
-                }
-
-                if (metaEl) {
-                    metaEl.style.whiteSpace = 'normal';
-                    metaEl.style.overflow = 'visible';
-                    metaEl.style.textOverflow = 'clip';
-                    metaEl.style.fontSize = '0.66rem';
-                }
-
-                if (tagsWrap) {
-                    tagsWrap.style.overflow = 'visible';
-                    tagsWrap.style.rowGap = '0.22rem';
-                }
-
-                tagEls.forEach((tagEl) => {
-                    tagEl.style.display = 'inline-flex';
-                    tagEl.style.boxSizing = 'border-box';
-                    tagEl.style.alignItems = 'center';
-                    tagEl.style.justifyContent = 'center';
-                    tagEl.style.verticalAlign = 'middle';
-                    tagEl.style.height = 'auto';
-                    tagEl.style.minHeight = '1.48rem';
-                    tagEl.style.padding = '0.18rem 0.45rem';
-                    tagEl.style.lineHeight = '1';
-                    tagEl.style.fontSize = '0.58rem';
-                    tagEl.style.transform = 'none';
-                    tagEl.style.maxWidth = 'none';
-                    tagEl.style.whiteSpace = 'nowrap';
-                    tagEl.style.overflow = 'visible';
-                    tagEl.style.textOverflow = 'clip';
-                });
-            });
-        }
-
-        document.body.appendChild(exportClone);
-
-        const sourceCanvas = await html2canvas(exportClone, {
-            scale: EXPORT_CAPTURE_SCALE_BASE * EXPORT_PNG_SCALE,
-            useCORS: true,
-            backgroundColor: '#1e293b',
-            width: exportWidth,
-            height: exportHeight,
-            windowWidth: exportWidth,
-            windowHeight: exportHeight,
-            scrollX: 0,
-            scrollY: 0,
-            onclone: (clonedDocument) => {
-                // Remove all linked styles so html2canvas never parses Tailwind v4 oklch colors.
-                const stylesheetLinks = clonedDocument.querySelectorAll('link[rel="stylesheet"]');
-                stylesheetLinks.forEach((linkElement) => {
-                    linkElement.remove();
-                });
-
-                injectExportFallbackStyles(clonedDocument);
-
-                const exportedBlocks = clonedDocument.querySelectorAll('#blocks-container .schedule-block');
-                exportedBlocks.forEach((blockElement) => {
-                    const backgroundColor = getExportSafeBackgroundColor(blockElement.className);
-                    blockElement.style.position = 'absolute';
-                    blockElement.style.display = 'flex';
-                    blockElement.style.flexDirection = 'column';
-                    blockElement.style.justifyContent = 'space-between';
-                    blockElement.style.boxSizing = 'border-box';
-                    blockElement.style.right = 'auto';
-                    blockElement.style.padding = '0.55rem';
-                    blockElement.style.overflow = 'hidden';
-                    blockElement.style.backgroundImage = 'none';
-                    blockElement.style.backgroundColor = backgroundColor;
-                    blockElement.style.color = '#f8fafc';
-                    blockElement.style.border = '1px solid rgba(255, 255, 255, 0.12)';
-                    blockElement.style.borderRadius = '0.5rem';
-                });
-            }
-        });
-
-        const titleStripHeight = Math.max(56, Math.round(sourceCanvas.height * 0.07));
-        const outputCanvas = document.createElement('canvas');
-        outputCanvas.width = sourceCanvas.width;
-        outputCanvas.height = sourceCanvas.height + titleStripHeight;
-
-        const ctx = outputCanvas.getContext('2d');
-        if (!ctx) {
-            setStatus('PNG export failed: unable to prepare image context.', 'error');
-            return;
-        }
-
-        ctx.fillStyle = '#0b1220';
-        ctx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
-
-        const watermarkFontPx = Math.max(13, Math.min(20, Math.round(sourceCanvas.width * 0.013)));
-        ctx.fillStyle = 'rgba(203, 213, 225, 0.58)';
-        ctx.font = `600 ${watermarkFontPx}px "Open Sans", Arial, sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(exportWatermark, 16, Math.round(titleStripHeight / 2));
-
-        let titleFontPx = Math.max(24, Math.min(54, Math.round(sourceCanvas.width * 0.034)));
-        const titleMaxWidth = sourceCanvas.width * 0.62;
-        do {
-            ctx.font = `800 ${titleFontPx}px "Open Sans", Arial, sans-serif`;
-            if (ctx.measureText(exportTitle).width <= titleMaxWidth || titleFontPx <= 18) {
-                break;
-            }
-            titleFontPx -= 1;
-        } while (titleFontPx > 18);
-
-        ctx.fillStyle = '#f1f5f9';
-        ctx.textAlign = 'center';
-        ctx.fillText(exportTitle, Math.round(outputCanvas.width / 2), Math.round(titleStripHeight / 2));
-
-        ctx.drawImage(sourceCanvas, 0, titleStripHeight);
-
-        outputCanvas.toBlob((blob) => {
-            if (!blob) {
-                setStatus('PNG export failed to generate image data.', 'error');
-                return;
-            }
-            triggerDownload(`${safeName}-${stamp}.png`, blob, 'image/png');
-            setStatus(`PNG exported for ${nameBase}.`, 'success');
-        }, 'image/png');
-    } catch (error) {
-        setStatus(`PNG export failed: ${error.message}`, 'error');
-    } finally {
-        if (exportClone && exportClone.parentNode) {
-            exportClone.parentNode.removeChild(exportClone);
-        }
-    }
+    animateModalOut(exportModal, exportModalCard, () => {
+        document.body.style.overflow = '';
+    });
 }
 
 function initTimeAxis() {
@@ -1890,11 +1482,6 @@ editForm.addEventListener('submit', async (e) => {
 });
 
 editCancelBtn.addEventListener('click', closeEditModal);
-editModal.addEventListener('click', (e) => {
-    if (e.target === editModal) {
-        closeEditModal();
-    }
-});
 
 addSecondaryDayBtn.addEventListener('click', () => {
     const primaryStart = document.getElementById('course-start').value.trim();
@@ -1934,7 +1521,13 @@ jsonFileInput.addEventListener('change', async (event) => {
 loadSelectedBtn.addEventListener('click', loadSelectedSchedule);
 overwriteSelectedBtn.addEventListener('click', overwriteSelectedSchedule);
 deleteSelectedBtn.addEventListener('click', deleteSelectedSchedule);
-exportPngBtn.addEventListener('click', exportCurrentTimetablePng);
+exportPngBtn.addEventListener('click', openExportModal);
+exportCloseBtn?.addEventListener('click', closeExportModal);
+exportCancelBtn?.addEventListener('click', closeExportModal);
+exportForm?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    await exportCurrentTimetablePng();
+});
 
 mobileWarningAckBtn?.addEventListener('click', () => {
     localStorage.setItem(MOBILE_WARNING_ACK_KEY, '1');
@@ -1951,12 +1544,6 @@ mobileFullPreviewBtn?.addEventListener('click', () => {
 
 mobilePreviewCloseBtn?.addEventListener('click', () => {
     closeMobileFullPreview();
-});
-
-mobilePreviewModal?.addEventListener('click', (event) => {
-    if (event.target === mobilePreviewModal) {
-        closeMobileFullPreview();
-    }
 });
 
 editExtendRelated?.addEventListener('change', () => {
