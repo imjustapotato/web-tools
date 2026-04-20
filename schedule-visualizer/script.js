@@ -1572,3 +1572,36 @@ syncMobileLayoutState();
 setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
 wireDropImport();
 renderSchedule();
+
+// Web Tools Companion Extension Bridge Listener
+window.addEventListener('message', (event) => {
+    if (event.source !== window) return;
+
+    if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
+        const payload = event.data.payload;
+        try {
+            const normalized = normalizeSchedulePayload(payload, payload.name || 'Extension Schedule');
+            
+            // Smart update: Avoid duplicates if ID is the same, otherwise push to top
+            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+            if (existingIndex !== -1) {
+                savedSchedules[existingIndex] = normalized;
+            } else {
+                savedSchedules.unshift(normalized);
+            }
+            
+            activeScheduleId = normalized.id;
+            classes = normalized.blocks.map((b) => ({ ...b }));
+            
+            renderSavedSchedulesList();
+            renderSchedule();
+            setStatus('Auto Sched Synced from Portal!', 'success');
+        } catch (err) {
+            console.error('[Web Tools] Failed to sync extension schedule:', err);
+            setStatus('Failed to sync schedule from extension.', 'error');
+        }
+    }
+});
+
+// Broadcast readiness so extension bridge can immediately inject if it was waiting
+window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
