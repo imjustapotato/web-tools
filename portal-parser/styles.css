@@ -304,11 +304,11 @@ body {
 
 .summary-dock {
     position: absolute;
-    top: 3.2rem;
+    top: 4.5rem; /* Moved down */
     left: 0.8rem;
     z-index: 4;
     width: min(26rem, 40vw);
-    max-height: calc(100% - 4rem);
+    max-height: calc(100% - 5.5rem);
     overflow: auto;
     padding: 0.8rem 0.9rem;
     border: 1px solid rgba(148, 163, 184, 0.12);
@@ -319,11 +319,30 @@ body {
     box-shadow: 0 10px 24px rgba(2, 6, 23, 0.24);
 }
 
+.summary-dock-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+}
+
 .summary-dock-title {
-    margin: 0 0 0.6rem;
+    margin: 0;
     font-size: 0.93rem;
     line-height: 1.32;
     color: var(--text-main);
+}
+
+.summary-dock-subtitle {
+    margin: 1rem 0 0.5rem;
+    font-size: 0.85rem;
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.summary-list--indirect {
+    opacity: 0.8;
 }
 
 .summary-dock.is-hidden {
@@ -528,4 +547,8 @@ body.page-leaving {
         width: 96vw;
         max-height: 92vh;
     }
+}
+
+.is-hidden {
+    display: none !important;
 }

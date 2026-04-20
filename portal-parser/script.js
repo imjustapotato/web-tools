@@ -2,6 +2,8 @@ import mermaid from 'mermaid';
 import gsap from 'gsap';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 
+import cstRaw from './src/CST.txt?raw';
+
 mermaid.initialize({
     startOnLoad: false,
     theme: 'base',
@@ -19,12 +21,12 @@ mermaid.initialize({
 window.mermaid = mermaid;
 
 // Preset Curriculum Config 
-// To add a new curriculum: append { id, label, path } to this array.
+// To add a new curriculum: append { id, label, content } to this array.
 const PRESET_CURRICULA = [
     {
         id: 'cst',
         label: '🛡️ Cybersecurity Technology (CST)',
-        path: './src/CST.txt'
+        content: cstRaw
     }
 ];
 
@@ -62,7 +64,11 @@ const presetButtonsContainer = document.getElementById('preset-buttons');
 const summaryDock = document.getElementById('summary-dock');
 const summarySubjectDock = document.getElementById('summary-subject-dock');
 const summaryListDock = document.getElementById('summary-list-dock');
+const summaryExpandBtn = document.getElementById('summary-expand-btn');
+const summaryIndirectContainer = document.getElementById('summary-indirect-container');
+const summaryIndirectListDock = document.getElementById('summary-indirect-list-dock');
 let isFullView = false;
+let isSummaryExpanded = false;
 
 // File Input
 const fileInput = document.createElement('input');
@@ -114,15 +120,10 @@ async function loadPresetCurriculum(preset, button) {
     button.disabled = true;
 
     try {
-        const response = await fetch(preset.path);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch preset: ${response.statusText}`);
-        }
-        const mermaidCode = await response.text();
-        await renderMermaidCode(mermaidCode.trim());
+        await renderMermaidCode(preset.content.trim());
     } catch (error) {
         console.error('Preset load error:', error);
-        container.innerHTML = `<p class="status-message status-message--error">Failed to load preset curriculum. Check that ${preset.path} is accessible.</p>`;
+        container.innerHTML = `<p class="status-message status-message--error">Failed to load preset curriculum.</p>`;
     } finally {
         button.classList.remove('is-loading');
         button.disabled = false;
@@ -659,24 +660,56 @@ function buildPrerequisiteEdgeDistanceMap(startCode, visitedEdges) {
 function renderSummaryContent(subjectElement, listElement, selectedCode) {
     subjectElement.textContent = `Selected Subject: ${getCourseDisplayLabel(selectedCode)}`;
     listElement.innerHTML = '';
+    summaryIndirectListDock.innerHTML = '';
 
     const directPrerequisites = Array.from(adjacencyGraph.get(selectedCode)?.incoming ?? []).sort();
+
+    const { visitedNodes } = collectPrerequisiteChain(selectedCode);
+    const indirectPrerequisites = Array.from(visitedNodes)
+        .filter(code => code !== selectedCode && !directPrerequisites.includes(code))
+        .sort();
 
     if (directPrerequisites.length === 0) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'summary-item is-empty';
         emptyItem.textContent = 'No prerequisites required.';
         listElement.appendChild(emptyItem);
-        return;
+    } else {
+        directPrerequisites.forEach((courseCode) => {
+            const item = document.createElement('li');
+            item.className = 'summary-item';
+            item.textContent = getCourseDisplayLabel(courseCode);
+            listElement.appendChild(item);
+        });
     }
 
-    directPrerequisites.forEach((courseCode) => {
-        const item = document.createElement('li');
-        item.className = 'summary-item';
-        item.textContent = getCourseDisplayLabel(courseCode);
-        listElement.appendChild(item);
-    });
+    if (indirectPrerequisites.length > 0) {
+        summaryExpandBtn.classList.remove('is-hidden');
+        indirectPrerequisites.forEach((courseCode) => {
+            const item = document.createElement('li');
+            item.className = 'summary-item';
+            item.textContent = getCourseDisplayLabel(courseCode);
+            summaryIndirectListDock.appendChild(item);
+        });
+    } else {
+        summaryExpandBtn.classList.add('is-hidden');
+    }
+
+    isSummaryExpanded = false;
+    summaryExpandBtn.textContent = 'Expand';
+    summaryIndirectContainer.classList.add('is-hidden');
 }
+
+summaryExpandBtn.addEventListener('click', () => {
+    isSummaryExpanded = !isSummaryExpanded;
+    if (isSummaryExpanded) {
+        summaryIndirectContainer.classList.remove('is-hidden');
+        summaryExpandBtn.textContent = 'Collapse';
+    } else {
+        summaryIndirectContainer.classList.add('is-hidden');
+        summaryExpandBtn.textContent = 'Expand';
+    }
+});
 
 function openSummaryDock() {
     if (!selectedNodeId) {

@@ -154,7 +154,7 @@ export function animateNodeSelection(selectedCourseCode, context) {
         }
 
         // Related Nodes
-        const arrivalDelay = nodeDistance <= 0 ? 0 : ((nodeDistance - 1) * TRAIL_STEP_SECONDS) + EDGE_TRAVEL_SECONDS;
+        const arrivalDelay = nodeDistance <= 0 ? 0 : nodeDistance * TRAIL_STEP_SECONDS;
 
         let glow = 'none';
         let targetScale = 1;
@@ -239,29 +239,20 @@ export function animateNodeSelection(selectedCourseCode, context) {
         if (edgeKey && visitedEdges.has(edgeKey)) {
             const distance = edgeDistanceMap.get(edgeKey) ?? 0;
             const delay = distance * TRAIL_STEP_SECONDS;
-            const pathLength = getSafePathLength(path);
-
-            gsap.set(path, {
-                opacity: 1,
-                strokeDasharray: pathLength,
-                strokeDashoffset: pathLength
-            });
 
             path.style.pointerEvents = 'auto';
 
-            tl.call(() => {
-                path.style.filter = 'drop-shadow(0 0 5px #60a5fa)';
-                path.style.markerEnd = 'url(#arrowhead)';
-            }, null, delay);
-
             tl.to(path, {
-                duration: EDGE_TRAVEL_SECONDS,
+                duration: 0.3,
                 ease: 'power2.out',
-                strokeDashoffset: 0,
                 stroke: '#60a5fa',
                 strokeWidth: 2.8,
                 opacity: 1
             }, delay);
+
+            tl.call(() => {
+                path.style.filter = 'drop-shadow(0 0 5px #60a5fa)';
+            }, null, delay);
         } else {
             path.style.filter = 'none';
             path.style.pointerEvents = 'none';
