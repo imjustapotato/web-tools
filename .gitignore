@@ -1,5 +1,4 @@
 # Ignore these files
-*.txt
 *.mhtml
 .vscode
 node_modules
