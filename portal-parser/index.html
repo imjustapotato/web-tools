@@ -24,8 +24,13 @@
         <section id="dropzone" class="dropzone" aria-label="File upload dropzone">
             <div class="dropzone-content">
                 <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <span class="dropzone-label">Drop Program Curriculum.mhtml here</span>
+                <span class="dropzone-label">Drop Program Curriculum.mhtml or html file here</span>
             </div>
+        </section>
+
+        <section class="preset-loaders" aria-label="Preset curriculum loaders">
+            <span class="preset-label">Or load a preset:</span>
+            <div id="preset-buttons" class="preset-buttons" role="group" aria-label="Preset curriculum buttons"></div>
         </section>
 
         <section id="controls" class="controls is-hidden" aria-label="Graph controls">
@@ -50,7 +55,14 @@
         </section>
 
         <section id="graph-wrapper" class="graph-wrapper" aria-live="polite">
+            <button id="deselect-btn-full" class="btn btn-secondary graph-deselect-btn" type="button"
+                aria-label="Deselect Node">Deselect</button>
             <button id="full-view-close" class="icon-btn graph-close-btn" type="button" aria-label="Close full tree view">x</button>
+            <aside id="summary-dock" class="summary-dock is-hidden" aria-label="Fullscreen prerequisite summary">
+                <h2 class="summary-dock-title">Complete the following subjects first to unlock:</h2>
+                <p id="summary-subject-dock" class="summary-subject"></p>
+                <ul id="summary-list-dock" class="summary-list"></ul>
+            </aside>
             <div id="graph-container" class="graph-container">
                 <p id="status-text" class="status-text">Waiting for MHTML file...</p>
             </div>
