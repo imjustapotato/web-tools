@@ -998,6 +998,34 @@ function getScheduleEntries() {
     return entries;
 }
 
+const editColorPicker = document.getElementById('edit-color-picker');
+const editColorBtns = editColorPicker?.querySelectorAll('.color-btn') || [];
+let editSelectedColor = 'bg-blue-600';
+
+function syncEditColorButtons(selectedBtn = null) {
+    const activeButton = selectedBtn || Array.from(editColorBtns).find(btn => btn.dataset.color === editSelectedColor);
+
+    editColorBtns.forEach((btn) => {
+        btn.classList.remove('ring-2', 'ring-offset-2', 'ring-offset-slate-800');
+        btn.classList.add('opacity-50');
+        btn.className = btn.className.replace(/\bring-[a-z-]+-400\b/g, '');
+    });
+
+    if (!activeButton) {
+        return;
+    }
+
+    editSelectedColor = activeButton.dataset.color || editSelectedColor;
+    activeButton.classList.remove('opacity-50');
+    activeButton.classList.add('ring-2', 'ring-offset-2', 'ring-offset-slate-800', getRingClass(editSelectedColor));
+}
+
+editColorBtns.forEach((btn) => {
+    btn.addEventListener('click', (event) => {
+        syncEditColorButtons(event.currentTarget);
+    });
+});
+
 function openEditModal(index) {
     const target = classes[index];
     if (!target) {
@@ -1011,6 +1039,10 @@ function openEditModal(index) {
     editCourseEnd.value = target.end;
     editCourseRoom.value = target.room || '';
     editCourseSection.value = target.section || '';
+    
+    editSelectedColor = target.color || 'bg-blue-600';
+    syncEditColorButtons();
+
     setEditExtendRelatedState(editExtendRelatedState);
     animateModalIn(editModal, editModalCard);
 }
@@ -1451,7 +1483,8 @@ editForm.addEventListener('submit', async (e) => {
             start,
             end,
             room,
-            section
+            section,
+            color: editSelectedColor
         };
 
         relatedIndexes.filter((index) => index !== editingIndex).forEach((index) => {
@@ -1459,7 +1492,8 @@ editForm.addEventListener('submit', async (e) => {
                 ...classes[index],
                 name,
                 room,
-                section
+                section,
+                color: editSelectedColor
             };
         });
         pendingEditedIndexes = [...relatedIndexes];
@@ -1471,7 +1505,8 @@ editForm.addEventListener('submit', async (e) => {
             start,
             end,
             room,
-            section
+            section,
+            color: editSelectedColor
         };
         pendingEditedIndexes = [editingIndex];
     }
