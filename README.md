@@ -17,8 +17,8 @@ Any new projects I could think of will be appended here.
 
 **Homepage**
 
-![Alt text](assets/homepage.png)
+![Alt text](src/screenshots/homepage.png)
 
 **Plotter**
 
-![Alt text](assets/plotter.png)
+![Alt text](src/screenshots/plotter.png)
