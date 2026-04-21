@@ -84,34 +84,40 @@ body.page-leaving {
 body.theme-liquid {
     --hero-radius: 40px;
     --hero-border: rgba(255, 255, 255, 0.32);
-    --hero-bg: 
+    --hero-bg:
         linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.01) 100%),
         radial-gradient(circle at 20% 10%, rgba(80, 215, 255, 0.15), transparent 45%),
         radial-gradient(circle at 85% 92%, rgba(82, 227, 172, 0.12), transparent 52%);
     --hero-backdrop: blur(48px) saturate(210%) brightness(110%);
-    --hero-shadow: 
+    --hero-shadow:
         0 42px 120px rgba(2, 6, 20, 0.7),
         inset 0 1px 1px rgba(255, 255, 255, 0.45),
         inset 0 -1px 1px rgba(255, 255, 255, 0.12),
         0 0 0 1px rgba(255, 255, 255, 0.08);
-    --hero-sheen: 
+    --hero-sheen:
         linear-gradient(130deg, rgba(255, 255, 255, 0.3) 0%, transparent 42%),
         radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.45), transparent 32%);
 
     --tool-card-radius: 28px;
     --tool-card-border: rgba(255, 255, 255, 0.38);
-    --tool-card-shadow: 
+    --tool-card-shadow:
         0 32px 80px rgba(1, 8, 22, 0.55),
         inset 0 1px 1px rgba(255, 255, 255, 0.4),
         inset 0 -1px 1px rgba(0, 0, 0, 0.2);
     --tool-card-highlight: rgba(255, 255, 255, 0.18);
     --tool-card-filter: saturate(145%) brightness(105%);
-    --tool-card-bg: 
+    --tool-card-bg:
         linear-gradient(175deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
         radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.22), transparent 45%),
         radial-gradient(circle at 90% 100%, rgba(80, 215, 255, 0.12), transparent 55%);
     --glass-refraction: 
-        linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.08) 45%, rgba(255, 255, 255, 0.12) 50%, rgba(255, 255, 255, 0.08) 55%, transparent 60%);
+        linear-gradient(110deg, 
+            transparent 35%, 
+            rgba(255, 255, 255, 0.03) 40%, 
+            rgba(255, 255, 255, 0.2) 50%, 
+            rgba(255, 255, 255, 0.03) 60%, 
+            transparent 65%
+        );
 }
 
 body.theme-glassmorph {
@@ -279,11 +285,11 @@ body.theme-glassmorph {
     backdrop-filter: blur(24px) saturate(180%);
     color: var(--text);
     box-shadow: var(--tool-card-shadow);
-    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1), 
-                border-color 280ms ease, 
-                box-shadow 280ms ease, 
-                background 280ms ease, 
-                filter 280ms ease;
+    transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+        border-color 280ms ease,
+        box-shadow 280ms ease,
+        background 280ms ease,
+        filter 280ms ease;
     position: relative;
     overflow: hidden;
     isolation: isolate;
@@ -293,12 +299,13 @@ body.theme-glassmorph {
 .tool-card::before {
     content: '';
     position: absolute;
-    inset: 0;
+    inset: 0 -150%;
     background: var(--glass-refraction);
-    opacity: 0.4;
+    opacity: 0.35;
     pointer-events: none;
-    transition: transform 600ms ease, opacity 600ms ease;
+    transition: transform 900ms cubic-bezier(0.23, 1, 0.32, 1), opacity 600ms ease;
     z-index: -1;
+    transform: translateX(-15%);
 }
 
 .tool-card::after {
@@ -315,13 +322,13 @@ body.theme-glassmorph {
 }
 
 .tool-card:hover::before {
-    transform: translateX(15%) translateY(-5%) rotate(5deg);
-    opacity: 0.7;
+    transform: translateX(15%);
+    opacity: 0.9;
 }
 
 .tool-card:hover {
     transform: translateY(-6px) scale(1.012);
-    border-color: rgba(196, 226, 255, 0.54);
+    border-color: rgba(196, 255, 214, 0.54);
     box-shadow: var(--tool-card-shadow);
     filter: var(--tool-card-filter);
 }
@@ -345,21 +352,21 @@ body.theme-glassmorph {
 }
 
 .tool-card-primary {
-    --tool-card-bg: 
+    --tool-card-bg:
         linear-gradient(175deg, rgba(12, 56, 52, 0.45), rgba(10, 24, 34, 0.38)),
         radial-gradient(circle at 88% 6%, rgba(82, 227, 172, 0.32), transparent 50%),
         radial-gradient(circle at 14% 92%, rgba(80, 215, 255, 0.14), transparent 55%);
 }
 
 .tool-card-secondary {
-    --tool-card-bg: 
+    --tool-card-bg:
         linear-gradient(176deg, rgba(20, 38, 72, 0.45), rgba(10, 24, 36, 0.38)),
         radial-gradient(circle at 88% 8%, rgba(80, 215, 255, 0.32), transparent 50%),
         radial-gradient(circle at 16% 92%, rgba(179, 155, 255, 0.16), transparent 56%);
 }
 
 .tool-card-tertiary {
-    --tool-card-bg: 
+    --tool-card-bg:
         linear-gradient(177deg, rgba(102, 56, 22, 0.4), rgba(12, 24, 36, 0.38)),
         radial-gradient(circle at 86% 8%, rgba(255, 184, 108, 0.32), transparent 52%),
         radial-gradient(circle at 18% 92%, rgba(255, 132, 66, 0.18), transparent 58%);
@@ -424,10 +431,13 @@ body.theme-glassmorph .tool-card-tertiary {
 
 
 @keyframes heroGlow {
-    0%, 100% {
+
+    0%,
+    100% {
         filter: drop-shadow(0 0 0 rgba(80, 215, 255, 0));
         text-shadow: 0 0 0 rgba(80, 215, 255, 0);
     }
+
     50% {
         filter: drop-shadow(0 0 20px rgba(80, 215, 255, 0.28));
         text-shadow: 0 0 22px rgba(80, 215, 255, 0.22), 0 0 36px rgba(134, 239, 172, 0.17);
@@ -493,5 +503,3 @@ body.theme-glassmorph .tool-card-tertiary {
         transition: none;
     }
 }
-
-
