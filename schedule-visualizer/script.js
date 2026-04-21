@@ -1630,7 +1630,7 @@ window.addEventListener('message', (event) => {
             
             renderSavedSchedulesList();
             renderSchedule();
-            setStatus('Auto Sched Synced from Portal!', 'success');
+            setStatus('Auto Plotter Synced from OSES!', 'success');
         } catch (err) {
             console.error('[Web Tools] Failed to sync extension schedule:', err);
             setStatus('Failed to sync schedule from extension.', 'error');
