@@ -96,7 +96,9 @@ const SUBJECT_CATALOG = [
     { code: 'IT0204', title: 'IT SPECIALIZATION 7 - CYBERSECURITY AND PRIVACY:  LAWS, POLICIES, AND COMPLIANCE' },
     { code: 'IT0205', title: 'IT SPECIALIZATION 9 - CLOUD SECURITY' },
     { code: 'IT0207', title: 'CAPSTONE PROJECT 1 CST' },
-    { code: 'IT0209', title: 'CAPSTONE PROJECT 2 CST' }
+    { code: 'IT0209', title: 'CAPSTONE PROJECT 2 CST' },
+    { code: 'NSTP1', title: 'CIVIC WELFARE TRAINING SERVICE 1' },
+    { code: 'NSTP2', title: 'CIVIC WELFARE TRAINING SERVICE 2' }
 ];
 
 const form = document.getElementById('class-form');
