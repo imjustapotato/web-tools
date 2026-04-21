@@ -1,0 +1,192 @@
+:root {
+    --aurora-a: rgba(82, 227, 172, 0.32);
+    --aurora-b: rgba(80, 215, 255, 0.3);
+    --aurora-c: rgba(179, 155, 255, 0.28);
+    --aurora-night: #0a0120;
+    --aurora-highlight-one: rgba(0, 255, 184, 0.62);
+    --aurora-highlight-two: rgba(255, 0, 184, 0.54);
+    --aurora-highlight-three: rgba(255, 255, 0, 0.38);
+    --aurora-highlight-four: rgba(255, 94, 0, 0.38);
+    --aurora-highlight-five: rgba(0, 255, 255, 0.38);
+    --aurora-highlight-six: rgba(255, 0, 128, 0.38);
+    --aurora-horizon-base: rgba(255, 0, 128, 0.18);
+    --aurora-horizon-mid: rgba(0, 255, 184, 0.22);
+}
+
+@property --aurora-angle-one {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@property --aurora-angle-two {
+    syntax: '<angle>';
+    initial-value: 60deg;
+    inherits: false;
+}
+
+@property --aurora-angle-three {
+    syntax: '<angle>';
+    initial-value: 120deg;
+    inherits: false;
+}
+
+.aurora-background {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.aurora-stars {
+    position: absolute;
+    inset: 0;
+    background-image:
+        radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 25% 35%, rgba(255, 255, 255, 0.6) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 40% 10%, rgba(255, 255, 255, 0.9) 0%, transparent 100%),
+        radial-gradient(1px 1px at 55% 25%, rgba(255, 255, 255, 0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 70% 5%, rgba(255, 255, 255, 0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 80% 30%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 90% 15%, rgba(255, 255, 255, 0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 15% 55%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+        radial-gradient(1px 1px at 35% 70%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+        radial-gradient(1px 1px at 60% 50%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 75% 65%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+        radial-gradient(1.5px 1.5px at 5% 80%, rgba(255, 255, 255, 0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 45% 88%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+        radial-gradient(1px 1px at 95% 75%, rgba(255, 255, 255, 0.7) 0%, transparent 100%),
+        radial-gradient(1px 1px at 20% 92%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+        radial-gradient(2px 2px at 85% 90%, rgba(255, 255, 255, 0.8) 0%, transparent 100%),
+        radial-gradient(1px 1px at 50% 45%, rgba(255, 255, 255, 0.6) 0%, transparent 100%),
+        radial-gradient(1px 1px at 3% 40%, rgba(255, 255, 255, 0.5) 0%, transparent 100%);
+    animation: auroraTwinkle 6s ease-in-out infinite alternate;
+}
+
+.aurora-curtains {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    filter: blur(60px);
+    opacity: 0.75;
+    animation: auroraPulse 12s ease-in-out infinite alternate;
+}
+
+.aurora-band {
+    position: absolute;
+    width: 200%;
+    left: -50%;
+    border-radius: 50%;
+    transform-origin: center center;
+}
+
+.aurora-band-one {
+    height: 55vh;
+    top: -10vh;
+    background: conic-gradient(from var(--aurora-angle-one) at 40% 60%,
+        transparent 0%,
+        var(--aurora-highlight-one) 12%,
+        var(--aurora-highlight-two) 28%,
+        var(--aurora-highlight-three) 38%,
+        transparent 52%,
+        var(--aurora-highlight-four) 66%,
+        transparent 80%
+    );
+    animation: auroraBandOne 18s linear infinite;
+}
+
+.aurora-band-two {
+    height: 60vh;
+    top: 5vh;
+    background: conic-gradient(from var(--aurora-angle-two) at 60% 40%,
+        transparent 0%,
+        var(--aurora-highlight-six) 8%,
+        var(--aurora-highlight-five) 22%,
+        var(--aurora-highlight-one) 36%,
+        transparent 50%,
+        var(--aurora-highlight-four) 64%,
+        transparent 78%
+    );
+    animation: auroraBandTwo 24s linear infinite reverse;
+}
+
+.aurora-band-three {
+    height: 50vh;
+    top: -5vh;
+    background: conic-gradient(from var(--aurora-angle-three) at 30% 70%,
+        transparent 0%,
+        var(--aurora-highlight-two) 18%,
+        var(--aurora-highlight-three) 32%,
+        transparent 44%,
+        var(--aurora-highlight-five) 58%,
+        var(--aurora-highlight-six) 72%,
+        transparent 86%
+    );
+    animation: auroraBandThree 20s linear infinite;
+}
+
+.aurora-horizon {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 30vh;
+    background: linear-gradient(to top,
+        var(--aurora-horizon-base) 0%,
+        var(--aurora-horizon-mid) 38%,
+        transparent 100%
+    );
+}
+
+.aurora-mountains {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 22vh;
+}
+
+.aurora-mountains svg {
+    width: 100%;
+    height: 100%;
+}
+
+@keyframes auroraTwinkle {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+}
+
+@keyframes auroraPulse {
+    0% {
+        opacity: 0.6;
+        filter: blur(60px);
+    }
+    50% {
+        opacity: 0.85;
+        filter: blur(50px);
+    }
+    100% {
+        opacity: 0.65;
+        filter: blur(70px);
+    }
+}
+
+@keyframes auroraBandOne {
+    to {
+        --aurora-angle-one: 360deg;
+    }
+}
+
+@keyframes auroraBandTwo {
+    to {
+        --aurora-angle-two: 420deg;
+    }
+}
+
+@keyframes auroraBandThree {
+    to {
+        --aurora-angle-three: 480deg;
+    }
+}
