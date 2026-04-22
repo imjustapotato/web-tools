@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +9,7 @@
     <link rel="stylesheet" href="./styles.css">
     <link rel="icon" href="../src/assets/logo100.png" type="image/png">
 </head>
+
 <body class="app-shell">
     <a href="/" class="home-fab" aria-label="Return to homepage">Home</a>
 
@@ -28,7 +30,8 @@
                 Full Preview
             </button>
             <div class="header-note warning-box" role="note" aria-live="polite">
-                Note: You may want to save your schedule to a JSON, then drop it here again if you wish to edit and export. I designed this web tool to not save files on any server or the browser.
+                Note: You may want to save your schedule to a JSON, then drop it here again if you wish to edit and
+                export. I designed this web tool to not save files on any server or the browser.
             </div>
             <button id="export-png-btn" class="btn btn-export">
                 <span class="iconify btn-icon" data-icon="mdi:export" aria-hidden="true"></span>
@@ -42,7 +45,8 @@
     </header>
 
     <section id="mobile-warning" class="mobile-warning hidden" role="alert" aria-live="polite">
-        <p class="mobile-warning-text">Best experience is on desktop. Mobile editing is supported but can feel tight.</p>
+        <p class="mobile-warning-text">Best experience is on desktop. Mobile editing is supported but can feel tight.
+        </p>
         <button id="mobile-warning-ack-btn" type="button" class="btn btn-sm btn-load">I Understand</button>
     </section>
 
@@ -80,16 +84,19 @@
             <form id="class-form" class="class-form">
                 <div>
                     <label class="field-label with-margin">
-                        <span class="iconify label-icon" data-icon="mdi:book-open-page-variant-outline" aria-hidden="true"></span>
+                        <span class="iconify label-icon" data-icon="mdi:book-open-page-variant-outline"
+                            aria-hidden="true"></span>
                         Subject Code / Title
                     </label>
-                    <input type="text" id="course-name" list="pending-courses" required placeholder="IT/CCS/GED - Subject Name" class="field-input">
+                    <input type="text" id="course-name" list="pending-courses" required
+                        placeholder="IT/CCS/GED/CE/COE - Subject Name" class="field-input">
                     <datalist id="pending-courses"></datalist>
                 </div>
 
                 <div>
                     <label class="field-label with-margin">
-                        <span class="iconify label-icon" data-icon="mdi:calendar-week-outline" aria-hidden="true"></span>
+                        <span class="iconify label-icon" data-icon="mdi:calendar-week-outline"
+                            aria-hidden="true"></span>
                         Day
                     </label>
                     <select id="course-day" required class="field-input">
@@ -108,14 +115,18 @@
                             <span class="iconify label-icon" data-icon="mdi:clock-outline" aria-hidden="true"></span>
                             Start (24H)
                         </label>
-                        <input type="text" id="course-start" required class="field-input" placeholder="07:30" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 13:30)" value="07:30">
+                        <input type="text" id="course-start" required class="field-input" placeholder="07:30"
+                            pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                            title="Enter time in 24-hour format (e.g., 13:30)" value="07:30">
                     </div>
                     <div class="half-field">
                         <label class="field-label with-margin">
                             <span class="iconify label-icon" data-icon="mdi:clock-outline" aria-hidden="true"></span>
                             End (24H)
                         </label>
-                        <input type="text" id="course-end" required class="field-input" placeholder="13:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" title="Enter time in 24-hour format (e.g., 14:30)" value="09:00">
+                        <input type="text" id="course-end" required class="field-input" placeholder="13:00"
+                            pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$"
+                            title="Enter time in 24-hour format (e.g., 14:30)" value="09:00">
                     </div>
                 </div>
 
@@ -129,7 +140,8 @@
                     </div>
                     <div class="half-field">
                         <label class="field-label with-margin">
-                            <span class="iconify label-icon" data-icon="mdi:account-group-outline" aria-hidden="true"></span>
+                            <span class="iconify label-icon" data-icon="mdi:account-group-outline"
+                                aria-hidden="true"></span>
                             Section
                         </label>
                         <input type="text" id="course-section" placeholder="TW/TC/TF/TX/H" class="field-input">
@@ -138,7 +150,8 @@
 
                 <div class="secondary-days-panel">
                     <div class="secondary-days-header-row">
-                        <button type="button" id="add-secondary-day-btn" class="btn btn-sm btn-load secondary-day-trigger">
+                        <button type="button" id="add-secondary-day-btn"
+                            class="btn btn-sm btn-load secondary-day-trigger">
                             <span class="iconify btn-icon" data-icon="mdi:calendar-plus" aria-hidden="true"></span>
                             Add Secondary Day
                         </button>
@@ -152,16 +165,26 @@
                         Color
                     </label>
                     <div class="color-picker" id="color-picker">
-                        <button type="button" data-color="bg-emerald-600" class="w-8 h-8 rounded-full bg-emerald-600 ring-2 ring-offset-2 ring-offset-slate-800 ring-emerald-400 color-btn"></button>
-                        <button type="button" data-color="bg-cyan-600" class="w-8 h-8 rounded-full bg-cyan-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-indigo-600" class="w-8 h-8 rounded-full bg-indigo-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-purple-600" class="w-8 h-8 rounded-full bg-purple-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-rose-600" class="w-8 h-8 rounded-full bg-rose-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-amber-600" class="w-8 h-8 rounded-full bg-amber-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-sky-600" class="w-8 h-8 rounded-full bg-sky-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-lime-600" class="w-8 h-8 rounded-full bg-lime-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-pink-600" class="w-8 h-8 rounded-full bg-pink-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-teal-600" class="w-8 h-8 rounded-full bg-teal-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-emerald-600"
+                            class="w-8 h-8 rounded-full bg-emerald-600 ring-2 ring-offset-2 ring-offset-slate-800 ring-emerald-400 color-btn"></button>
+                        <button type="button" data-color="bg-cyan-600"
+                            class="w-8 h-8 rounded-full bg-cyan-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-indigo-600"
+                            class="w-8 h-8 rounded-full bg-indigo-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-purple-600"
+                            class="w-8 h-8 rounded-full bg-purple-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-rose-600"
+                            class="w-8 h-8 rounded-full bg-rose-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-amber-600"
+                            class="w-8 h-8 rounded-full bg-amber-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-sky-600"
+                            class="w-8 h-8 rounded-full bg-sky-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-lime-600"
+                            class="w-8 h-8 rounded-full bg-lime-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-pink-600"
+                            class="w-8 h-8 rounded-full bg-pink-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-teal-600"
+                            class="w-8 h-8 rounded-full bg-teal-600 opacity-50 hover:opacity-100 color-btn"></button>
                     </div>
                 </div>
 
@@ -183,11 +206,13 @@
                     </h3>
                     <div class="saved-actions-grid">
                         <button type="button" id="load-selected-btn" class="manager-btn manager-load">
-                            <span class="iconify btn-icon" data-icon="mdi:folder-open-outline" aria-hidden="true"></span>
+                            <span class="iconify btn-icon" data-icon="mdi:folder-open-outline"
+                                aria-hidden="true"></span>
                             Load Selected
                         </button>
                         <button type="button" id="overwrite-selected-btn" class="manager-btn manager-overwrite">
-                            <span class="iconify btn-icon" data-icon="mdi:content-save-edit-outline" aria-hidden="true"></span>
+                            <span class="iconify btn-icon" data-icon="mdi:content-save-edit-outline"
+                                aria-hidden="true"></span>
                             Overwrite
                         </button>
                         <button type="button" id="delete-selected-btn" class="manager-btn manager-delete">
@@ -232,7 +257,8 @@
         </section>
     </div>
 
-    <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+        aria-labelledby="edit-modal-title">
         <div class="modal-card">
             <h3 id="edit-modal-title" class="section-title modal-title">
                 <span class="iconify label-icon" data-icon="mdi:pencil-outline" aria-hidden="true"></span>
@@ -241,7 +267,8 @@
             <form id="edit-class-form" class="class-form">
                 <div>
                     <label class="field-label with-margin">
-                        <span class="iconify label-icon" data-icon="mdi:book-open-page-variant-outline" aria-hidden="true"></span>
+                        <span class="iconify label-icon" data-icon="mdi:book-open-page-variant-outline"
+                            aria-hidden="true"></span>
                         Subject Code / Title
                     </label>
                     <input type="text" id="edit-course-name" list="pending-courses" required class="field-input">
@@ -249,7 +276,8 @@
 
                 <div>
                     <label class="field-label with-margin">
-                        <span class="iconify label-icon" data-icon="mdi:calendar-week-outline" aria-hidden="true"></span>
+                        <span class="iconify label-icon" data-icon="mdi:calendar-week-outline"
+                            aria-hidden="true"></span>
                         Day
                     </label>
                     <select id="edit-course-day" required class="field-input">
@@ -268,14 +296,16 @@
                             <span class="iconify label-icon" data-icon="mdi:clock-outline" aria-hidden="true"></span>
                             Start (24H)
                         </label>
-                        <input type="text" id="edit-course-start" required class="field-input" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$">
+                        <input type="text" id="edit-course-start" required class="field-input"
+                            pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$">
                     </div>
                     <div class="half-field">
                         <label class="field-label with-margin">
                             <span class="iconify label-icon" data-icon="mdi:clock-outline" aria-hidden="true"></span>
                             End (24H)
                         </label>
-                        <input type="text" id="edit-course-end" required class="field-input" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$">
+                        <input type="text" id="edit-course-end" required class="field-input"
+                            pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$">
                     </div>
                 </div>
 
@@ -297,7 +327,8 @@
                     </div>
                     <div class="half-field">
                         <label class="field-label with-margin">
-                            <span class="iconify label-icon" data-icon="mdi:account-group-outline" aria-hidden="true"></span>
+                            <span class="iconify label-icon" data-icon="mdi:account-group-outline"
+                                aria-hidden="true"></span>
                             Section (Optional)
                         </label>
                         <input type="text" id="edit-course-section" class="field-input">
@@ -310,17 +341,28 @@
                         Color
                     </label>
                     <div class="color-picker" id="edit-color-picker">
-                        <button type="button" data-color="bg-emerald-600" class="w-8 h-8 rounded-full bg-emerald-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-cyan-600" class="w-8 h-8 rounded-full bg-cyan-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-indigo-600" class="w-8 h-8 rounded-full bg-indigo-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-purple-600" class="w-8 h-8 rounded-full bg-purple-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-rose-600" class="w-8 h-8 rounded-full bg-rose-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-amber-600" class="w-8 h-8 rounded-full bg-amber-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-sky-600" class="w-8 h-8 rounded-full bg-sky-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-lime-600" class="w-8 h-8 rounded-full bg-lime-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-pink-600" class="w-8 h-8 rounded-full bg-pink-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-teal-600" class="w-8 h-8 rounded-full bg-teal-600 opacity-50 hover:opacity-100 color-btn"></button>
-                        <button type="button" data-color="bg-blue-600" class="w-8 h-8 rounded-full bg-blue-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-emerald-600"
+                            class="w-8 h-8 rounded-full bg-emerald-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-cyan-600"
+                            class="w-8 h-8 rounded-full bg-cyan-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-indigo-600"
+                            class="w-8 h-8 rounded-full bg-indigo-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-purple-600"
+                            class="w-8 h-8 rounded-full bg-purple-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-rose-600"
+                            class="w-8 h-8 rounded-full bg-rose-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-amber-600"
+                            class="w-8 h-8 rounded-full bg-amber-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-sky-600"
+                            class="w-8 h-8 rounded-full bg-sky-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-lime-600"
+                            class="w-8 h-8 rounded-full bg-lime-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-pink-600"
+                            class="w-8 h-8 rounded-full bg-pink-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-teal-600"
+                            class="w-8 h-8 rounded-full bg-teal-600 opacity-50 hover:opacity-100 color-btn"></button>
+                        <button type="button" data-color="bg-blue-600"
+                            class="w-8 h-8 rounded-full bg-blue-600 opacity-50 hover:opacity-100 color-btn"></button>
                     </div>
                 </div>
 
@@ -339,7 +381,8 @@
         </div>
     </div>
 
-    <div id="message-modal" class="message-modal hidden" role="dialog" aria-modal="true" aria-labelledby="message-modal-title" aria-describedby="message-modal-body">
+    <div id="message-modal" class="message-modal hidden" role="dialog" aria-modal="true"
+        aria-labelledby="message-modal-title" aria-describedby="message-modal-body">
         <div class="message-card">
             <h3 id="message-modal-title" class="section-title modal-title">Message</h3>
             <p id="message-modal-body" class="message-body"></p>
@@ -353,7 +396,8 @@
         </div>
     </div>
 
-    <div id="mobile-preview-modal" class="mobile-preview-modal hidden" role="dialog" aria-modal="true" aria-labelledby="mobile-preview-title">
+    <div id="mobile-preview-modal" class="mobile-preview-modal hidden" role="dialog" aria-modal="true"
+        aria-labelledby="mobile-preview-title">
         <div class="mobile-preview-card">
             <div class="mobile-preview-header">
                 <h3 id="mobile-preview-title">Full Timetable Preview</h3>
@@ -363,11 +407,11 @@
         </div>
     </div>
 
-    <div id="export-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="export-modal-title">
+    <div id="export-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
+        aria-labelledby="export-modal-title">
         <div class="modal-card export-modal-card">
             <div class="mobile-preview-header export-modal-header">
                 <h3 id="export-modal-title">Export PNG</h3>
-                <button id="export-close-btn" type="button" class="btn btn-sm btn-clear">Close</button>
             </div>
             <form id="export-form" class="class-form export-form">
                 <div>
@@ -395,5 +439,5 @@
     <script type="module" src="../src/scripts/page-transition.js"></script>
     <script type="module" src="./script.js"></script>
 </body>
-</html>
 
+</html>
