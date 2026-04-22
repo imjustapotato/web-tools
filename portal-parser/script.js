@@ -2,7 +2,7 @@ import mermaid from 'mermaid';
 import gsap from 'gsap';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 
-import cstRaw from './src/CST.txt?raw';
+import { PRESET_CURRICULA } from './presets.js';
 
 mermaid.initialize({
     startOnLoad: false,
@@ -20,15 +20,6 @@ mermaid.initialize({
 
 window.mermaid = mermaid;
 
-// Preset Curriculum Config 
-// To add a new curriculum: append { id, label, content } to this array.
-const PRESET_CURRICULA = [
-    {
-        id: 'cst',
-        label: '🛡️ Cybersecurity Technology (CST)',
-        content: cstRaw
-    }
-];
 
 // State
 let mermaidRawCode = '';
