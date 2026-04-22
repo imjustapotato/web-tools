@@ -1,5 +1,5 @@
 export const SUBJECT_CATALOG = [
-    // BSIT CST Subjects Database
+    // === BSIT CST (CyberSecurity Technology) + Common IT Subs and General Subs Database ===
     { code: 'CCS0001', title: 'INTRODUCTION TO COMPUTING LEC' },
     { code: 'CCS0001L', title: 'INTRODUCTION TO COMPUTING LAB' },
     { code: 'CCS0003', title: 'COMPUTER PROGRAMMING 1 LEC' },
@@ -53,7 +53,7 @@ export const SUBJECT_CATALOG = [
     { code: 'IT0021', title: 'SYSTEM ADMINISTRATION AND MAINTENANCE' },
     { code: 'IT0023', title: 'SYSTEM INTEGRATION AND ARCHITECTURE 1' },
     { code: 'IT0025', title: 'SOCIAL AND PROFESSIONAL ISSUES' },
-    { code: 'IT0027', title: 'COURSE CODE PRESENT IN CURRICULUM (TITLE NOT FOUND IN SOURCE)' },
+    { code: 'IT0027', title: 'CAPSTONE PROJECT 1 (CST / WMA / SMBA / AGD)' },
     { code: 'IT0031', title: 'INTERNSHIP 1' },
     { code: 'IT0033', title: 'INTERNSHIP 2 520 HOURS' },
     { code: 'IT0035', title: 'APPLIED OPERATING SYSTEM' },
@@ -80,7 +80,10 @@ export const SUBJECT_CATALOG = [
     { code: 'IT0204', title: 'IT SPECIALIZATION 7 - CYBERSECURITY AND PRIVACY:  LAWS, POLICIES, AND COMPLIANCE' },
     { code: 'IT0205', title: 'IT SPECIALIZATION 9 - CLOUD SECURITY' },
     { code: 'IT0207', title: 'CAPSTONE PROJECT 1 CST' },
-    // BSCE Subjects Database
+    { code: 'IT0209', title: 'CAPSTONE PROJECT 2 CST' },
+    { code: 'NSTP1', title: 'CIVIC WELFARE TRAINING SERVICE 1' },
+    { code: 'NSTP2', title: 'CIVIC WELFARE TRAINING SERVICE 2' },
+    // === BSCE (Civil Engineering) Subjects Database ===
     { code: 'COE0003', title: 'ENGINEERING MATHEMATICS 2' },
     { code: 'COE0005', title: 'CHEMISTRY FOR ENGINEERS 1' },
     { code: 'COE0001', title: 'ENGINEERING MATHEMATICS 1' },
@@ -156,4 +159,13 @@ export const SUBJECT_CATALOG = [
     { code: 'CE0073', title: 'PROFESSIONAL COURSE 5 - (SPECIALIZED 5) FOUNDATION AND RETAINING WALL' },
     { code: 'CE0075', title: 'PROFESSIONAL COURSE 6 (SPECIALIZED 6) COMPUTER SOFTWARE IN STRUCTURAL ANALYSIS' },
     { code: 'CE0077', title: 'TECHNICAL ELECTIVE FOR CE - COSH' },
+    /// === BSIT WMA (Web and Mobile Application) Subjects Database ===
+    { code: 'IT0063', title: 'IT SPECIALIZATION 3 - ADVANCE WEB DESIGN' },
+    { code: 'IT0069', title: 'IT SPECIALIZATION 4 - FUNDAMENTALS OF BUSINESS ANALYTICS' },
+    { code: 'IT0079', title: 'IT SPECIALIZATION 5 - MOBILE APPLICATION DEVELOPMENT 1' },
+    { code: 'IT0087', title: 'IT SPECIALIZATION 6 - BUSINESS PROCESS FOR COMPUTING SYSTEM' },
+    { code: 'IT0087L', title: 'IT SPECIALIZATION 6 - BUSINESS PROCESS FOR COMPUTING SYSTEM LAB' },
+    { code: 'IT0093', title: 'IT SPECIALIZATION 7 - MOBILE APPLICATION DEVELOPMENT 2' },
+    { code: 'IT0123', title: 'IT SPECIALIZATION 8 - DEVELOPMENT NETWORK' },
+    { code: 'IT0029', title: 'CAPSTONE PROJECT 2 WMA' },
 ];
