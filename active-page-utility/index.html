@@ -1,0 +1,506 @@
+<!-- A Simple Page that showcases Active-Page Utility Extension with Video Demo, step by step guides and activation guide -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Active-Page Utility</title>
+    <link rel="stylesheet" href="../src/styles/tailwind.css">
+    <link rel="stylesheet" href="./style.css">
+    <link rel="icon" href="./src/icon/icon-idle.png" type="image/png">
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
+</head>
+
+<body class="theme-liquid">
+    <a href="/" class="home-fab" id="home-fab-btn" aria-label="Back to Homepage">
+        <span class="iconify home-fab-icon" data-icon="mdi:home" aria-hidden="true"></span>
+        <span class="home-fab-label">Back to Homepage</span>
+    </a>
+    <!-- Aurora Background and Design SVG Elements-->
+    <div class="aurora-utility-container" aria-hidden="true">
+        <div class="aurora-stars"></div>
+        <div class="aurora-clouds">
+            <div class="aurora-cloud cloud-static-1"></div>
+            <div class="aurora-cloud cloud-static-2"></div>
+            <div class="aurora-cloud cloud-static-3"></div>
+            <div class="aurora-cloud cloud-move-1"></div>
+            <div class="aurora-cloud cloud-move-2"></div>
+        </div>
+        <div class="aurora-curtains">
+            <div class="aurora-band aurora-band-one"></div>
+            <div class="aurora-band aurora-band-two"></div>
+            <div class="aurora-band aurora-band-three"></div>
+        </div>
+        <div class="aurora-horizon"></div>
+
+        <div class="aurora-mountains">
+            <svg viewBox="0 0 1440 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="mountainGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" style="stop-color:#0a1020;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#020510;stop-opacity:1" />
+                    </linearGradient>
+                    <filter id="cityGlow">
+                        <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" />
+                    </filter>
+                </defs>
+
+                <!-- Background Huge Mountain -->
+                <path d="M-100,300 L300,100 L720,20 L1140,100 L1540,300 Z" fill="#040816" opacity="0.4" />
+
+                <!-- Midground Mountain Range -->
+                <path d="M0,300 L150,150 L350,220 L550,120 L750,200 L950,80 L1150,220 L1350,140 L1500,300 Z"
+                    fill="url(#mountainGrad)" />
+
+                <!-- City Skyline -->
+                <g class="city-silhouettes" fill="#01030a">
+                    <rect x="100" y="240" width="25" height="60" />
+                    <rect x="130" y="210" width="30" height="90" />
+                    <rect x="165" y="230" width="20" height="70" />
+                    <rect x="190" y="250" width="15" height="50" />
+                    <rect x="350" y="220" width="35" height="80" />
+                    <rect x="390" y="245" width="20" height="55" />
+                    <rect x="415" y="200" width="25" height="100" />
+                    <rect x="445" y="230" width="30" height="70" />
+                    <rect x="680" y="180" width="40" height="120" />
+                    <rect x="725" y="160" width="35" height="140" />
+                    <rect x="765" y="195" width="25" height="105" />
+                    <rect x="795" y="215" width="30" height="85" />
+                    <rect x="1100" y="225" width="25" height="75" />
+                    <rect x="1130" y="205" width="35" height="95" />
+                    <rect x="1170" y="240" width="20" height="60" />
+                    <rect x="1200" y="215" width="30" height="85" />
+                </g>
+
+                <!-- City Lights -->
+                <g class="city-lights" fill="#ffd700" filter="url(#cityGlow)">
+                    <rect x="105" y="250" width="2" height="2" opacity="0.6" />
+                    <rect x="115" y="250" width="2" height="2" opacity="0.4" />
+                    <rect x="135" y="220" width="2" height="2" opacity="0.8" />
+                    <rect x="145" y="220" width="2" height="2" opacity="0.6" />
+                    <rect x="135" y="235" width="2" height="2" opacity="0.9" />
+                    <rect x="145" y="235" width="2" height="2" opacity="0.5" />
+                    <rect x="135" y="250" width="2" height="2" opacity="0.7" />
+                    <rect x="172" y="240" width="2" height="2" opacity="0.8" />
+                    <rect x="172" y="255" width="2" height="2" opacity="0.6" />
+                    <rect x="195" y="260" width="2" height="2" opacity="0.5" />
+                    <rect x="360" y="230" width="2" height="2" opacity="0.7" />
+                    <rect x="360" y="245" width="2" height="2" opacity="0.9" />
+                    <rect x="395" y="255" width="2" height="2" opacity="0.6" />
+                    <rect x="422" y="210" width="2" height="2" opacity="0.8" />
+                    <rect x="422" y="225" width="2" height="2" opacity="0.6" />
+                    <rect x="422" y="240" width="2" height="2" opacity="0.9" />
+                    <rect x="455" y="240" width="2" height="2" opacity="0.7" />
+                    <rect x="690" y="190" width="2" height="2" opacity="0.9" />
+                    <rect x="705" y="190" width="2" height="2" opacity="0.7" />
+                    <rect x="690" y="205" width="2" height="2" opacity="0.8" />
+                    <rect x="705" y="205" width="2" height="2" opacity="0.6" />
+                    <rect x="735" y="170" width="2" height="2" opacity="1" />
+                    <rect x="750" y="170" width="2" height="2" opacity="0.8" />
+                    <rect x="735" y="185" width="2" height="2" opacity="0.9" />
+                    <rect x="750" y="185" width="2" height="2" opacity="0.7" />
+                    <rect x="735" y="200" width="2" height="2" opacity="0.8" />
+                    <rect x="772" y="205" width="2" height="2" opacity="0.9" />
+                    <rect x="772" y="220" width="2" height="2" opacity="0.7" />
+                    <rect x="805" y="225" width="2" height="2" opacity="0.8" />
+                    <rect x="1105" y="235" width="2" height="2" opacity="0.7" />
+                    <rect x="1138" y="215" width="2" height="2" opacity="0.8" />
+                    <rect x="1150" y="215" width="2" height="2" opacity="0.6" />
+                    <rect x="1138" y="230" width="2" height="2" opacity="0.9" />
+                    <rect x="1150" y="230" width="2" height="2" opacity="0.7" />
+                    <rect x="1138" y="245" width="2" height="2" opacity="0.8" />
+                    <rect x="1175" y="250" width="2" height="2" opacity="0.6" />
+                    <rect x="1210" y="225" width="2" height="2" opacity="0.8" />
+                </g>
+            </svg>
+        </div>
+    </div>
+
+    <main class="page-shell">
+        <!-- Hero Section -->
+        <header class="hero-card gs-reveal">
+            <img src="./src/icon/icon-idle.png" alt="Active-Page Utility Icon" class="hero-icon">
+            <h1>Active-Page Utility</h1>
+            <div class="typing-container">
+                <span class="typing-prefix">Features:&nbsp;</span>
+                <span class="typing-text"></span><span class="typing-cursor" aria-hidden="true"></span>
+            </div>
+            <p class="hero-copy">
+                Stay active without staying on the page. Spoof your activity on
+                <span class="txt-feature">whitelisted domains</span>
+                to prevent
+                <span class="txt-emphasis">idle detection</span>
+                and
+                <span class="txt-emphasis">tracking</span>,
+                or even block
+                <span class="txt-emphasis">alt-tab detections</span>.
+            </p>
+
+            <div class="action-buttons">
+                <a href="https://chromewebstore.google.com/detail/efinkkopnpgbhdecnaoflgbjpcanahpp?utm_source=item-share-cb"
+                    target="_blank" rel="noopener" class="btn btn-primary">
+                    <span class="btn-icon">
+                        <span class="iconify" data-icon="logos:chrome"></span>
+                    </span>
+                    Download for Chrome
+                </a>
+                <a href="#" class="btn btn-disabled" aria-disabled="true" title="Coming Soon">
+                    <span class="btn-icon">
+                        <span class="iconify" data-icon="logos:firefox"></span>
+                    </span>
+                    Firefox Addon
+                    <span class="badge">Soon</span>
+                </a>
+            </div>
+        </header>
+
+        <!-- Features Section -->
+        <section id="features" class="features-section">
+            <h2 class="section-title gs-reveal">Features</h2>
+            <div class="module-cards grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- Card 1 — Left column -->
+                <article class="module-card gs-module-card" data-column-position="left">
+                    <span class="iconify module-card-icon" data-icon="mdi:eye-off-outline"></span>
+                    <h3 class="module-card-title">Block Tracking Events</h3>
+                    <p class="module-card-body">
+                        Intercepts tracking-oriented event listeners so pages have a harder time watching your activity
+                        state.
+                    </p>
+                </article>
+
+                <!-- Card 2 — Center column -->
+                <article class="module-card gs-module-card" data-column-position="center">
+                    <span class="iconify module-card-icon" data-icon="mdi:tab"></span>
+                    <h3 class="module-card-title">Fake Tab Focus</h3>
+                    <p class="module-card-body">
+                        Makes the page behave as though the tab is still active and focused when you are switching
+                        around.
+                    </p>
+                </article>
+
+                <!-- Card 3 — Right column -->
+                <article class="module-card gs-module-card" data-column-position="right">
+                    <span class="iconify module-card-icon" data-icon="mdi:block-helper"></span>
+                    <h3 class="module-card-title">Block Tab Switch Detection</h3>
+                    <p class="module-card-body">
+                        Reduces the usefulness of visibility-change checks that websites use to detect tab switching.
+                        Alt-Tab wont be detected reliably.
+                    </p>
+                </article>
+
+                <!-- Card 4 — Left column -->
+                <article class="module-card gs-module-card" data-column-position="left">
+                    <span class="iconify module-card-icon" data-icon="mdi:shield-lock-outline"></span>
+                    <h3 class="module-card-title">Shield Page Handlers</h3>
+                    <p class="module-card-body">
+                        Shields your page against advanced monitoring scripts that try to hijack your browser's
+                        native activity sensors to force an "away" state.
+                    </p>
+                </article>
+
+                <!-- Card 5 — Center column -->
+                <article class="module-card gs-module-card" data-column-position="center">
+                    <span class="iconify module-card-icon" data-icon="mdi:animation-play-outline"></span>
+                    <h3 class="module-card-title">Spoof Active Animations</h3>
+                    <p class="module-card-body">
+                        Keeps timing signals looking active so animation-based heuristics do not conclude the page is
+                        idle.
+                    </p>
+                </article>
+
+                <!-- Card 6 — Right column -->
+                <article class="module-card gs-module-card" data-column-position="right">
+                    <span class="iconify module-card-icon" data-icon="mdi:timer-off-outline"></span>
+                    <h3 class="module-card-title">Prevent Timer Throttling</h3>
+                    <p class="module-card-body">
+                        Keeps timer behavior more predictable when browsers try to slow work down in the background.
+                    </p>
+                </article>
+
+                <!-- Card 7 — Left column -->
+                <article class="module-card gs-module-card" data-column-position="left">
+                    <span class="iconify module-card-icon" data-icon="mdi:cursor-default-gesture"></span>
+                    <h3 class="module-card-title">Block Cursor Tracking</h3>
+                    <p class="module-card-body">
+                        Limits how much the page can learn from pointer and hover activity. Such as your mouse pointer
+                        leaving the window of the browser or the page itself.
+                    </p>
+                </article>
+            </div>
+
+        </section>
+
+        <!-- Instructions Sections -->
+        <div class="steps-container">
+            <h2 class="section-title gs-reveal">Guides</h2>
+            <!-- Installation and Key Acquisition -->
+            <section class="step-card gs-reveal">
+                <div class="step-content">
+                    <span class="step-number">01</span>
+                    <h3>Install and Getting a Key</h3>
+                    <p>First <span class="txt-emphasis">Install</span> the Extension in
+                        <span class="txt-emphasis">Chrome Web Store</span> or <span class="txt-emphasis">Firefox
+                            Addon</span> store.
+                        Ones installed, if you wish, you can pin the extension so that it can be accessed easier.
+                        Upon opening the extension, you will need an <span class="txt-important">Activation Key</span>
+                        which will be used to
+                        Unlock Functionalities of the Extension.<br>
+                        <br>Get your Activation Key by sending me an email at
+                        <span class="email-wrapper"> <a href="#" role="button" aria-label="Copy activation email"
+                                class="email-link" data-email="gen.harpuia@outlook.ph">gen.harpuia@outlook.ph</a><span
+                                class="email-tooltip" aria-hidden="true">Copied!</span></span>,
+                        with the Subject: <span class="txt-emphasis">Request for Key</span>
+                        and in the Body, <span class="txt-important">your Username</span>
+                    </p>
+                </div>
+                <div class="carousel-container">
+                    <div class="carousel-track">
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/Install.webp" alt="Install" class="carousel-img" loading="lazy"
+                                decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/Pinning.webp" alt="Pinning" class="carousel-img" loading="lazy"
+                                decoding="async">
+                        </div>
+                    </div>
+                    <div class="carousel-nav nav-prev"></div>
+                    <div class="carousel-nav nav-next"></div>
+                    <div class="carousel-dots"></div>
+                </div>
+            </section>
+
+            <!-- Activation with Key -->
+            <section class="step-card reverse gs-reveal">
+                <div class="step-content">
+                    <span class="step-number">02</span>
+                    <h3>Activation with Acquired Key</h3>
+                    <p>
+                        Ones you have acquired the
+                        <span class="txt-important">Activation Key</span>,
+                        open the extension popup again and click the
+                        <span class="txt-emphasis">Edit Key</span>
+                        Button. Input the Key on the Textbox and click
+                        <span class="txt-important">Save Key</span>.
+                        <br><br>
+                        If the key is valid, it'll automatically lift the restriction, and your Username will show up
+                        with the Status of your Authentication.
+                    </p>
+                </div>
+                <div class="carousel-container">
+                    <div class="carousel-track">
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/activation1.webp" alt="Click Edit Key" class="carousel-img"
+                                loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/activation2.webp" alt="Click Save Key" class="carousel-img"
+                                loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/activation3.webp" alt="Auth Success" class="carousel-img"
+                                loading="lazy" decoding="async">
+                        </div>
+                    </div>
+                    <div class="carousel-nav nav-prev"></div>
+                    <div class="carousel-nav nav-next"></div>
+                    <div class="carousel-dots"></div>
+                </div>
+            </section>
+
+            <!-- Adding Domains and Per-Domain Profile -->
+            <section class="step-card gs-reveal">
+                <div class="step-content">
+                    <span class="step-number">03</span>
+                    <h3>Adding and Managing Domain Profiles</h3>
+                    <p>
+                        To add a desired domain, you can copy paste the
+                        <span class="txt-emphasis">URL</span>
+                        of the page onto the Targeted Domain Input
+                        then hit
+                        <span class="txt-important">Save</span>.
+                        <br><br>
+                        To Mange <span class="txt-feature">Domain Profiles</span>, click
+                        on
+                        the
+                        Saved Domain, each domain can be managed here, if you
+                        were to disable a specific domain you need to also Reload that page to fully disable.
+                    </p>
+                </div>
+                <div class="carousel-container">
+                    <div class="carousel-track">
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/copy-add.webp" alt="Copy Link then Add Domain"
+                                class="carousel-img" loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/add-domain-success.webp" alt="Add Domain Success"
+                                class="carousel-img" loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/accordion-perdomain.webp"
+                                alt="Open Accordion for Per-Domain Profile" class="carousel-img" loading="lazy"
+                                decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/disable-perdomain.webp" alt="Disable Per-Domain Profile"
+                                class="carousel-img" loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/yes-it-can-be-used-for-that-too.webp"
+                                alt="Yes, It Can Be Used for That Too (Canvas)" class="carousel-img" loading="lazy"
+                                decoding="async">
+                        </div>
+                    </div>
+                    <div class="carousel-nav nav-prev"></div>
+                    <div class="carousel-nav nav-next"></div>
+                    <div class="carousel-dots"></div>
+                </div>
+            </section>
+
+            <!-- Global Activation -->
+            <section class="step-card gs-reveal">
+                <div class="step-content">
+                    <span class="step-number">04</span>
+                    <h3>Global Injection</h3>
+                    <p>
+                        This <span class="txt-emphasis">Toggle</span> serves as the global control for the whole
+                        domains, <span class="txt-success">Enabling</span> and <span class="txt-danger">Disabling</span>
+                        this
+                        defines if the all sites with Enabled Profile will have all the Modules applied to them.
+                        <br><br>
+                        Actually thats all, nothing fancy.
+                    </p>
+                </div>
+                <div class="carousel-container">
+                    <div class="carousel-track">
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/global-active.webp" alt="Global Injection Enabled"
+                                class="carousel-img" loading="lazy" decoding="async">
+                        </div>
+                        <div class="carousel-slide">
+                            <img src="./src/screenshots/global-inactive.webp" alt="Global Injection Disabled"
+                                class="carousel-img" loading="lazy" decoding="async">
+                        </div>
+                    </div>
+                    <div class="carousel-nav nav-prev"></div>
+                    <div class="carousel-nav nav-next"></div>
+                    <div class="carousel-dots"></div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Diagnostics Sidebar -->
+        <section class="step-card reverse gs-reveal">
+            <div class="step-content">
+                <span class="step-number">05</span>
+                <h3>Diagnostics Sidebar</h3>
+                <p>
+                    The Diagnostics Sidebar is mostly for debugging purpose and transparent tracing of how and what the
+                    extension is doing in the background.
+                    <br><br>
+                    Use this to verify the injection and if the overrides are <span class="txt-success">Healthy</span>.
+                </p>
+            </div>
+            <div class="carousel-container">
+                <div class="carousel-track">
+                    <div class="carousel-slide">
+                        <img src="./src/screenshots/Diagnostics Sidebar.png" alt="Diagnostics Sidebar"
+                            class="carousel-img" loading="lazy" decoding="async">
+                    </div>
+                </div>
+                <div class="carousel-nav nav-prev"></div>
+                <div class="carousel-nav nav-next"></div>
+                <div class="carousel-dots"></div>
+            </div>
+        </section>
+
+        <!-- Diagnostics Sidebar/Hosts Profiler -->
+        <section class="step-card reverse gs-reveal">
+            <div class="step-content">
+                <span class="step-number">06</span>
+                <h3>Hosts Profiler</h3>
+                <p>
+                    The Hosts Profiler is used if the website has multiple frame hosts candidates. Some websites use
+                    cross domain frames for some features, use this to verify the hosts and select the correct one to
+                    override them if the main website fails. Ones the Profiler has seen domains, add them with ease with
+                    the <span class="txt-important">Add to Targets</span> button.
+                    <br><br>
+                    Example: <span class="txt-emphasis">codepen.io</span> is the main host domain, but inside it has
+                    <span class="txt-emphasis">cdpn.io</span> for the actual pen view. Use
+                    this
+                    to add both to the targets if needed.
+                </p>
+            </div>
+            <div class="carousel-container">
+                <div class="carousel-track">
+                    <div class="carousel-slide">
+                        <img src="./src/screenshots/Host-Profiler.webp" alt="Hosts Profiler" class="carousel-img"
+                            loading="lazy" decoding="async">
+                    </div>
+                    <div class="carousel-slide">
+                        <img src="./src/screenshots/Added-Subhosts.webp" alt="Added Subhosts" class="carousel-img"
+                            loading="lazy" decoding="async">
+                    </div>
+                </div>
+                <div class="carousel-nav nav-prev"></div>
+                <div class="carousel-nav nav-next"></div>
+                <div class="carousel-dots"></div>
+            </div>
+        </section>
+        </div>
+
+        <!-- Video Demo -->
+        <section class="video-section gs-reveal">
+            <h2 class="section-title">As Requested: Video Demonstration :)</h2>
+            <div class="video-card">
+                <div class="video-container">
+                    <iframe width="560" height="315" src="https://www.youtube.com/embed/oeEagUUEaRY"
+                        title="YouTube video player" frameborder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- Support Footer -->
+        <footer class="support-card gs-reveal">
+            <div class="support-icon">
+                <span class="iconify" data-icon="mdi:help-circle-outline"></span>
+            </div>
+            <h3>Need Help?</h3>
+            <p><br>Let me know if you have problem with the extension, by emailing me the issue or submitting
+                it on my Github/web-tools.
+                <br><br>Or just hit me up about it in person if you know me 😶‍🌫️.
+            </p>
+            <div class="support-actions">
+                <span class="email-wrapper">
+                    <a href="#" role="button" aria-label="Copy support email" class="support-link email-link"
+                        data-email="gen.harpuia@outlook.ph">
+                        <span class="iconify" data-icon="mdi:email-outline"></span>
+                        Copy Email
+                    </a>
+                    <span class="email-tooltip" aria-hidden="true">Copied!</span>
+                </span>
+                <a href="https://github.com/imjustapotato" target="_blank" rel="noopener" class="support-link">
+                    <span class="iconify" data-icon="mdi:github"></span>
+                    GitHub
+                </a>
+                <div class="has-tooltip">
+                    <a href="javascript:void(0)" class="support-link disabled" aria-disabled="true">
+                        <span class="iconify" data-icon="mdi:account-circle-outline"></span>
+                        Portfolio
+                    </a>
+                    <span class="tooltip">In development</span>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    <script type="module" src="./script.js"></script>
+    <script defer src="/_vercel/insights/script.js"></script>
+    <script defer src="/_vercel/speed-insights/script.js"></script>
+    <script type="module" src="../src/scripts/page-transition.js"></script>
+</body>

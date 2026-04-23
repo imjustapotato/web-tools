@@ -1,0 +1,131 @@
+.aurora-utility-container {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background: var(--aurora-night, #0a0120);
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0,0,0);
+}
+
+/* Base refined colors for utility page - Increased alpha for visibility */
+:root {
+    --u-aurora-1: rgba(0, 255, 184, 0.25);
+    --u-aurora-2: rgba(80, 215, 255, 0.3);
+    --u-aurora-3: rgba(179, 155, 255, 0.35);
+    --u-aurora-4: rgba(255, 0, 128, 0.2);
+}
+
+.aurora-clouds {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    overflow: hidden;
+    mix-blend-mode: screen; /* Makes clouds pop against dark bg */
+}
+
+.aurora-cloud {
+    position: absolute;
+    filter: blur(48px);
+    border-radius: 50%;
+    will-change: transform;
+}
+
+/* Static Clouds - Glowing Aurora Layers */
+.cloud-static-1 { 
+    width: 45vw; height: 45vw; top: 5%; left: -5%; 
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, var(--u-aurora-1) 40%, transparent 80%);
+    opacity: 0.8; 
+}
+.cloud-static-2 { 
+    width: 60vw; height: 60vw; bottom: -10%; right: -5%; 
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.15) 0%, var(--u-aurora-2) 40%, transparent 80%);
+    opacity: 0.7; 
+}
+.cloud-static-3 { 
+    width: 35vw; height: 35vw; top: 40%; left: 55%; 
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.1) 0%, var(--u-aurora-3) 40%, transparent 80%);
+    opacity: 0.6; 
+}
+
+/* Moving Clouds - Luminous Horizontal Drifts */
+.cloud-move-1 {
+    width: 50vw; height: 50vw;
+    top: 15%;
+    left: -20%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.25) 0%, rgba(100, 255, 218, 0.3) 40%, transparent 75%);
+    animation: driftRight 150s linear infinite;
+    opacity: 0.8;
+}
+
+.cloud-move-2 {
+    width: 40vw; height: 40vw;
+    bottom: 15%;
+    right: -20%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, rgba(179, 155, 255, 0.25) 40%, transparent 75%);
+    animation: driftLeft 130s linear infinite;
+    opacity: 0.7;
+}
+
+@keyframes driftRight {
+    from { transform: translateX(-10vw); }
+    to { transform: translateX(110vw); }
+}
+
+@keyframes driftLeft {
+    from { transform: translateX(10vw); }
+    to { transform: translateX(-110vw); }
+}
+
+/* Keep the curtains and horizon but tone them down for this theme */
+.aurora-utility-container .aurora-curtains {
+    opacity: 0.3;
+    filter: blur(76px);
+    will-change: opacity, transform;
+    transform: translate3d(0,0,0);
+}
+
+.aurora-utility-container .aurora-horizon {
+    height: 35vh;
+    opacity: 0.8;
+}
+
+/* Performance: Pause animations during scroll */
+.is-scrolling .aurora-cloud,
+.is-scrolling .aurora-band,
+.is-scrolling .aurora-stars,
+.is-scrolling .aurora-curtains {
+    animation-play-state: paused !important;
+}
+
+.aurora-utility-container .aurora-stars {
+    opacity: 0.5;
+}
+
+@media (max-width: 900px) {
+    .aurora-cloud {
+        filter: blur(36px);
+    }
+
+    .cloud-move-1,
+    .cloud-move-2 {
+        animation-duration: 180s;
+        opacity: 0.56;
+    }
+
+    .aurora-utility-container .aurora-curtains {
+        filter: blur(52px);
+        opacity: 0.22;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .cloud-move-1,
+    .cloud-move-2,
+    .aurora-band,
+    .aurora-stars {
+        animation: none !important;
+    }
+}
