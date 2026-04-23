@@ -15,10 +15,16 @@ Any new projects I could think of will be appended here.
 
 # Screenshots
 
-**Homepage**
+### **Homepage (v2.0)**
 
-![Alt text](src/screenshots/homepage.png)
+![Alt text](./src/screenshots/homepage-new.png)
 
-**Plotter**
+Reworked Theme of Homepage, and applied to some parts of the webapp.
+
+***
+
+### **Plotter (v2.0)**
 
 ![Alt text](src/screenshots/plotter.png)
+
+***

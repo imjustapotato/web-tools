@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+@import '../src/molecule/home-fab/home-fab.css';
 
 :root {
     --page-transition-ms: 320ms;
@@ -477,37 +478,14 @@ body.page-leaving {
     scrollbar-width: none;
 }
 
-.home-fab {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 90;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.45rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.82);
-    color: #e2e8f0;
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-decoration: none;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
-
-.home-fab:hover {
-    transform: translateY(-1px);
-    background: rgba(30, 41, 59, 0.95);
-    border-color: rgba(52, 211, 153, 0.45);
-}
 
 @media (max-width: 720px) {
     .parser-page {
         padding: 1rem;
+    }
+
+    .page-header {
+        margin-top: 3.5rem;
     }
 
     .app-shell {
