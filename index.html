@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -31,15 +31,100 @@
             <div class="aurora-horizon"></div>
 
             <div class="aurora-mountains">
-                <svg viewBox="0 0 1440 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-                    <path
-                        d="M0,200 L0,140 L80,90 L160,130 L260,60 L360,110 L440,50 L520,95 L620,30 L720,80 L820,20 L900,70 L980,40 L1060,85 L1160,35 L1260,90 L1360,55 L1440,80 L1440,200 Z"
-                        fill="#020510" />
-                    <path
-                        d="M0,200 L0,160 L100,120 L200,150 L320,100 L420,140 L540,90 L640,130 L760,110 L860,145 L960,105 L1080,135 L1180,115 L1300,140 L1440,120 L1440,200 Z"
-                        fill="rgba(0,10,8,.95)" />
+                <svg viewBox="0 0 1440 300" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="mountainGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                            <stop offset="0%" style="stop-color:#0a1020;stop-opacity:1" />
+                            <stop offset="100%" style="stop-color:#020510;stop-opacity:1" />
+                        </linearGradient>
+                        <filter id="cityGlow">
+                            <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" />
+                        </filter>
+                    </defs>
+                    
+                    <!-- Background Huge Mountain -->
+                    <path d="M-100,300 L300,100 L720,20 L1140,100 L1540,300 Z" fill="#040816" opacity="0.4" />
+                    
+                    <!-- Midground Mountain Range -->
+                    <path d="M0,300 L150,150 L350,220 L550,120 L750,200 L950,80 L1150,220 L1350,140 L1500,300 Z" fill="url(#mountainGrad)" />
+
+                    <!-- City Skyline -->
+                    <g class="city-silhouettes" fill="#01030a">
+                        <!-- Left Cluster -->
+                        <rect x="100" y="240" width="25" height="60" />
+                        <rect x="130" y="210" width="30" height="90" />
+                        <rect x="165" y="230" width="20" height="70" />
+                        <rect x="190" y="250" width="15" height="50" />
+                        
+                        <!-- Central-Left Cluster -->
+                        <rect x="350" y="220" width="35" height="80" />
+                        <rect x="390" y="245" width="20" height="55" />
+                        <rect x="415" y="200" width="25" height="100" />
+                        <rect x="445" y="230" width="30" height="70" />
+
+                        <!-- Central Cluster (Taller Buildings) -->
+                        <rect x="680" y="180" width="40" height="120" />
+                        <rect x="725" y="160" width="35" height="140" />
+                        <rect x="765" y="195" width="25" height="105" />
+                        <rect x="795" y="215" width="30" height="85" />
+                        
+                        <!-- Right Cluster -->
+                        <rect x="1100" y="225" width="25" height="75" />
+                        <rect x="1130" y="205" width="35" height="95" />
+                        <rect x="1170" y="240" width="20" height="60" />
+                        <rect x="1200" y="215" width="30" height="85" />
+                    </g>
+
+                    <!-- City Lights -->
+                    <g class="city-lights" fill="#ffd700" filter="url(#cityGlow)">
+                        <!-- Lights for Left Cluster -->
+                        <rect x="105" y="250" width="2" height="2" opacity="0.6" />
+                        <rect x="115" y="250" width="2" height="2" opacity="0.4" />
+                        <rect x="135" y="220" width="2" height="2" opacity="0.8" />
+                        <rect x="145" y="220" width="2" height="2" opacity="0.6" />
+                        <rect x="135" y="235" width="2" height="2" opacity="0.9" />
+                        <rect x="145" y="235" width="2" height="2" opacity="0.5" />
+                        <rect x="135" y="250" width="2" height="2" opacity="0.7" />
+                        <rect x="172" y="240" width="2" height="2" opacity="0.8" />
+                        <rect x="172" y="255" width="2" height="2" opacity="0.6" />
+                        <rect x="195" y="260" width="2" height="2" opacity="0.5" />
+
+                        <!-- Lights for Central-Left -->
+                        <rect x="360" y="230" width="2" height="2" opacity="0.7" />
+                        <rect x="360" y="245" width="2" height="2" opacity="0.9" />
+                        <rect x="395" y="255" width="2" height="2" opacity="0.6" />
+                        <rect x="422" y="210" width="2" height="2" opacity="0.8" />
+                        <rect x="422" y="225" width="2" height="2" opacity="0.6" />
+                        <rect x="422" y="240" width="2" height="2" opacity="0.9" />
+                        <rect x="455" y="240" width="2" height="2" opacity="0.7" />
+
+                        <!-- Lights for Central Cluster -->
+                        <rect x="690" y="190" width="2" height="2" opacity="0.9" />
+                        <rect x="705" y="190" width="2" height="2" opacity="0.7" />
+                        <rect x="690" y="205" width="2" height="2" opacity="0.8" />
+                        <rect x="705" y="205" width="2" height="2" opacity="0.6" />
+                        <rect x="735" y="170" width="2" height="2" opacity="1" />
+                        <rect x="750" y="170" width="2" height="2" opacity="0.8" />
+                        <rect x="735" y="185" width="2" height="2" opacity="0.9" />
+                        <rect x="750" y="185" width="2" height="2" opacity="0.7" />
+                        <rect x="735" y="200" width="2" height="2" opacity="0.8" />
+                        <rect x="772" y="205" width="2" height="2" opacity="0.9" />
+                        <rect x="772" y="220" width="2" height="2" opacity="0.7" />
+                        <rect x="805" y="225" width="2" height="2" opacity="0.8" />
+
+                        <!-- Lights for Right Cluster -->
+                        <rect x="1105" y="235" width="2" height="2" opacity="0.7" />
+                        <rect x="1138" y="215" width="2" height="2" opacity="0.8" />
+                        <rect x="1150" y="215" width="2" height="2" opacity="0.6" />
+                        <rect x="1138" y="230" width="2" height="2" opacity="0.9" />
+                        <rect x="1150" y="230" width="2" height="2" opacity="0.7" />
+                        <rect x="1138" y="245" width="2" height="2" opacity="0.8" />
+                        <rect x="1175" y="250" width="2" height="2" opacity="0.6" />
+                        <rect x="1210" y="225" width="2" height="2" opacity="0.8" />
+                    </g>
                 </svg>
             </div>
+
         </div>
 
         <section class="hero-card">
@@ -51,9 +136,11 @@
                 <a class="tool-card tool-card-primary" href="/schedule-visualizer/">
                     <span class="tool-kicker">Planner</span>
                     <strong>Schedule Plotter</strong>
-                    <span class="tool-description">Plot class schedules, manage saved snapshots, and export PNGs.
-                        <br>(Currently supports CST Subjects but you may add custom subjects: Course Code - Subject
-                        Name)</span>
+                    <span class="tool-description">Plot class schedules, manage saved snapshots, and export PNGs. With
+                        Automated Plotting Support with Companion Extension.
+                        <span style="color: var(--emphasis)">(Supports CST & CE)</span>
+                        <br>For Custom Subject:
+                        <span style="color: var(--emphasis)">(Subject Code - Subject Name)</span>
                 </a>
 
                 <a class="tool-card tool-card-secondary" href="/portal-parser/">
@@ -64,16 +151,23 @@
                         input automatically.</span>
                 </a>
                 <!-- Bitly Link to be appended later <a class="tool-card tool-card-tertiary" href="https://chromewebstore.google.com/detail/efinkkopnpgbhdecnaoflgbjpcanahpp?utm_source=item-share-cb" target="_blank" rel="noopener"> -->
-                <!-- <a class="tool-card tool-card-tertiary" href="active-page-utility/"> -->
-                <a class="tool-card tool-card-tertiary"
-                    href="https://chromewebstore.google.com/detail/efinkkopnpgbhdecnaoflgbjpcanahpp?utm_source=item-share-cb"
-                    target="_blank" rel="noopener">
+                <a class="tool-card tool-card-tertiary" href="active-page-utility/">
                     <span class="tool-kicker">Extension</span>
                     <strong>Active-Page Utility</strong>
                     <span class="tool-description">A Browser extension that spoofs your whitelisted domains to be active
                         even if you arent actively viewing them, in turn prevents pages from detecting your activity.
                         Supports Chromium-based browsers. <span class="soon-warning">(Soon will support Gecko-based
                             browsers)</span></span>
+                </a>
+
+                <a class="tool-card tool-card-tertiary disabled" href="#" aria-disabled="true" tabindex="-1"
+                    onclick="event.preventDefault();">
+                    <span class="tool-kicker">Extension <span class="soon-warning">(In Development)</span></span>
+                    <strong>Web Tools Companion</strong>
+                    <span class="tool-description">Companion to the Web Tool, that automates Schedule Plotting,
+                        by dynamically adding and removing schedule as you add and drop subjects on the OSES portal.
+                        Supports Manual Extract through COR to get Schedule Data.
+                    </span>
                 </a>
             </div>
         </section>
