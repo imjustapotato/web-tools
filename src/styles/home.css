@@ -19,6 +19,27 @@
     --motion-fast: 7.5s;
     --page-transition-ms: 340ms;
     --emphasis: #67e8f9;
+
+    /* Unified Button Design (Liquid Glass) */
+    --tool-card-radius: 28px;
+    --tool-card-border: rgba(255, 255, 255, 0.38);
+    --tool-card-shadow:
+        0 32px 80px rgba(1, 8, 22, 0.55),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+    --tool-card-highlight: rgba(255, 255, 255, 0.18);
+    --tool-card-filter: saturate(145%) brightness(105%);
+    --tool-card-bg:
+        linear-gradient(175deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+        radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.22), transparent 45%),
+        radial-gradient(circle at 90% 100%, rgba(80, 215, 255, 0.12), transparent 55%);
+    --glass-refraction:
+        linear-gradient(110deg,
+            transparent 35%,
+            rgba(255, 255, 255, 0.03) 40%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.03) 60%,
+            transparent 65%);
 }
 
 @view-transition {
@@ -44,13 +65,6 @@ body {
     color: var(--text);
     min-height: 100vh;
     background: var(--aurora-night);
-    /* Old homepage background (kept for quick fallback/reversion)
-    background:
-        radial-gradient(circle at 18% 10%, rgba(82, 227, 172, 0.18), transparent 36%),
-        radial-gradient(circle at 80% 18%, rgba(80, 215, 255, 0.14), transparent 34%),
-        radial-gradient(circle at 55% 92%, rgba(179, 155, 255, 0.16), transparent 33%),
-        linear-gradient(180deg, #030615 0%, #040712 56%, #060b1f 100%);
-    */
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -89,7 +103,7 @@ body.theme-liquid {
         linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.01) 100%),
         radial-gradient(circle at 20% 10%, rgba(80, 215, 255, 0.15), transparent 45%),
         radial-gradient(circle at 85% 92%, rgba(82, 227, 172, 0.12), transparent 52%);
-    --hero-backdrop: blur(48px) saturate(210%) brightness(110%);
+    --hero-backdrop: blur(18px) saturate(210%) brightness(110%);
     --hero-shadow:
         0 42px 120px rgba(2, 6, 20, 0.7),
         inset 0 1px 1px rgba(255, 255, 255, 0.45),
@@ -98,27 +112,6 @@ body.theme-liquid {
     --hero-sheen:
         linear-gradient(130deg, rgba(255, 255, 255, 0.3) 0%, transparent 42%),
         radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.45), transparent 32%);
-
-    --tool-card-radius: 28px;
-    --tool-card-border: rgba(255, 255, 255, 0.38);
-    --tool-card-shadow:
-        0 32px 80px rgba(1, 8, 22, 0.55),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.2);
-    --tool-card-highlight: rgba(255, 255, 255, 0.18);
-    --tool-card-filter: saturate(145%) brightness(105%);
-    --tool-card-bg:
-        linear-gradient(175deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-        radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.22), transparent 45%),
-        radial-gradient(circle at 90% 100%, rgba(80, 215, 255, 0.12), transparent 55%);
-    --glass-refraction: 
-        linear-gradient(110deg, 
-            transparent 35%, 
-            rgba(255, 255, 255, 0.03) 40%, 
-            rgba(255, 255, 255, 0.2) 50%, 
-            rgba(255, 255, 255, 0.03) 60%, 
-            transparent 65%
-        );
 }
 
 body.theme-glassmorph {
@@ -133,69 +126,7 @@ body.theme-glassmorph {
     --hero-sheen:
         radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.12), transparent 38%),
         linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 52%);
-
-    --tool-card-border: rgba(148, 163, 184, 0.18);
-    --tool-card-shadow: 0 22px 56px rgba(3, 10, 25, 0.5);
-    --tool-card-highlight: rgba(255, 255, 255, 0.06);
-    --tool-card-filter: saturate(106%);
 }
-
-/* Old homepage aurora glow layers (kept for quick fallback/reversion)
-.aurora-base {
-    position: fixed;
-    inset: -18% -12%;
-    background:
-        conic-gradient(from 210deg at 22% 18%, rgba(82, 227, 172, 0.26), transparent 36%),
-        conic-gradient(from 28deg at 84% 22%, rgba(80, 215, 255, 0.24), transparent 34%),
-        conic-gradient(from 310deg at 54% 78%, rgba(179, 155, 255, 0.22), transparent 38%);
-    filter: blur(48px) saturate(118%);
-    opacity: 0.74;
-    z-index: 0;
-    pointer-events: none;
-    animation: auroraShift var(--motion-slow) ease-in-out infinite alternate;
-}
-
-.home-glow {
-    position: fixed;
-    border-radius: 999px;
-    filter: blur(var(--glow-blur));
-    opacity: 0.8;
-    pointer-events: none;
-    mix-blend-mode: screen;
-    z-index: 0;
-    animation: auroraFloat var(--motion-mid) ease-in-out infinite;
-}
-
-.home-glow-one {
-    width: clamp(18rem, 34vw, 32rem);
-    height: clamp(18rem, 34vw, 32rem);
-    left: -10rem;
-    top: -7rem;
-    background: radial-gradient(circle at 38% 30%, var(--aurora-a), transparent 66%);
-    animation-duration: var(--motion-slow);
-}
-
-.home-glow-two {
-    width: clamp(16rem, 28vw, 27rem);
-    height: clamp(16rem, 28vw, 27rem);
-    right: -6rem;
-    bottom: -8rem;
-    background: radial-gradient(circle at 42% 40%, var(--aurora-b), transparent 68%);
-    animation-duration: var(--motion-mid);
-    animation-delay: -3.4s;
-}
-
-.home-glow-three {
-    width: clamp(14rem, 24vw, 22rem);
-    height: clamp(14rem, 24vw, 22rem);
-    right: 28%;
-    top: 10%;
-    background: radial-gradient(circle at 44% 42%, var(--aurora-c), transparent 70%);
-    animation-duration: var(--motion-fast);
-    animation-delay: -7.2s;
-}
-*/
-
 
 .hero-card {
     width: min(960px, 100%);
@@ -282,8 +213,8 @@ body.theme-glassmorph {
     border-radius: var(--tool-card-radius, 22px);
     border: 1px solid var(--tool-card-border);
     background: var(--tool-card-bg);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(10px) saturate(118%);
+    backdrop-filter: blur(10px) saturate(118%);
     color: var(--text);
     box-shadow: var(--tool-card-shadow);
     transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -382,32 +313,6 @@ body.theme-glassmorph {
     border-color: rgba(255, 184, 108, 0.45);
 }
 
-body.theme-glassmorph .tool-card {
-    background:
-        linear-gradient(180deg, rgba(12, 20, 38, 0.86), rgba(12, 20, 38, 0.62)),
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 40%);
-    -webkit-backdrop-filter: blur(14px) saturate(118%);
-    backdrop-filter: blur(14px) saturate(118%);
-}
-
-body.theme-glassmorph .tool-card-primary {
-    background:
-        linear-gradient(180deg, rgba(7, 82, 64, 0.52), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(82, 227, 172, 0.26), transparent 42%);
-}
-
-body.theme-glassmorph .tool-card-secondary {
-    background:
-        linear-gradient(180deg, rgba(30, 41, 59, 0.82), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(80, 215, 255, 0.24), transparent 42%);
-}
-
-body.theme-glassmorph .tool-card-tertiary {
-    background:
-        linear-gradient(180deg, rgba(255, 184, 108, 0.22), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(255, 184, 108, 0.18), transparent 42%);
-    border-color: rgba(255, 184, 108, 0.32);
-}
 
 .tool-kicker {
     font-size: 0.72rem;
