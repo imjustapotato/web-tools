@@ -4,10 +4,10 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Page-ready class to trigger initial fade-in
+    // Trigger initial page fade-in.
     document.body.classList.add('page-ready');
 
-    // --- Typing Animation ---
+    /* Hero section typing animation. */
     const textElement = document.querySelector('.typing-text');
     const modules = [
         "Block Tracking Events",
@@ -39,7 +39,7 @@ document.addEventListener('DOMContentLoaded', () => {
             typeDelay = 100; // type normal speed
         }
 
-        // State transitions
+        // Handle word completion and deletion state.
         if (!isDeleting && charIndex === currentWord.length) {
             // Pause at the end of word
             typeDelay = 2000;
@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(typeEffect, 1000);
     }
 
-    // Centralized image fallback so HTML stays clean and easy to maintain.
+    /* Centralized image fallback for missing assets. */
     function createImageFallbackDataUrl(label) {
         const safeLabel = (label || 'Image unavailable')
             .replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch]));
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- GSAP ScrollTrigger Animations ---
+    /* Scroll-triggered reveal animations. */
     const revealElements = document.querySelectorAll('.gs-reveal');
 
     revealElements.forEach((elem) => {
@@ -130,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Module Card Directional Animations ---
+    /* Module card directional reveals. */
     function resolveModuleCardInitialState(columnPosition) {
         if (columnPosition === 'left') return { x: -80, y: 0, opacity: 0 };
         if (columnPosition === 'right') return { x: 80, y: 0, opacity: 0 };
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Parallax Carousel Logic ---
+    /* Parallax image carousel management. */
     const carousels = document.querySelectorAll('.carousel-container');
 
     carousels.forEach(container => {
@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         container.addEventListener('mouseleave', resetTimer);
     });
 
-    // Email copy + tooltip handler
+    /* Email clipboard copy and tooltip feedback. */
     const emailLinks = document.querySelectorAll('.email-link');
 
     emailLinks.forEach(link => {
@@ -331,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Performance Optimization: Scroll Throttling ---
+    /* Scroll performance throttling. */
     let scrollTimeout;
     const utilityBody = document.body;
 

@@ -9,7 +9,7 @@
     transform: translate3d(0,0,0);
 }
 
-/* Base refined colors for utility page - Increased alpha for visibility */
+/* High-visibility aurora color tokens. */
 :root {
     --u-aurora-1: rgba(0, 255, 184, 0.25);
     --u-aurora-2: rgba(80, 215, 255, 0.3);
@@ -33,7 +33,7 @@
     will-change: transform;
 }
 
-/* Static Clouds - Glowing Aurora Layers */
+/* Static glowing aurora layers. */
 .cloud-static-1 { 
     width: 45vw; height: 45vw; top: 5%; left: -5%; 
     background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, var(--u-aurora-1) 40%, transparent 80%);
@@ -50,7 +50,7 @@
     opacity: 0.6; 
 }
 
-/* Moving Clouds - Luminous Horizontal Drifts */
+/* Luminous horizontal drifts. */
 .cloud-move-1 {
     width: 50vw; height: 50vw;
     top: 15%;
@@ -79,7 +79,7 @@
     to { transform: translateX(-110vw); }
 }
 
-/* Keep the curtains and horizon but tone them down for this theme */
+/* Subtle background curtains and horizon. */
 .aurora-utility-container .aurora-curtains {
     opacity: 0.3;
     filter: blur(76px);
@@ -92,7 +92,7 @@
     opacity: 0.8;
 }
 
-/* Performance: Pause animations during scroll */
+/* Animation pausing during scroll to save GPU. */
 .is-scrolling .aurora-cloud,
 .is-scrolling .aurora-band,
 .is-scrolling .aurora-stars,
