@@ -9,7 +9,7 @@
     --panel-border: rgba(167, 139, 250, 0.22);
     --panel-highlight: rgba(226, 232, 240, 0.14);
     --text: #e2e8f0;
-    --muted: #94a3b8;
+    --muted: #c2d4ec;
     --accent: #52e3ac;
     --accent-2: #50d7ff;
     --accent-3: #b39bff;
@@ -18,6 +18,42 @@
     --motion-mid: 9s;
     --motion-fast: 7.5s;
     --page-transition-ms: 340ms;
+    --emphasis: #67e8f9;
+
+    /* Semantic Text Colors */
+    --txt-important: #fbbf24;
+    /* Amber/Warning */
+    --txt-link: #60a5fa;
+    /* Interactive Blue */
+    --txt-emphasis: #22d3ee;
+    /* Highlight Cyan */
+    --txt-feature: #c084fc;
+    /* Product Feature Purple */
+    --txt-danger: #f87171;
+    /* Alert/Danger Red */
+    --txt-success: #34d399;
+    /* Positive Green */
+
+    /* Unified Button Design (Liquid Glass) */
+    --tool-card-radius: 28px;
+    --tool-card-border: rgba(255, 255, 255, 0.38);
+    --tool-card-shadow:
+        0 32px 80px rgba(1, 8, 22, 0.55),
+        inset 0 1px 1px rgba(255, 255, 255, 0.4),
+        inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+    --tool-card-highlight: rgba(255, 255, 255, 0.18);
+    --tool-card-filter: saturate(145%) brightness(105%);
+    --tool-card-bg:
+        linear-gradient(175deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+        radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.22), transparent 45%),
+        radial-gradient(circle at 90% 100%, rgba(80, 215, 255, 0.12), transparent 55%);
+    --glass-refraction:
+        linear-gradient(110deg,
+            transparent 35%,
+            rgba(255, 255, 255, 0.03) 40%,
+            rgba(255, 255, 255, 0.2) 50%,
+            rgba(255, 255, 255, 0.03) 60%,
+            transparent 65%);
 }
 
 @view-transition {
@@ -43,13 +79,6 @@ body {
     color: var(--text);
     min-height: 100vh;
     background: var(--aurora-night);
-    /* Old homepage background (kept for quick fallback/reversion)
-    background:
-        radial-gradient(circle at 18% 10%, rgba(82, 227, 172, 0.18), transparent 36%),
-        radial-gradient(circle at 80% 18%, rgba(80, 215, 255, 0.14), transparent 34%),
-        radial-gradient(circle at 55% 92%, rgba(179, 155, 255, 0.16), transparent 33%),
-        linear-gradient(180deg, #030615 0%, #040712 56%, #060b1f 100%);
-    */
     background-size: cover;
     background-position: center center;
     background-repeat: no-repeat;
@@ -80,7 +109,46 @@ body.page-leaving {
     isolation: isolate;
 }
 
-/* Theme swap: set body class to theme-liquid (default) or theme-glassmorph */
+/* --- Semantic Text Utilities --- */
+.txt-important {
+    color: var(--txt-important);
+    font-weight: 700;
+}
+
+.txt-emphasis {
+    color: var(--txt-emphasis);
+    font-weight: 600;
+}
+
+.txt-feature {
+    color: var(--txt-feature);
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}
+
+.txt-danger {
+    color: var(--txt-danger);
+    font-weight: 600;
+}
+
+.txt-success {
+    color: var(--txt-success);
+    font-weight: 600;
+}
+
+.txt-link {
+    color: var(--txt-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.txt-link:hover {
+    color: var(--txt-emphasis);
+    opacity: 0.85;
+}
+
+/* --- Hero Card --- */
 body.theme-liquid {
     --hero-radius: 40px;
     --hero-border: rgba(255, 255, 255, 0.32);
@@ -88,7 +156,7 @@ body.theme-liquid {
         linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.04) 40%, rgba(255, 255, 255, 0.01) 100%),
         radial-gradient(circle at 20% 10%, rgba(80, 215, 255, 0.15), transparent 45%),
         radial-gradient(circle at 85% 92%, rgba(82, 227, 172, 0.12), transparent 52%);
-    --hero-backdrop: blur(48px) saturate(210%) brightness(110%);
+    --hero-backdrop: blur(3px) saturate(210%) brightness(110%);
     --hero-shadow:
         0 42px 120px rgba(2, 6, 20, 0.7),
         inset 0 1px 1px rgba(255, 255, 255, 0.45),
@@ -97,34 +165,13 @@ body.theme-liquid {
     --hero-sheen:
         linear-gradient(130deg, rgba(255, 255, 255, 0.3) 0%, transparent 42%),
         radial-gradient(circle at 5% 0%, rgba(255, 255, 255, 0.45), transparent 32%);
-
-    --tool-card-radius: 28px;
-    --tool-card-border: rgba(255, 255, 255, 0.38);
-    --tool-card-shadow:
-        0 32px 80px rgba(1, 8, 22, 0.55),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4),
-        inset 0 -1px 1px rgba(0, 0, 0, 0.2);
-    --tool-card-highlight: rgba(255, 255, 255, 0.18);
-    --tool-card-filter: saturate(145%) brightness(105%);
-    --tool-card-bg:
-        linear-gradient(175deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
-        radial-gradient(circle at 10% 0%, rgba(255, 255, 255, 0.22), transparent 45%),
-        radial-gradient(circle at 90% 100%, rgba(80, 215, 255, 0.12), transparent 55%);
-    --glass-refraction: 
-        linear-gradient(110deg, 
-            transparent 35%, 
-            rgba(255, 255, 255, 0.03) 40%, 
-            rgba(255, 255, 255, 0.2) 50%, 
-            rgba(255, 255, 255, 0.03) 60%, 
-            transparent 65%
-        );
 }
 
 body.theme-glassmorph {
     --hero-radius: 28px;
     --hero-border: var(--panel-border);
     --hero-bg: var(--panel);
-    --hero-backdrop: blur(22px) saturate(118%);
+    --hero-backdrop: blur(12px) saturate(118%);
     --hero-shadow:
         0 30px 90px rgba(1, 5, 17, 0.56),
         inset 0 1px 0 var(--panel-highlight),
@@ -132,69 +179,7 @@ body.theme-glassmorph {
     --hero-sheen:
         radial-gradient(circle at 12% 0%, rgba(255, 255, 255, 0.12), transparent 38%),
         linear-gradient(120deg, rgba(255, 255, 255, 0.05), transparent 52%);
-
-    --tool-card-border: rgba(148, 163, 184, 0.18);
-    --tool-card-shadow: 0 22px 56px rgba(3, 10, 25, 0.5);
-    --tool-card-highlight: rgba(255, 255, 255, 0.06);
-    --tool-card-filter: saturate(106%);
 }
-
-/* Old homepage aurora glow layers (kept for quick fallback/reversion)
-.aurora-base {
-    position: fixed;
-    inset: -18% -12%;
-    background:
-        conic-gradient(from 210deg at 22% 18%, rgba(82, 227, 172, 0.26), transparent 36%),
-        conic-gradient(from 28deg at 84% 22%, rgba(80, 215, 255, 0.24), transparent 34%),
-        conic-gradient(from 310deg at 54% 78%, rgba(179, 155, 255, 0.22), transparent 38%);
-    filter: blur(48px) saturate(118%);
-    opacity: 0.74;
-    z-index: 0;
-    pointer-events: none;
-    animation: auroraShift var(--motion-slow) ease-in-out infinite alternate;
-}
-
-.home-glow {
-    position: fixed;
-    border-radius: 999px;
-    filter: blur(var(--glow-blur));
-    opacity: 0.8;
-    pointer-events: none;
-    mix-blend-mode: screen;
-    z-index: 0;
-    animation: auroraFloat var(--motion-mid) ease-in-out infinite;
-}
-
-.home-glow-one {
-    width: clamp(18rem, 34vw, 32rem);
-    height: clamp(18rem, 34vw, 32rem);
-    left: -10rem;
-    top: -7rem;
-    background: radial-gradient(circle at 38% 30%, var(--aurora-a), transparent 66%);
-    animation-duration: var(--motion-slow);
-}
-
-.home-glow-two {
-    width: clamp(16rem, 28vw, 27rem);
-    height: clamp(16rem, 28vw, 27rem);
-    right: -6rem;
-    bottom: -8rem;
-    background: radial-gradient(circle at 42% 40%, var(--aurora-b), transparent 68%);
-    animation-duration: var(--motion-mid);
-    animation-delay: -3.4s;
-}
-
-.home-glow-three {
-    width: clamp(14rem, 24vw, 22rem);
-    height: clamp(14rem, 24vw, 22rem);
-    right: 28%;
-    top: 10%;
-    background: radial-gradient(circle at 44% 42%, var(--aurora-c), transparent 70%);
-    animation-duration: var(--motion-fast);
-    animation-delay: -7.2s;
-}
-*/
-
 
 .hero-card {
     width: min(960px, 100%);
@@ -229,7 +214,7 @@ body.theme-glassmorph {
     border-radius: 50%;
     pointer-events: none;
     background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.02) 55%, transparent 75%);
-    filter: blur(12px);
+    filter: blur(8px);
     mix-blend-mode: overlay;
 }
 
@@ -281,8 +266,8 @@ body.theme-glassmorph {
     border-radius: var(--tool-card-radius, 22px);
     border: 1px solid var(--tool-card-border);
     background: var(--tool-card-bg);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
-    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(6px) saturate(118%);
+    backdrop-filter: blur(6px) saturate(118%);
     color: var(--text);
     box-shadow: var(--tool-card-shadow);
     transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
@@ -316,7 +301,7 @@ body.theme-glassmorph {
     height: 8rem;
     border-radius: 999px;
     background: var(--tool-card-highlight);
-    filter: blur(14px);
+    filter: blur(8px);
     mix-blend-mode: soft-light;
     transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), opacity 340ms ease;
 }
@@ -351,6 +336,14 @@ body.theme-glassmorph {
     box-shadow: 0 20px 52px rgba(3, 10, 25, 0.5);
 }
 
+/* Externalized disabled state for tool cards */
+.tool-card.disabled,
+.tool-card[aria-disabled='true'] {
+    pointer-events: none;
+    cursor: default;
+    opacity: 0.6;
+}
+
 .tool-card-primary {
     --tool-card-bg:
         linear-gradient(175deg, rgba(12, 56, 52, 0.45), rgba(10, 24, 34, 0.38)),
@@ -373,32 +366,6 @@ body.theme-glassmorph {
     border-color: rgba(255, 184, 108, 0.45);
 }
 
-body.theme-glassmorph .tool-card {
-    background:
-        linear-gradient(180deg, rgba(12, 20, 38, 0.86), rgba(12, 20, 38, 0.62)),
-        radial-gradient(circle at top right, rgba(255, 255, 255, 0.12), transparent 40%);
-    -webkit-backdrop-filter: blur(14px) saturate(118%);
-    backdrop-filter: blur(14px) saturate(118%);
-}
-
-body.theme-glassmorph .tool-card-primary {
-    background:
-        linear-gradient(180deg, rgba(7, 82, 64, 0.52), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(82, 227, 172, 0.26), transparent 42%);
-}
-
-body.theme-glassmorph .tool-card-secondary {
-    background:
-        linear-gradient(180deg, rgba(30, 41, 59, 0.82), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(80, 215, 255, 0.24), transparent 42%);
-}
-
-body.theme-glassmorph .tool-card-tertiary {
-    background:
-        linear-gradient(180deg, rgba(255, 184, 108, 0.22), rgba(12, 20, 38, 0.74)),
-        radial-gradient(circle at top right, rgba(255, 184, 108, 0.18), transparent 42%);
-    border-color: rgba(255, 184, 108, 0.32);
-}
 
 .tool-kicker {
     font-size: 0.72rem;
@@ -421,12 +388,47 @@ body.theme-glassmorph .tool-card-tertiary {
     font-size: 0.96rem;
 }
 
-/* Subtle warning accent for parenthetical notes like "(Soon ...)" */
 .soon-warning {
-    color: var(--aurora-highlight-four);
+    color: var(--txt-important);
     font-weight: 600;
     opacity: 0.95;
     font-size: 0.95em;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--muted);
+    vertical-align: middle;
+    margin-left: 0.4rem;
+    letter-spacing: 0.02em;
+}
+
+.tool-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 99px; /* Pill shape */
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: linear-gradient(145deg, rgba(82, 227, 172, 0.2), rgba(80, 215, 255, 0.2));
+    border: 1px solid rgba(134, 239, 172, 0.4);
+    color: #b7ffdd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10;
 }
 
 

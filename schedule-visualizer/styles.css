@@ -1,5 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
+@import '../src/molecule/home-fab/home-fab.css';
+@import './companion.css';
 
+/* Page transition variables. */
 :root {
     --page-transition-ms: 320ms;
 }
@@ -36,29 +39,48 @@ body.page-leaving {
 .app-shell {
     background: #0f172a;
     color: #e2e8f0;
-    min-height: 100vh;
-    padding: 1.5rem;
+    height: 100vh;
+    padding: 0 1.5rem 1.5rem;
     overflow: hidden;
     display: flex;
     flex-direction: column;
 }
 
 .app-header {
+    margin-top: 0.75rem;
     margin-bottom: 1.5rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-    padding-left: 4.25rem;
-    padding-top: 0.1rem;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    gap: 2.5rem;
+    padding-top: 0;
+}
+
+.header-main {
+    flex-shrink: 0;
 }
 
 .app-title {
     margin: 0;
-    font-size: 1.875rem;
+    font-size: 1.75rem;
     font-weight: 800;
-    line-height: 1.15;
+    line-height: 1.1;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.app-version-tag {
+    font-size: 0.65rem;
+    font-weight: 800;
+    padding: 0.15rem 0.45rem;
+    background: rgba(34, 211, 238, 0.15);
+    border: 1px solid rgba(34, 211, 238, 0.3);
+    border-radius: 4px;
+    color: #22d3ee;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    vertical-align: middle;
 }
 
 .title-gradient {
@@ -84,7 +106,38 @@ body.page-leaving {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0.75rem;
+    justify-self: end;
+}
+
+@media (max-width: 1200px) {
+    .app-header {
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+    }
+}
+
+/* Flex layout for sidebar and timetable. */
+.app-content {
+    flex: 1;
+    display: flex;
+    gap: 1.5rem;
+    min-height: 0;
+}
+
+@media (max-width: 768px) {
+    .app-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
 }
 
 .mobile-only-control {
@@ -114,6 +167,7 @@ body.page-leaving {
     line-height: 1.3;
 }
 
+/* Universal button styles with tactile feedback. */
 .btn {
     border-radius: 0.5rem;
     font-size: 0.875rem;
@@ -160,7 +214,7 @@ body.page-leaving {
 .btn-icon,
 .label-icon {
     display: inline-block;
-    vertical-align: -0.1em;
+    vertical-align: middle;
     margin-right: 0.35rem;
     font-size: 1em;
 }
@@ -203,12 +257,14 @@ body.page-leaving {
     background: #6ee7b7;
 }
 
+/* Viewport constraints for independent scrolling. */
 .app-content {
     display: flex;
     gap: 1.5rem;
     height: calc(100vh - 120px);
 }
 
+/* Primary sidebar for entry and management. */
 .sidebar-panel {
     width: 20rem;
     background: #1e293b;
@@ -219,6 +275,25 @@ body.page-leaving {
     flex-direction: column;
     overflow-y: auto;
     box-shadow: 0 20px 35px -20px rgba(0, 0, 0, 0.65);
+}
+
+.sidebar-divider {
+    border-top: 1px solid #334155;
+    margin: 1.25rem 0;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.quick-actions .btn {
+    width: 100%;
+    justify-content: center;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.5rem;
 }
 
 .section-title {
@@ -287,6 +362,7 @@ body.page-leaving {
     gap: 1rem;
 }
 
+/* Multi-day subject grouping. */
 .secondary-days-panel {
     display: flex;
     flex-direction: column;
@@ -342,6 +418,7 @@ body.page-leaving {
         opacity: 0;
         transform: translateY(-12px) scale(0.98);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -353,6 +430,7 @@ body.page-leaving {
         opacity: 0;
         transform: translateY(-10px) scale(0.985);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -364,6 +442,7 @@ body.page-leaving {
         opacity: 0;
         transform: translateY(-12px) scale(0.98);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -375,6 +454,7 @@ body.page-leaving {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateY(-10px) scale(0.98);
@@ -385,6 +465,7 @@ body.page-leaving {
     0% {
         box-shadow: 0 10px 18px rgba(0, 0, 0, 0.12);
     }
+
     100% {
         box-shadow: 0 18px 32px rgba(0, 0, 0, 0.28), 0 0 0 1px rgba(255, 255, 255, 0.14) inset;
     }
@@ -459,9 +540,10 @@ body.page-leaving {
     font-size: 0.7rem;
 }
 
+/* Global notification stack. */
 .toast-stack {
     position: fixed;
-    top: 4.3rem;
+    top: 7rem;
     left: 50%;
     transform: translateX(-50%);
     width: min(32rem, calc(100vw - 1rem));
@@ -527,6 +609,7 @@ body.page-leaving {
     opacity: 1;
 }
 
+/* Modal backdrop blur. */
 .message-modal {
     position: fixed;
     inset: 0;
@@ -577,6 +660,7 @@ body.page-leaving {
     width: 50%;
 }
 
+/* Theme selection grid. */
 .color-picker {
     display: flex;
     flex-wrap: wrap;
@@ -621,38 +705,53 @@ body.page-leaving {
     background: rgba(6, 78, 59, 0.3);
 }
 
+/* Feature callouts and guidance. */
 .header-note {
-    display: inline-flex;
+    justify-self: end;
+    margin-right: 2rem;
+    margin-left: 0;
+    display: flex;
     align-items: center;
-    flex: 1 1 35rem;
-    max-width: 35rem;
-    padding: 0.55rem 0.85rem;
-    border-radius: 0.65rem;
-    font-size: 0.8rem;
-    line-height: 1.25;
+    gap: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    background: rgba(30, 41, 59, 0.4);
+    border: 1px dashed rgba(148, 163, 184, 0.3);
+    border-radius: 0.75rem;
+    max-width: 30rem;
+    flex: 0 1 auto;
 }
 
-.warning-box {
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.12);
-    color: #fbbf24;
-    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.25);
-    animation: pulse-warning 2.5s ease-in-out infinite;
+.persistence-info {
+    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #64748b;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    line-height: 1.4;
+    padding: 0 0.25rem;
+}
+
+.persistence-info .info-icon {
+    font-size: 0.9rem;
+    color: #34d399;
+    flex-shrink: 0;
 }
 
 @keyframes pulse-warning {
-    0%, 100% {
+
+    0%,
+    100% {
         box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.15);
     }
+
     50% {
         box-shadow: 0 0 0 14px rgba(245, 158, 11, 0);
     }
 }
 
 .stats-section {
-    margin-top: 1.5rem;
-    border-top: 1px solid #334155;
-    padding-top: 1rem;
+    padding-top: 0.25rem;
     flex: 1;
 }
 
@@ -1076,14 +1175,14 @@ body.page-leaving {
 }
 
 @media (prefers-reduced-motion: reduce) {
+
     .btn,
     .toast,
     .message-card,
     .secondary-day-row,
     .schedule-block,
     .block-actions,
-    .remove-secondary-day-btn,
-    .home-fab {
+    .remove-secondary-day-btn {
         transition: none !important;
         animation: none !important;
     }
@@ -1212,51 +1311,40 @@ body.page-leaving {
     padding: 0.9rem;
 }
 
-.home-fab {
-    position: fixed;
-    top: 1rem;
-    left: 1rem;
-    z-index: 90;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 0.45rem 0.7rem;
-    border-radius: 999px;
-    border: 1px solid rgba(148, 163, 184, 0.22);
-    background: rgba(15, 23, 42, 0.82);
-    color: #e2e8f0;
-    font-size: 0.72rem;
-    font-weight: 800;
-    text-decoration: none;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
-    transition: transform 160ms ease, background 160ms ease, border-color 160ms ease;
-}
 
-.home-fab:hover {
-    transform: translateY(-1px);
-    background: rgba(30, 41, 59, 0.95);
-    border-color: rgba(52, 211, 153, 0.45);
-}
-
+/* Mobile Layout Refinements: Transitions to a single-column scrollable stack for ergonomics */
 @media (max-width: 768px) {
     .mobile-only-control {
         display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .app-header {
         padding-left: 0;
+        margin-top: 4.25rem;
+        margin-bottom: 1.25rem;
+    }
+
+    .app-title {
+        font-size: 1.35rem !important;
+        flex-wrap: wrap;
+        gap: 0.5rem !important;
+        line-height: 1.2;
+        justify-content: center;
+    }
+
+    .app-version-tag,
+    .portal-connection-badge {
+        font-size: 0.6rem !important;
+        padding: 0.1rem 0.4rem !important;
     }
 
     .app-shell {
+        height: auto;
+        min-height: 100vh;
         overflow: auto;
         padding: 1rem 0.8rem;
-    }
-
-    .header-actions {
-        width: 100%;
-        flex-wrap: wrap;
     }
 
     .app-content {
@@ -1285,5 +1373,25 @@ body.page-leaving {
     .mobile-warning {
         flex-direction: column;
         align-items: stretch;
+        padding: 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .quick-actions {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+
+    .secondary-days-panel {
+        padding: 0.6rem;
+        gap: 0.5rem;
+    }
+
+    .sidebar-panel {
+        padding: 1rem;
+    }
+
+    .mobile-only-control {
+        margin-bottom: 0.5rem;
     }
 }

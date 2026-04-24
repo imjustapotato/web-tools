@@ -1,8 +1,12 @@
+/**
+ * Application orchestrator.
+ * Manages file ingestion, heuristic parsing, Mermaid rendering, and navigation.
+ */
 import mermaid from 'mermaid';
 import gsap from 'gsap';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 
-import cstRaw from './src/CST.txt?raw';
+import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
 
 mermaid.initialize({
     startOnLoad: false,
@@ -20,16 +24,11 @@ mermaid.initialize({
 
 window.mermaid = mermaid;
 
-// Preset Curriculum Config 
-// To add a new curriculum: append { id, label, content } to this array.
-const PRESET_CURRICULA = [
-    {
-        id: 'cst',
-        label: '🛡️ Cybersecurity Technology (CST)',
-        content: cstRaw
-    }
-];
 
+/**
+ * Application state.
+ * Tracks navigation, selection, and dependency data.
+ */
 // State
 let mermaidRawCode = '';
 let scale = 1;
@@ -102,6 +101,10 @@ dropzone.addEventListener('drop', (e) => {
     }
 });
 
+/**
+ * Initializes degree templates.
+ * Provides quick access to common curriculum structures.
+ */
 // Preset Buttons
 function buildPresetButtons() {
     PRESET_CURRICULA.forEach((preset) => {
@@ -111,9 +114,59 @@ function buildPresetButtons() {
         button.type = 'button';
         button.textContent = preset.label;
         button.addEventListener('click', () => loadPresetCurriculum(preset, button));
+        
+        // Hover Tooltip for Credits
+        button.addEventListener('mouseenter', () => {
+            const credit = CURRICULA_CREDITS[preset.id] || 'Contributor';
+            showCreditTooltip(credit, button);
+        });
+
+        button.addEventListener('mouseleave', () => {
+            hideCreditTooltip();
+        });
+
         presetButtonsContainer.appendChild(button);
     });
 }
+
+
+/**
+ * Credit Tooltip Logic
+ * Displays a non-intrusive credit label below preset buttons.
+ */
+const creditTooltip = document.createElement('div');
+creditTooltip.className = 'credit-tooltip';
+document.body.appendChild(creditTooltip);
+
+
+let creditTooltipTimeout = null;
+
+function showCreditTooltip(credit, targetEl) {
+    if (creditTooltipTimeout) {
+        clearTimeout(creditTooltipTimeout);
+        creditTooltipTimeout = null;
+    }
+    
+    creditTooltip.textContent = `Data provided by: ${credit}`;
+    creditTooltip.classList.add('visible');
+    
+    // Position the tooltip centered below the button
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipX = rect.left + window.scrollX + (rect.width / 2);
+    const tooltipY = rect.bottom + window.scrollY + 8;
+    
+    creditTooltip.style.left = `${tooltipX}px`;
+    creditTooltip.style.top = `${tooltipY}px`;
+}
+
+function hideCreditTooltip() {
+    creditTooltip.classList.remove('visible');
+    if (creditTooltipTimeout) {
+        clearTimeout(creditTooltipTimeout);
+        creditTooltipTimeout = null;
+    }
+}
+
 
 async function loadPresetCurriculum(preset, button) {
     button.classList.add('is-loading');
@@ -131,6 +184,10 @@ async function loadPresetCurriculum(preset, button) {
 }
 
 // File Parsing
+/**
+ * Processes HTML and MHTML exports.
+ * Handles encoding (Base64/Quoted-Printable) to extract the raw course table.
+ */
 async function handleFile(file) {
     const text = await file.text();
     let rawHtml = text;
@@ -156,6 +213,10 @@ async function handleFile(file) {
     parseAndRender(rawHtml);
 }
 
+/**
+ * Extracts course data from HTML.
+ * Uses heuristic column detection for robustness across portal versions.
+ */
 async function parseAndRender(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
@@ -218,6 +279,10 @@ async function parseAndRender(html) {
 }
 
 // Core Render
+/**
+ * Renders Mermaid syntax into an interactive SVG graph.
+ * Builds the logical adjacency map once the SVG is available in the DOM.
+ */
 async function renderMermaidCode(mermaidCode) {
     mermaidRawCode = mermaidCode;
     controls.classList.remove('is-hidden');
@@ -394,6 +459,10 @@ function isKnownEdge(sourceCode, targetCode) {
     return Boolean(adjacencyGraph.get(sourceCode)?.outgoing.has(targetCode));
 }
 
+/**
+ * Builds a map of course relationships.
+ * Parses raw Mermaid code for accurate dependency tracking.
+ */
 function buildAdjacencyGraph() {
     const svgElement = container.querySelector('svg');
     if (!svgElement) {
@@ -432,6 +501,9 @@ function buildAdjacencyGraph() {
 }
 
 // Prerequisite Traversal (incoming edges only)
+/**
+ * Traverses upwards from a node to find all ancestors (prerequisites).
+ */
 function collectPrerequisiteChain(startCode) {
     const visitedNodes = new Set();
     const visitedEdges = new Set();
@@ -548,6 +620,12 @@ function findNearestCourseCode(point, nodeCenterLookup) {
     return closestCode;
 }
 
+/**
+ * Edge resolution fallback strategy.
+ * 1. Check LS-/LE- class tokens (standard Mermaid flowchart).
+ * 2. Check IDs/Labels for "Source --> Target" patterns.
+ * 3. Final fallback: Infer source/target via geometric proximity to node centers.
+ */
 function resolveEdgeKey(edgeElement, nodeCenterLookup = []) {
     const edgePath = edgeElement.querySelector('path');
 
@@ -657,6 +735,10 @@ function buildPrerequisiteEdgeDistanceMap(startCode, visitedEdges) {
     return buildEdgeDistanceMap(startCode, visitedEdges);
 }
 
+/**
+ * Generates the text-based prerequisite summary for the side dock.
+ * Categorizes dependencies into direct and indirect for clarity.
+ */
 function renderSummaryContent(subjectElement, listElement, selectedCode) {
     subjectElement.textContent = `Selected Subject: ${getCourseDisplayLabel(selectedCode)}`;
     listElement.innerHTML = '';
@@ -745,6 +827,10 @@ function attachNodeClickListeners() {
     });
 }
 
+/**
+ * Handles node selection on click.
+ * Ignored during panning to prevent accidental triggers.
+ */
 function handleNodeClick(event) {
     event.stopPropagation();
 
@@ -790,6 +876,9 @@ function handleNodeClick(event) {
 }
 
 // Pan & Zoom
+/**
+ * Applies zoom and pan offsets to the graph container.
+ */
 function setTransform() {
     container.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
 }
@@ -926,6 +1015,9 @@ fullViewBtn.addEventListener('click', () => {
     });
 });
 
+/**
+ * Exits the full-screen view with a smooth transition.
+ */
 function closeFullView() {
     if (!isFullView || isViewTransitioning) {
         return;

@@ -1,105 +1,22 @@
 import '@iconify/iconify';
 import { exportScheduleAsPng } from './export/export-png.js';
-import { gsap } from 'gsap';
+import { SUBJECT_CATALOG } from './subjects.js';
+import * as anim from './anim.js';
 
-let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
+/* Persistent state and shared exports for extension hooks. */
+export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 let selectedColor = 'bg-emerald-600';
-let savedSchedules = [];
-let activeScheduleId = null;
+export let savedSchedules = [];
+export let activeScheduleId = null;
 let editingIndex = null;
 
+/* Timetable grid and responsiveness constants. */
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
 const HEADER_HEIGHT_PX = 40;
 const MOBILE_BREAKPOINT = 768;
 const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
-
-const SUBJECT_CATALOG = [
-    { code: 'CCS0001', title: 'INTRODUCTION TO COMPUTING LEC' },
-    { code: 'CCS0001L', title: 'INTRODUCTION TO COMPUTING LAB' },
-    { code: 'CCS0003', title: 'COMPUTER PROGRAMMING 1 LEC' },
-    { code: 'CCS0003L', title: 'COMPUTER PROGRAMMING 1 LAB' },
-    { code: 'CCS0005', title: 'INTRODUCTION TO HUMAN COMPUTER INTERACTION LEC' },
-    { code: 'CCS0005L', title: 'INTRODUCTION TO HUMAN COMPUTER INTERACTION LAB' },
-    { code: 'CCS0007', title: 'COMPUTER PROGRAMMING 2 LEC' },
-    { code: 'CCS0007L', title: 'COMPUTER PROGRAMMING 2 LAB' },
-    { code: 'CCS0015', title: 'DATA STRUCTURES AND ALGORITHMS LEC' },
-    { code: 'CCS0015L', title: 'DATA STRUCTURES AND ALGORITHMS LAB' },
-    { code: 'CCS0023', title: 'OBJECT ORIENTED PROGRAMMING LEC' },
-    { code: 'CCS0023L', title: 'OBJECT ORIENTED PROGRAMMING LAB' },
-    { code: 'CCS0043', title: 'APPLICATIONS DEVELOPMENT AND EMERGING TECHNOLOGIES LEC' },
-    { code: 'CCS0043L', title: 'APPLICATIONS DEVELOPMENT AND EMERGING TECHNOLOGIES LAB' },
-    { code: 'CCS0101', title: 'DESIGN THINKING CCS' },
-    { code: 'CCS0103', title: 'TECHNOPRENEURSHIP CCS' },
-    { code: 'CCS0105', title: 'PROFESSIONAL DEVELOPMENT COMPUTING PROFESSION' },
-    { code: 'GED0001', title: 'SPECIALIZED ENGLISH PROGRAM 1' },
-    { code: 'GED0004', title: 'PHYSICAL EDUCATION 1' },
-    { code: 'GED0006', title: 'PERSONAL AND PROFESSIONAL EFFECTIVENESS' },
-    { code: 'GED0007', title: 'ART APPRECIATION' },
-    { code: 'GED0009', title: 'READINGS IN PHILIPPINE HISTORY' },
-    { code: 'GED0011', title: 'SCIENCE, TECHNOLOGY AND SOCIETY' },
-    { code: 'GED0015', title: 'PHYSICAL EDUCATION 2' },
-    { code: 'GED0019', title: 'UNDERSTANDING THE SELF' },
-    { code: 'GED0021', title: 'SPECIALIZED ENGLISH PROGRAM 2' },
-    { code: 'GED0023', title: 'PHYSICAL EDUCATION 3' },
-    { code: 'GED0027', title: 'MATHEMATICS IN THE MODERN WORLD' },
-    { code: 'GED0031', title: 'PURPOSIVE COMMUNICATION' },
-    { code: 'GED0035', title: 'THE CONTEMPORARY WORLD' },
-    { code: 'GED0039', title: 'APPLIED STATISTICS' },
-    { code: 'GED0043', title: 'SPECIALIZED ENGLISH PROGRAM 3' },
-    { code: 'GED0047', title: 'FOREIGN LANGUAGE' },
-    { code: 'GED0049', title: 'LIFE AND WORKS OF RIZAL' },
-    { code: 'GED0061', title: 'ETHICS' },
-    { code: 'GED0073', title: 'GE ELECTIVE 2' },
-    { code: 'GED0081', title: 'COLLEGE PHYSICS 1 LECTURE' },
-    { code: 'GED0081L', title: 'COLLEGE PHYSICS 1 LABORATORY' },
-    { code: 'GED0083', title: 'COLLEGE PHYSICS 2 LECTURE' },
-    { code: 'GED0083L', title: 'COLLEGE PHYSICS 2 LABORATORY' },
-    { code: 'GED0085', title: 'GENDER AND SOCIETY' },
-    { code: 'IT0002', title: 'USER DESIGN FUNDAMENTALS' },
-    { code: 'IT0004', title: 'USER EXPERIENCE DESIGN FUNDAMENTALS' },
-    { code: 'IT0007', title: 'INFORMATION ASSURANCE AND SECURITY 2' },
-    { code: 'IT0009', title: 'FUNDAMENTALS OF DATABASE SYSTEMS' },
-    { code: 'IT0011', title: 'INTEGRATIVE PROGRAMMING AND TECHNOLOGIES' },
-    { code: 'IT0013', title: 'NETWORKING 1' },
-    { code: 'IT0015', title: 'NETWORKING 2' },
-    { code: 'IT0017', title: 'DISCRETE MATHEMATICS' },
-    { code: 'IT0019', title: 'QUANTITATIVE METHODS INCL MODELING AND SIMULATION' },
-    { code: 'IT0021', title: 'SYSTEM ADMINISTRATION AND MAINTENANCE' },
-    { code: 'IT0023', title: 'SYSTEM INTEGRATION AND ARCHITECTURE 1' },
-    { code: 'IT0025', title: 'SOCIAL AND PROFESSIONAL ISSUES' },
-    { code: 'IT0027', title: 'COURSE CODE PRESENT IN CURRICULUM (TITLE NOT FOUND IN SOURCE)' },
-    { code: 'IT0031', title: 'INTERNSHIP 1' },
-    { code: 'IT0033', title: 'INTERNSHIP 2 520 HOURS' },
-    { code: 'IT0035', title: 'APPLIED OPERATING SYSTEM' },
-    { code: 'IT0035L', title: 'APPLIED OPERATING SYSTEM LAB' },
-    { code: 'IT0037', title: 'SYSTEM ANALYSIS AND DESIGN' },
-    { code: 'IT0039', title: 'IT PROJECT MANAGEMENT' },
-    { code: 'IT0041', title: 'E-COMMERCE WITH DIGITAL MARKETING' },
-    { code: 'IT0043', title: 'WEB DESIGN WITH CLIENT SIDE SCRIPTING' },
-    { code: 'IT0043L', title: 'WEB DESIGN WITH CLIENT SIDE SCRIPTING LAB' },
-    { code: 'IT0047', title: 'IT ELECTIVE - COMPUTER SYSTEMS AND PLATFORM TECHNOLOGIES' },
-    { code: 'IT0049', title: 'IT ELECTIVE  - WEB SYSTEM TECHNOLOGIES' },
-    { code: 'IT0051', title: 'IT ELECTIVE -  HUMAN COMPUTER INTERACTION 2' },
-    { code: 'IT0053', title: 'IT ELECTIVE - EMERGING TECHNOLOGIES IN COMPUTING' },
-    { code: 'IT0057', title: 'IT ELECTIVE 6 - CERTIFICATION EXAM' },
-    { code: 'IT0103', title: 'IT SPECIALIZATION 8    -  NETWORKING 3' },
-    { code: 'IT0119', title: 'INFORMATION MANAGEMENT' },
-    { code: 'IT0119L', title: 'INFORMATION MANAGEMENT LAB' },
-    { code: 'IT0125', title: 'INFORMATION ASSURANCE & SECURITY 1' },
-    { code: 'IT0129', title: 'IT ELECTIVE - SYSTEM INTEGRATION & ARCHITECTURE 2' },
-    { code: 'IT0200', title: 'IT SPECIALIZATION 3 - NETWORK DEFENSE ESSENTIALS' },
-    { code: 'IT0201', title: 'IT SPECIALIZATION 4 - INTRODUCTION TO CYBERSECURITY AND CYBERSECURITY ESSENTIALS' },
-    { code: 'IT0202', title: 'IT SPECIALIZATION 5 - ETHICAL HACKING ESSENTIALS' },
-    { code: 'IT0203', title: 'IT SPECIALIZATION 6 - DIGITAL FORENSICS ESSENTIALS' },
-    { code: 'IT0204', title: 'IT SPECIALIZATION 7 - CYBERSECURITY AND PRIVACY:  LAWS, POLICIES, AND COMPLIANCE' },
-    { code: 'IT0205', title: 'IT SPECIALIZATION 9 - CLOUD SECURITY' },
-    { code: 'IT0207', title: 'CAPSTONE PROJECT 1 CST' },
-    { code: 'IT0209', title: 'CAPSTONE PROJECT 2 CST' },
-    { code: 'NSTP1', title: 'CIVIC WELFARE TRAINING SERVICE 1' },
-    { code: 'NSTP2', title: 'CIVIC WELFARE TRAINING SERVICE 2' }
-];
 
 const form = document.getElementById('class-form');
 const colorBtns = document.querySelectorAll('.color-btn');
@@ -133,6 +50,8 @@ const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
 const secondaryDaysContainer = document.getElementById('secondary-days-container');
 const timetableExportArea = document.getElementById('timetable-export-area');
 const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
+
+/* UI state and DOM references. */
 const appContent = document.querySelector('.app-content');
 const mobileWarning = document.getElementById('mobile-warning');
 const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
@@ -181,68 +100,12 @@ let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '
 let pendingAddedCount = 0;
 let pendingEditedIndexes = [];
 
-function hasGsap() {
-    return typeof gsap !== 'undefined';
-}
-
-function animatePressFeedback(targetEl) {
-    if (!targetEl || !hasGsap()) {
-        return;
-    }
-
-    gsap.killTweensOf(targetEl);
-    gsap.fromTo(targetEl,
-        { scale: 0.95 },
-        { scale: 1, duration: 0.24, ease: 'back.out(2)' }
-    );
-}
-
-function animateModalIn(modalEl, cardEl) {
-    if (!modalEl) {
-        return;
-    }
-
-    modalEl.classList.remove('hidden');
-    if (!hasGsap()) {
-        return;
-    }
-
-    gsap.killTweensOf([modalEl, cardEl]);
-    gsap.set(modalEl, { opacity: 0 });
-    gsap.set(cardEl, { opacity: 0, y: -16, scale: 0.965 });
-    gsap.to(modalEl, { opacity: 1, duration: 0.22, ease: 'power2.out' });
-    gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' });
-}
-
-function animateModalOut(modalEl, cardEl, onComplete) {
-    if (!modalEl || modalEl.classList.contains('hidden')) {
-        onComplete?.();
-        return;
-    }
-
-    if (!hasGsap()) {
-        modalEl.classList.add('hidden');
-        onComplete?.();
-        return;
-    }
-
-    gsap.killTweensOf([modalEl, cardEl]);
-    const timeline = gsap.timeline({
-        onComplete: () => {
-            modalEl.classList.add('hidden');
-            onComplete?.();
-        }
-    });
-
-    timeline.to(cardEl, { opacity: 0, y: 12, scale: 0.97, duration: 0.18, ease: 'power2.in' });
-    timeline.to(modalEl, { opacity: 0, duration: 0.16, ease: 'power2.in' }, '<');
-}
-
+/* Global event delegation for feedback. */
 function setupButtonFeedbackDelegation() {
     document.addEventListener('click', (event) => {
         const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn');
         if (targetButton) {
-            animatePressFeedback(targetButton);
+            anim.animatePressFeedback(targetButton);
         }
     });
 }
@@ -266,160 +129,6 @@ function initColorSelectorHighlight() {
     colorPicker.appendChild(highlight);
 }
 
-function animateColorSelectorTo(buttonEl, immediate = false) {
-    if (!colorPicker || !buttonEl) {
-        return;
-    }
-
-    const highlight = colorPicker.querySelector('.color-selector-highlight');
-    if (!highlight) {
-        return;
-    }
-
-    const pickerRect = colorPicker.getBoundingClientRect();
-    const buttonRect = buttonEl.getBoundingClientRect();
-    const nextX = buttonRect.left - pickerRect.left;
-    const nextY = buttonRect.top - pickerRect.top;
-
-    if (!hasGsap() || immediate) {
-        highlight.style.opacity = '1';
-        highlight.style.width = `${buttonRect.width}px`;
-        highlight.style.height = `${buttonRect.height}px`;
-        highlight.style.transform = `translate(${nextX}px, ${nextY}px)`;
-        return;
-    }
-
-    gsap.to(highlight, {
-        opacity: 1,
-        x: nextX,
-        y: nextY,
-        width: buttonRect.width,
-        height: buttonRect.height,
-        duration: 0.28,
-        ease: 'power3.out'
-    });
-}
-
-function getBlockGlowColor(colorClass) {
-    const hue = String(colorClass || '').replace(/^bg-/, '').split('-')[0];
-    const glowMap = {
-        emerald: 'rgba(16, 185, 129, 0.45)',
-        cyan: 'rgba(6, 182, 212, 0.45)',
-        indigo: 'rgba(99, 102, 241, 0.45)',
-        purple: 'rgba(147, 51, 234, 0.45)',
-        rose: 'rgba(244, 63, 94, 0.45)',
-        amber: 'rgba(245, 158, 11, 0.45)',
-        sky: 'rgba(14, 165, 233, 0.45)',
-        lime: 'rgba(132, 204, 22, 0.45)',
-        pink: 'rgba(236, 72, 153, 0.45)',
-        teal: 'rgba(20, 184, 166, 0.45)'
-    };
-
-    return glowMap[hue] || 'rgba(16, 185, 129, 0.45)';
-}
-
-function bindBlockHoverAnimation(blockEl, colorClass) {
-    if (!blockEl) {
-        return;
-    }
-
-    const glowColor = getBlockGlowColor(colorClass);
-    blockEl.addEventListener('mouseenter', () => {
-        if (!hasGsap()) {
-            return;
-        }
-        gsap.to(blockEl, {
-            y: -2,
-            scale: 1.01,
-            boxShadow: `0 18px 32px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.14) inset, 0 0 18px ${glowColor}`,
-            duration: 0.22,
-            ease: 'power2.out'
-        });
-    });
-
-    blockEl.addEventListener('mouseleave', () => {
-        if (!hasGsap()) {
-            return;
-        }
-        gsap.to(blockEl, {
-            y: 0,
-            scale: 1,
-            boxShadow: '0 0 0 rgba(0,0,0,0)',
-            duration: 0.2,
-            ease: 'power2.out'
-        });
-    });
-}
-
-function animateAddedBlocks(blockElements) {
-    if (!hasGsap() || !Array.isArray(blockElements) || blockElements.length === 0) {
-        return;
-    }
-
-    const timeline = gsap.timeline();
-    timeline.fromTo(blockElements,
-        {
-            autoAlpha: 0,
-            x: -10,
-            y: -16,
-            scale: 0.975,
-            rotateX: -4,
-            transformOrigin: '50% 100%',
-            filter: 'saturate(1.12) blur(3px) brightness(0.95)'
-        },
-        {
-            autoAlpha: 1,
-            x: 0,
-            y: 0,
-            scale: 1,
-            rotateX: 0,
-            filter: 'saturate(1) blur(0px) brightness(1)',
-            duration: 0.46,
-            ease: 'power3.out',
-            stagger: { each: 0.07 }
-        }
-    );
-
-    timeline.fromTo(blockElements,
-        {
-            boxShadow: '0 0 0 rgba(0,0,0,0), 0 0 0 rgba(0,0,0,0)'
-        },
-        {
-            boxShadow: '0 12px 24px rgba(2, 6, 23, 0.28), 0 0 12px rgba(148,163,184,0.14)',
-            duration: 0.22,
-            yoyo: true,
-            repeat: 1,
-            ease: 'power1.inOut',
-            stagger: { each: 0.06 }
-        },
-        '-=0.24'
-    );
-}
-
-function animateBlockExitAndRemove(blockEl, onComplete) {
-    if (!blockEl || !hasGsap()) {
-        onComplete?.();
-        return;
-    }
-
-    gsap.killTweensOf(blockEl);
-    const timeline = gsap.timeline({ onComplete: () => onComplete?.() });
-    timeline.to(blockEl, {
-        boxShadow: '0 0 8px rgba(255,255,255,0.14)',
-        duration: 0.08,
-        ease: 'power1.out'
-    });
-    timeline.to(blockEl, {
-        autoAlpha: 0,
-        x: 16,
-        y: -7,
-        scale: 0.965,
-        filter: 'blur(2px) saturate(0.92)',
-        duration: 0.18,
-        ease: 'power2.in'
-    }, '-=0.02');
-}
-
 function syncColorButtons(selectedBtn = null) {
     const activeButton = selectedBtn || document.querySelector(`.color-btn[data-color="${selectedColor}"]`);
 
@@ -436,9 +145,10 @@ function syncColorButtons(selectedBtn = null) {
     selectedColor = activeButton.dataset.color || selectedColor;
     activeButton.classList.remove('opacity-50');
     activeButton.classList.add('ring-2', 'ring-offset-2', 'ring-offset-slate-800', getRingClass(selectedColor));
-    animateColorSelectorTo(activeButton);
+    anim.animateColorSelectorTo(activeButton, colorPicker);
 }
 
+/* Populates course search datalist. */
 function populateSubjectOptions() {
     const datalist = document.getElementById('pending-courses');
     const seen = new Set();
@@ -456,7 +166,8 @@ function populateSubjectOptions() {
     });
 }
 
-function setStatus(message, tone = 'info') {
+/* Displays toast notifications and status messages. */
+export function setStatus(message, tone = 'info') {
     managerStatus.className = 'status-text';
     if (tone === 'error') {
         managerStatus.classList.add('tone-error');
@@ -515,12 +226,13 @@ function closeMessageDialog(result) {
         activeMessageKeydownHandler = null;
     }
 
-    animateModalOut(messageModal, messageModalCard, () => {
+    anim.animateModalOut(messageModal, messageModalCard, () => {
         document.body.style.overflow = '';
         resolve(result);
     });
 }
 
+/* Promise-based custom dialog system. */
 function openMessageDialog({
     title = 'Message',
     message = '',
@@ -555,7 +267,7 @@ function openMessageDialog({
         messageModalInput.value = defaultValue;
         messageModalInput.placeholder = placeholder;
 
-        animateModalIn(messageModal, messageModalCard);
+        anim.animateModalIn(messageModal, messageModalCard);
         document.body.style.overflow = 'hidden';
 
         const focusTarget = mode === 'prompt' ? messageModalInput : messageModalConfirm;
@@ -615,6 +327,7 @@ function hasAcknowledgedMobileWarning() {
     return localStorage.getItem(MOBILE_WARNING_ACK_KEY) === '1';
 }
 
+/* Mobile layout and view management. */
 function syncMobileWarningVisibility() {
     if (!mobileWarning) {
         return;
@@ -653,7 +366,7 @@ function closeMobileFullPreview() {
         return;
     }
 
-    animateModalOut(mobilePreviewModal, mobilePreviewCard, () => {
+    anim.animateModalOut(mobilePreviewModal, mobilePreviewCard, () => {
         mobilePreviewContainer.innerHTML = '';
         mobilePreviewContainer.scrollTop = 0;
         document.body.style.overflow = '';
@@ -684,7 +397,7 @@ function openMobileFullPreview() {
 
     mobilePreviewContainer.appendChild(previewClone);
     mobilePreviewContainer.scrollTop = 0;
-    animateModalIn(mobilePreviewModal, mobilePreviewCard);
+    anim.animateModalIn(mobilePreviewModal, mobilePreviewCard);
     document.body.style.overflow = 'hidden';
 }
 
@@ -700,6 +413,7 @@ function syncMobileLayoutState() {
     setMobileViewMode(mobileViewMode);
 }
 
+/* Sets timetable grid CSS variables. */
 function applyLiveTimetableMetrics() {
     const bodyHeight = (END_HOUR - START_HOUR) * LIVE_ROW_HEIGHT_PIXELS;
     const totalHeight = HEADER_HEIGHT_PX + bodyHeight;
@@ -714,6 +428,7 @@ function applyLiveTimetableMetrics() {
     }
 }
 
+/* Drag-and-drop file imports. */
 function wireDropImport() {
     if (!jsonDropZone) {
         return;
@@ -790,7 +505,8 @@ function syncActionStates() {
     exportPngBtn.disabled = !hasPlotted;
 }
 
-function renderSavedSchedulesList() {
+/* Renders saved schedules list. */
+export function renderSavedSchedulesList() {
     savedSchedulesList.innerHTML = '';
 
     if (savedSchedules.length === 0) {
@@ -1028,6 +744,7 @@ editColorBtns.forEach((btn) => {
     });
 });
 
+/* Opens class block editor. */
 function openEditModal(index) {
     const target = classes[index];
     if (!target) {
@@ -1041,20 +758,21 @@ function openEditModal(index) {
     editCourseEnd.value = target.end;
     editCourseRoom.value = target.room || '';
     editCourseSection.value = target.section || '';
-    
+
     editSelectedColor = target.color || 'bg-blue-600';
     syncEditColorButtons();
 
     setEditExtendRelatedState(editExtendRelatedState);
-    animateModalIn(editModal, editModalCard);
+    anim.animateModalIn(editModal, editModalCard);
 }
 
 function closeEditModal() {
     editingIndex = null;
-    animateModalOut(editModal, editModalCard);
+    anim.animateModalOut(editModal, editModalCard);
 }
 
-function normalizeSchedulePayload(payload, fallbackName = '') {
+/* Normalizes incoming schedule data. */
+export function normalizeSchedulePayload(payload, fallbackName = '') {
     if (!payload || typeof payload !== 'object') {
         throw new Error('Schedule JSON is not an object.');
     }
@@ -1252,7 +970,7 @@ function openExportModal() {
 
     const defaultName = getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
     exportNameInput.value = defaultName;
-    animateModalIn(exportModal, exportModalCard);
+    anim.animateModalIn(exportModal, exportModalCard);
     document.body.style.overflow = 'hidden';
     window.requestAnimationFrame(() => exportNameInput.focus());
 }
@@ -1262,7 +980,7 @@ function closeExportModal() {
         return;
     }
 
-    animateModalOut(exportModal, exportModalCard, () => {
+    anim.animateModalOut(exportModal, exportModalCard, () => {
         document.body.style.overflow = '';
     });
 }
@@ -1291,7 +1009,8 @@ function timeToPixels(timeStr) {
     return totalHoursFromStart * LIVE_ROW_HEIGHT_PIXELS;
 }
 
-function renderSchedule() {
+/* Core rendering engine for the timetable blocks, calculating positions and sizes */
+export function renderSchedule() {
     container.innerHTML = '';
 
     classes.forEach((c, index) => {
@@ -1338,16 +1057,16 @@ function renderSchedule() {
             ${(c.room || c.section) ? `<div class="schedule-block-tags">${c.room ? `<span class="schedule-tag">${c.room}</span>` : ''}${c.section ? `<span class="schedule-tag">${c.section}</span>` : ''}</div>` : ''}
         `;
 
-        bindBlockHoverAnimation(block, c.color);
+        anim.bindBlockHoverAnimation(block, c.color);
 
         container.appendChild(block);
     });
 
-    if (hasGsap()) {
+    if (anim.hasGsap()) {
         if (pendingAddedCount > 0) {
             const startIndex = Math.max(0, container.children.length - pendingAddedCount);
             const addedEls = Array.from(container.children).slice(startIndex);
-            animateAddedBlocks(addedEls);
+            anim.animateAddedBlocks(addedEls);
         }
 
         if (pendingEditedIndexes.length > 0) {
@@ -1355,12 +1074,7 @@ function renderSchedule() {
                 .map((index) => container.children[index])
                 .filter(Boolean);
 
-            if (editedEls.length > 0) {
-                gsap.fromTo(editedEls,
-                    { x: -2 },
-                    { x: 0, duration: 0.2, ease: 'power2.out', stagger: 0.025 }
-                );
-            }
+            anim.animateEditedBlocks(editedEls);
         }
     }
 
@@ -1529,7 +1243,7 @@ addSecondaryDayBtn.addEventListener('click', () => {
 window.removeClass = (index) => {
     const blockEl = container.children[index];
     if (blockEl) {
-        animateBlockExitAndRemove(blockEl, () => {
+        anim.animateBlockExitAndRemove(blockEl, () => {
             classes.splice(index, 1);
             renderSchedule();
         });
@@ -1575,10 +1289,6 @@ mobileToggleViewBtn?.addEventListener('click', () => {
     setMobileViewMode(mobileViewMode === 'plotter' ? 'timetable' : 'plotter');
 });
 
-mobileFullPreviewBtn?.addEventListener('click', () => {
-    openMobileFullPreview();
-});
-
 mobilePreviewCloseBtn?.addEventListener('click', () => {
     closeMobileFullPreview();
 });
@@ -1610,35 +1320,11 @@ setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
 wireDropImport();
 renderSchedule();
 
-// Web Tools Companion Extension Bridge Listener
-window.addEventListener('message', (event) => {
-    if (event.source !== window) return;
+/* State modifiers for extension hooks to update visualizer data from the bridge */
+export function updateClasses(newClasses) {
+    classes = newClasses;
+}
 
-    if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
-        const payload = event.data.payload;
-        try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Extension Schedule');
-            
-            // Smart update: Avoid duplicates if ID is the same, otherwise push to top
-            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
-            if (existingIndex !== -1) {
-                savedSchedules[existingIndex] = normalized;
-            } else {
-                savedSchedules.unshift(normalized);
-            }
-            
-            activeScheduleId = normalized.id;
-            classes = normalized.blocks.map((b) => ({ ...b }));
-            
-            renderSavedSchedulesList();
-            renderSchedule();
-            setStatus('Auto Plotter Synced from OSES!', 'success');
-        } catch (err) {
-            console.error('[Web Tools] Failed to sync extension schedule:', err);
-            setStatus('Failed to sync schedule from extension.', 'error');
-        }
-    }
-});
-
-// Broadcast readiness so extension bridge can immediately inject if it was waiting
-window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
+export function updateActiveScheduleId(id) {
+    activeScheduleId = id;
+}

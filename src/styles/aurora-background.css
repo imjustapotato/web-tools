@@ -144,7 +144,18 @@
     left: 0;
     right: 0;
     bottom: 0;
-    height: 22vh;
+    height: 38vh;
+    z-index: 2;
+}
+
+.city-lights rect {
+    /* Lights are static now for performance and simplicity */
+    filter: drop-shadow(0 0 2px rgba(255, 215, 0, 0.4));
+}
+
+@keyframes cityTwinkle {
+    0%, 100% { opacity: 0.8; filter: brightness(1); }
+    50% { opacity: 0.4; filter: brightness(0.7); }
 }
 
 .aurora-mountains svg {
@@ -188,5 +199,36 @@
 @keyframes auroraBandThree {
     to {
         --aurora-angle-three: 480deg;
+    }
+}
+
+/* Mobile Performance Optimizations */
+@media (max-width: 768px) {
+    .aurora-stars {
+        display: none !important;
+    }
+
+    .aurora-curtains {
+        display: block !important;
+        opacity: 0.4;
+        filter: blur(40px);
+        animation: auroraPulseMobile 18s ease-in-out infinite alternate;
+    }
+
+    .aurora-horizon {
+        height: 35vh;
+        opacity: 0.5;
+        background: linear-gradient(to top, var(--aurora-night) 0%, rgba(82, 227, 172, 0.08) 100%);
+    }
+
+    .aurora-mountains {
+        height: 25vh;
+        opacity: 0.9;
+    }
+
+    /* Toned down mobile pulse */
+    @keyframes auroraPulseMobile {
+        0%, 100% { opacity: 0.3; filter: blur(40px); }
+        50% { opacity: 0.5; filter: blur(35px); }
     }
 }

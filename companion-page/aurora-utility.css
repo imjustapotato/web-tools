@@ -1,0 +1,51 @@
+/* High-visibility aurora color tokens. */
+:root {
+    --u-aurora-1: rgba(0, 255, 184, 0.25);
+    --u-aurora-2: rgba(80, 215, 255, 0.3);
+    --u-aurora-3: rgba(179, 155, 255, 0.35);
+    --u-aurora-4: rgba(255, 0, 128, 0.2);
+}
+
+/* Aurora background container. */
+.aurora-utility-container {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    background: var(--aurora-night, #0a0120);
+    pointer-events: none;
+    will-change: transform;
+    transform: translate3d(0,0,0);
+}
+
+/* Subtle background curtains and horizon. */
+.aurora-utility-container .aurora-curtains {
+    opacity: 0.3;
+    filter: blur(76px);
+    will-change: opacity, transform;
+    transform: translate3d(0,0,0);
+}
+
+.aurora-utility-container .aurora-horizon {
+    height: 35vh;
+    opacity: 0.8;
+}
+
+
+@media (max-width: 900px) {
+    .aurora-cloud {
+        filter: blur(36px);
+    }
+
+    .aurora-utility-container .aurora-curtains {
+        filter: blur(52px);
+        opacity: 0.22;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .aurora-band,
+    .aurora-stars {
+        animation: none !important;
+    }
+}
