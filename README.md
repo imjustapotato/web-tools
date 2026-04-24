@@ -39,6 +39,11 @@ Reworked Theme of Homepage, and applied to some parts of the webapp.
 
 ![Active-Page Utility](./src/screenshots/APU-Home.png)
 
+***
+
+### **Web Tools Companion**
+![Web Tools Companion](./src/screenshots/companion-home.png)
+
 # TODO:
 
 - [ ] Create Global v2 of Dynamic Island to its own module, to be used by other web tools as well, using GSAP and Physics based Animations.

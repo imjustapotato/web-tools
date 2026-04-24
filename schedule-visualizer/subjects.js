@@ -1,3 +1,4 @@
+// Subject Arrays extracted from data gathered on portal
 export const SUBJECT_CATALOG = [
     // === BSIT CST (CyberSecurity Technology) + Common IT Subs and General Subs Database ===
     { code: 'CCS0001', title: 'INTRODUCTION TO COMPUTING LEC' },

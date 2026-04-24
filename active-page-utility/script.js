@@ -9,14 +9,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* Hero section typing animation. */
     const textElement = document.querySelector('.typing-text');
+    const cursorElement = document.querySelector('.typing-cursor');
     const modules = [
-        "Block Tracking Events",
-        "Fake Tab Focus",
-        "Block Tab Switch Detection",
-        "Shield Page Handlers",
-        "Spoof Active Animations",
-        "Spoof Timer Throttling",
-        "Block Cursor Tracking"
+        { text: "Block Tracking Events", color: "var(--txt-danger)" },
+        { text: "Fake Tab Focus", color: "var(--txt-emphasis)" },
+        { text: "Block Tab Switch Detection", color: "var(--txt-feature)" },
+        { text: "Shield Page Handlers", color: "var(--txt-success)" },
+        { text: "Spoof Active Animations", color: "var(--accent-2)" },
+        { text: "Spoof Timer Throttling", color: "var(--txt-important)" },
+        { text: "Block Cursor Tracking", color: "var(--accent-3)" }
     ];
 
     let moduleIndex = 0;
@@ -25,7 +26,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let typeDelay = 100;
 
     function typeEffect() {
-        const currentWord = modules[moduleIndex];
+        const currentModule = modules[moduleIndex];
+        const currentWord = currentModule.text;
 
         if (isDeleting) {
             // Remove a character
@@ -35,6 +37,11 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             // Add a character
             textElement.textContent = currentWord.substring(0, charIndex + 1);
+            textElement.style.color = currentModule.color;
+            if (cursorElement) {
+                cursorElement.style.backgroundColor = currentModule.color;
+                cursorElement.style.boxShadow = `0 0 12px ${currentModule.color}`;
+            }
             charIndex++;
             typeDelay = 100; // type normal speed
         }

@@ -1,4 +1,8 @@
 <!DOCTYPE html>
+<!--
+    Schedule Plotter and Visualizer: A tool for FEU students to visualize their schedules and spot conflicts.
+    This interface balances a tool-heavy sidebar with a high-fidelity timetable grid.
+-->
 <html lang="en">
 
 <head>
@@ -11,49 +15,54 @@
 </head>
 
 <body class="app-shell">
-    <a href="/" class="home-fab" aria-label="Return to homepage">Home</a>
+    <a href="/" class="home-fab" id="home-fab-btn" aria-label="Back to Homepage">
+        <span class="iconify home-fab-icon" data-icon="mdi:home" aria-hidden="true"></span>
+        <span class="home-fab-label">Back to Homepage</span>
+    </a>
 
+    <!-- Branding and global navigation header -->
     <header class="app-header">
-        <div>
+        <div class="header-main">
             <h1 class="app-title title-gradient">
                 Schedule Plotter and Visualizer
+                <span class="app-version-tag">v2.0</span>
+                <span id="header-portal-container"></span>
             </h1>
             <p class="app-subtitle">Plot your classes to spot conflicts and dead hours before confirming.</p>
         </div>
+
         <div class="header-actions">
             <button id="mobile-toggle-view-btn" class="btn btn-load mobile-only-control" type="button">
                 <span class="iconify btn-icon" data-icon="mdi:view-dashboard-outline" aria-hidden="true"></span>
                 Show Timetable
             </button>
-            <button id="mobile-full-preview-btn" class="btn btn-export mobile-only-control" type="button">
-                <span class="iconify btn-icon" data-icon="mdi:tablet-dashboard" aria-hidden="true"></span>
-                Full Preview
-            </button>
-            <div class="header-note warning-box" role="note" aria-live="polite">
-                Note: You may want to save your schedule to a JSON, then drop it here again if you wish to edit and
-                export. I designed this web tool to not save files on any server or the browser.
-            </div>
-            <button id="export-png-btn" class="btn btn-export">
-                <span class="iconify btn-icon" data-icon="mdi:export" aria-hidden="true"></span>
-                Export PNG
-            </button>
-            <button id="clear-btn" class="btn btn-clear">
-                <span class="iconify btn-icon" data-icon="mdi:trash-can-outline" aria-hidden="true"></span>
-                Clear Schedule
-            </button>
         </div>
     </header>
 
+    <!-- Mobile-only ergonomics warning for complex interactions -->
     <section id="mobile-warning" class="mobile-warning hidden" role="alert" aria-live="polite">
         <p class="mobile-warning-text">Best experience is on desktop. Mobile editing is supported but can feel tight.
         </p>
         <button id="mobile-warning-ack-btn" type="button" class="btn btn-sm btn-load">I Understand</button>
     </section>
 
+    <!-- Container for dynamic app alerts and toast notifications -->
     <div id="toast-stack" class="toast-stack" aria-live="polite" aria-atomic="true"></div>
 
     <div class="app-content">
+        <!-- Sidebar Panel: Primary tools for data entry, file management, and schedule persistence -->
         <aside class="sidebar-panel custom-scrollbar">
+            <a id="companion-status" href="#" class="companion-status-pill status-checking" aria-label="Extension Status">
+                <div class="status-content">
+                    <span class="status-dot"></span>
+                    <span class="iconify status-icon" data-icon="mdi:loading" aria-hidden="true"></span>
+                    <div class="status-text">
+                        <strong class="status-title">Checking Connection...</strong>
+                        <span class="status-subtitle" style="display: none;"></span>
+                    </div>
+                </div>
+            </a>
+
             <h2 class="section-title">Add Class Block</h2>
 
             <div class="snapshot-name-group">
@@ -79,6 +88,10 @@
                 <div id="json-drop-zone" class="drop-zone" aria-label="Drop saved schedule JSON files here">
                     Drop saved schedule JSON here
                 </div>
+                <p class="persistence-info">
+                    <span class="iconify info-icon" data-icon="mdi:shield-check-outline"></span>
+                    No data is saved to any server. Export to JSON to persist your work.
+                </p>
             </div>
 
             <form id="class-form" class="class-form">
@@ -194,6 +207,21 @@
                 </button>
             </form>
 
+            <div class="sidebar-divider"></div>
+
+            <div class="quick-actions">
+                <button id="export-png-btn" class="btn btn-export">
+                    <span class="iconify btn-icon" data-icon="mdi:export" aria-hidden="true"></span>
+                    Export PNG
+                </button>
+                <button id="clear-btn" class="btn btn-clear">
+                    <span class="iconify btn-icon" data-icon="mdi:trash-can-outline" aria-hidden="true"></span>
+                    Clear Schedule
+                </button>
+            </div>
+
+            <div class="sidebar-divider"></div>
+
             <div class="stats-section">
                 <h3 class="stats-label">Total</h3>
                 <div class="stats-value" id="class-count">0</div>
@@ -226,6 +254,7 @@
             </div>
         </aside>
 
+        <!-- Timetable Panel: The primary visualization canvas for plotted classes -->
         <section id="timetable-export-area" class="timetable-panel custom-scrollbar">
             <div class="timetable-canvas">
                 <div class="days-header">
@@ -257,6 +286,7 @@
         </section>
     </div>
 
+    <!-- Modal Overlays: Non-intrusive dialogs for editing and complex interactions -->
     <div id="edit-modal" class="modal-overlay hidden" role="dialog" aria-modal="true"
         aria-labelledby="edit-modal-title">
         <div class="modal-card">
@@ -438,6 +468,7 @@
     <script defer src="/_vercel/speed-insights/script.js"></script>
     <script type="module" src="../src/scripts/page-transition.js"></script>
     <script type="module" src="./script.js"></script>
+    <script type="module" src="./companion-hook.js"></script>
 </body>
 
 </html>

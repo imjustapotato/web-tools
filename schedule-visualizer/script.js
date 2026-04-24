@@ -3,12 +3,14 @@ import { exportScheduleAsPng } from './export/export-png.js';
 import { SUBJECT_CATALOG } from './subjects.js';
 import * as anim from './anim.js';
 
-let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
+/* Persistent state and shared exports for extension hooks. */
+export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 let selectedColor = 'bg-emerald-600';
-let savedSchedules = [];
-let activeScheduleId = null;
+export let savedSchedules = [];
+export let activeScheduleId = null;
 let editingIndex = null;
 
+/* Timetable grid and responsiveness constants. */
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
@@ -48,6 +50,8 @@ const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
 const secondaryDaysContainer = document.getElementById('secondary-days-container');
 const timetableExportArea = document.getElementById('timetable-export-area');
 const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
+
+/* UI state and DOM references. */
 const appContent = document.querySelector('.app-content');
 const mobileWarning = document.getElementById('mobile-warning');
 const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
@@ -96,6 +100,7 @@ let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '
 let pendingAddedCount = 0;
 let pendingEditedIndexes = [];
 
+/* Global event delegation for feedback. */
 function setupButtonFeedbackDelegation() {
     document.addEventListener('click', (event) => {
         const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn');
@@ -143,6 +148,7 @@ function syncColorButtons(selectedBtn = null) {
     anim.animateColorSelectorTo(activeButton, colorPicker);
 }
 
+/* Populates course search datalist. */
 function populateSubjectOptions() {
     const datalist = document.getElementById('pending-courses');
     const seen = new Set();
@@ -160,7 +166,8 @@ function populateSubjectOptions() {
     });
 }
 
-function setStatus(message, tone = 'info') {
+/* Displays toast notifications and status messages. */
+export function setStatus(message, tone = 'info') {
     managerStatus.className = 'status-text';
     if (tone === 'error') {
         managerStatus.classList.add('tone-error');
@@ -225,6 +232,7 @@ function closeMessageDialog(result) {
     });
 }
 
+/* Promise-based custom dialog system. */
 function openMessageDialog({
     title = 'Message',
     message = '',
@@ -319,6 +327,7 @@ function hasAcknowledgedMobileWarning() {
     return localStorage.getItem(MOBILE_WARNING_ACK_KEY) === '1';
 }
 
+/* Mobile layout and view management. */
 function syncMobileWarningVisibility() {
     if (!mobileWarning) {
         return;
@@ -404,6 +413,7 @@ function syncMobileLayoutState() {
     setMobileViewMode(mobileViewMode);
 }
 
+/* Sets timetable grid CSS variables. */
 function applyLiveTimetableMetrics() {
     const bodyHeight = (END_HOUR - START_HOUR) * LIVE_ROW_HEIGHT_PIXELS;
     const totalHeight = HEADER_HEIGHT_PX + bodyHeight;
@@ -418,6 +428,7 @@ function applyLiveTimetableMetrics() {
     }
 }
 
+/* Drag-and-drop file imports. */
 function wireDropImport() {
     if (!jsonDropZone) {
         return;
@@ -494,7 +505,8 @@ function syncActionStates() {
     exportPngBtn.disabled = !hasPlotted;
 }
 
-function renderSavedSchedulesList() {
+/* Renders saved schedules list. */
+export function renderSavedSchedulesList() {
     savedSchedulesList.innerHTML = '';
 
     if (savedSchedules.length === 0) {
@@ -732,6 +744,7 @@ editColorBtns.forEach((btn) => {
     });
 });
 
+/* Opens class block editor. */
 function openEditModal(index) {
     const target = classes[index];
     if (!target) {
@@ -745,7 +758,7 @@ function openEditModal(index) {
     editCourseEnd.value = target.end;
     editCourseRoom.value = target.room || '';
     editCourseSection.value = target.section || '';
-    
+
     editSelectedColor = target.color || 'bg-blue-600';
     syncEditColorButtons();
 
@@ -758,7 +771,8 @@ function closeEditModal() {
     anim.animateModalOut(editModal, editModalCard);
 }
 
-function normalizeSchedulePayload(payload, fallbackName = '') {
+/* Normalizes incoming schedule data. */
+export function normalizeSchedulePayload(payload, fallbackName = '') {
     if (!payload || typeof payload !== 'object') {
         throw new Error('Schedule JSON is not an object.');
     }
@@ -995,7 +1009,8 @@ function timeToPixels(timeStr) {
     return totalHoursFromStart * LIVE_ROW_HEIGHT_PIXELS;
 }
 
-function renderSchedule() {
+/* Core rendering engine for the timetable blocks, calculating positions and sizes */
+export function renderSchedule() {
     container.innerHTML = '';
 
     classes.forEach((c, index) => {
@@ -1274,10 +1289,6 @@ mobileToggleViewBtn?.addEventListener('click', () => {
     setMobileViewMode(mobileViewMode === 'plotter' ? 'timetable' : 'plotter');
 });
 
-mobileFullPreviewBtn?.addEventListener('click', () => {
-    openMobileFullPreview();
-});
-
 mobilePreviewCloseBtn?.addEventListener('click', () => {
     closeMobileFullPreview();
 });
@@ -1309,35 +1320,11 @@ setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
 wireDropImport();
 renderSchedule();
 
-// Web Tools Companion Extension Bridge Listener
-window.addEventListener('message', (event) => {
-    if (event.source !== window) return;
+/* State modifiers for extension hooks to update visualizer data from the bridge */
+export function updateClasses(newClasses) {
+    classes = newClasses;
+}
 
-    if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
-        const payload = event.data.payload;
-        try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Extension Schedule');
-            
-            // Smart update: Avoid duplicates if ID is the same, otherwise push to top
-            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
-            if (existingIndex !== -1) {
-                savedSchedules[existingIndex] = normalized;
-            } else {
-                savedSchedules.unshift(normalized);
-            }
-            
-            activeScheduleId = normalized.id;
-            classes = normalized.blocks.map((b) => ({ ...b }));
-            
-            renderSavedSchedulesList();
-            renderSchedule();
-            setStatus('Auto Plotter Synced from OSES!', 'success');
-        } catch (err) {
-            console.error('[Web Tools] Failed to sync extension schedule:', err);
-            setStatus('Failed to sync schedule from extension.', 'error');
-        }
-    }
-});
-
-// Broadcast readiness so extension bridge can immediately inject if it was waiting
-window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
+export function updateActiveScheduleId(id) {
+    activeScheduleId = id;
+}

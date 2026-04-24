@@ -139,12 +139,13 @@
 }
 
 .badge {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(251, 191, 36, 0.1);
+    color: var(--txt-important);
     padding: 0.2rem 0.5rem;
     border-radius: 12px;
     font-size: 0.75rem;
     margin-left: 0.5rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(251, 191, 36, 0.3);
 }
 
 /* Semantic page sections. */
@@ -386,7 +387,7 @@
     box-shadow: 0 0 10px var(--accent-2);
 }
 
-/* Community and support footer. */
+/* Support footer. */
 .support-card {
     text-align: center;
     padding: 4rem 2rem;

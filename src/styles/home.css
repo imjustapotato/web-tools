@@ -395,6 +395,42 @@ body.theme-glassmorph {
     font-size: 0.95em;
 }
 
+.badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    font-size: 0.68rem;
+    font-weight: 800;
+    line-height: 1;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: var(--muted);
+    vertical-align: middle;
+    margin-left: 0.4rem;
+    letter-spacing: 0.02em;
+}
+
+.tool-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 99px; /* Pill shape */
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: linear-gradient(145deg, rgba(82, 227, 172, 0.2), rgba(80, 215, 255, 0.2));
+    border: 1px solid rgba(134, 239, 172, 0.4);
+    color: #b7ffdd;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 10;
+}
+
 
 @keyframes heroGlow {
 

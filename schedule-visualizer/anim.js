@@ -1,15 +1,16 @@
+/* Import GSAP for animation library
+* Houses mostly used anims in the app
+* TODO: Improve Animation Selector on line 69 >
+*/
+
 import { gsap } from 'gsap';
 
-/**
- * Utility to check if GSAP is available in the current environment.
- */
+// Checks if GSAP is loaded
 export function hasGsap() {
     return typeof gsap !== 'undefined';
 }
 
-/**
- * Trigger a subtle scale-down feedback for clickable elements.
- */
+// Animation trigger for clickable elements
 export function animatePressFeedback(targetEl) {
     if (!targetEl || !hasGsap()) {
         return;
@@ -22,9 +23,7 @@ export function animatePressFeedback(targetEl) {
     );
 }
 
-/**
- * Entry animation for overlays/modals.
- */
+// Animation trigger for modal entrance
 export function animateModalIn(modalEl, cardEl) {
     if (!modalEl) {
         return;
@@ -42,9 +41,7 @@ export function animateModalIn(modalEl, cardEl) {
     gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.3, ease: 'power3.out' });
 }
 
-/**
- * Exit animation for overlays/modals.
- */
+// Animation trigger for modal exit
 export function animateModalOut(modalEl, cardEl, onComplete) {
     if (!modalEl || modalEl.classList.contains('hidden')) {
         onComplete?.();
@@ -69,9 +66,7 @@ export function animateModalOut(modalEl, cardEl, onComplete) {
     timeline.to(modalEl, { opacity: 0, duration: 0.16, ease: 'power2.in' }, '<');
 }
 
-/**
- * Move the highlight indicator in a color picker group.
- */
+// Animation for color selector (The Highlight) | May need improvement
 export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false) {
     if (!colorPicker || !buttonEl) {
         return;
@@ -106,9 +101,7 @@ export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false)
     });
 }
 
-/**
- * Helper to map standard background classes to glow colors for hover effects.
- */
+// Helper to map standard background classes to glow colors for hover effects.
 export function getBlockGlowColor(colorClass) {
     const hue = String(colorClass || '').replace(/^bg-/, '').split('-')[0];
     const glowMap = {
@@ -128,16 +121,14 @@ export function getBlockGlowColor(colorClass) {
     return glowMap[hue] || 'rgba(16, 185, 129, 0.45)';
 }
 
-/**
- * Bind hover interactions to a schedule block.
- */
+// Bind hover interactions to a schedule block.
 export function bindBlockHoverAnimation(blockEl, colorClass) {
     if (!blockEl) {
         return;
     }
 
     const glowColor = getBlockGlowColor(colorClass);
-    
+
     const onEnter = () => {
         if (!hasGsap()) return;
         gsap.to(blockEl, {
@@ -164,9 +155,7 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
     blockEl.addEventListener('mouseleave', onLeave);
 }
 
-/**
- * Batch animation for newly added blocks.
- */
+// Animation for newly added blocks.
 export function animateAddedBlocks(blockElements) {
     if (!hasGsap() || !Array.isArray(blockElements) || blockElements.length === 0) {
         return;
@@ -212,9 +201,7 @@ export function animateAddedBlocks(blockElements) {
     );
 }
 
-/**
- * Subtle feedback for elements that were just edited.
- */
+// Animation for newly edited blocks.
 export function animateEditedBlocks(editedEls) {
     if (!hasGsap() || !Array.isArray(editedEls) || editedEls.length === 0) {
         return;
@@ -226,9 +213,7 @@ export function animateEditedBlocks(editedEls) {
     );
 }
 
-/**
- * Exit animation for a block being removed.
- */
+// Animation for a block being removed.
 export function animateBlockExitAndRemove(blockEl, onComplete) {
     if (!blockEl || !hasGsap()) {
         onComplete?.();
