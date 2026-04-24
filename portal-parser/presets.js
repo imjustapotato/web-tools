@@ -1,5 +1,6 @@
 import cstRaw from './src/CST.txt?raw';
 import bsceRaw from './src/BSCE.txt?raw';
+import wmaRaw from './src/WMA.txt?raw';
 
 /**
  * Preset Curriculum Config 
@@ -15,5 +16,17 @@ export const PRESET_CURRICULA = [
         id: 'bsce',
         label: '🏗️ Civil Engineering (BSCE)',
         content: bsceRaw
+    },
+    {
+        id: 'wma',
+        label: '📱 Web and Mobile Applications (BSIT)',
+        content: wmaRaw
     }
 ];
+
+export const CURRICULA_CREDITS = {
+    cst: 'Kenneth Davila',
+    bsce: 'Aristotle Jr Siton',
+    wma: 'Miles Tan'
+};
+

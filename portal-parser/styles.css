@@ -1,6 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 @import '../src/molecule/home-fab/home-fab.css';
 
+/* root designs */
 :root {
     --page-transition-ms: 320ms;
     --bg-page: #020617;
@@ -23,6 +24,10 @@
     navigation: auto;
 }
 
+/**
+ * Core layout and page-level transitions.
+ * Implements a subtle entrance animation for a premium first impression.
+ */
 body {
     font-family: 'Inter', sans-serif;
     margin: 0;
@@ -84,6 +89,10 @@ body {
     font-weight: 600;
 }
 
+/**
+ * File ingestion interface.
+ * Uses dashed borders and hover states to clearly signal interaction areas.
+ */
 .dropzone {
     width: min(100%, 48rem);
     min-height: 6rem;
@@ -124,6 +133,10 @@ body {
     font-weight: 600;
 }
 
+/**
+ * Action bar and viewport tools.
+ * Organizes functional controls for graph manipulation and zoom management.
+ */
 .controls {
     width: 100%;
     display: flex;
@@ -217,6 +230,10 @@ body {
     font-weight: 700;
 }
 
+/**
+ * Graph viewport and immersive modes.
+ * Manages the transition between inline viewing and full-screen focus.
+ */
 .graph-wrapper {
     flex: 1;
     min-height: clamp(22rem, 56vh, 78vh);
@@ -303,6 +320,11 @@ body {
     display: inline-flex;
 }
 
+/**
+ * Interactive prerequisite sidebar.
+ * Employs glassmorphism (blur + transparency) to provide context without 
+ * obscuring the underlying graph logic.
+ */
 .summary-dock {
     position: absolute;
     top: 4.5rem; /* Moved down */
@@ -403,6 +425,10 @@ body {
     align-items: center;
 }
 
+/**
+ * Template selection system.
+ * Uses emerald accents to distinguish preset loading from user file uploads.
+ */
 .btn-preset {
     border-color: rgba(52, 211, 153, 0.35);
     background: rgba(52, 211, 153, 0.06);
@@ -479,6 +505,10 @@ body.page-leaving {
 }
 
 
+/**
+ * Mobile ergonomics.
+ * Reconfigures the layout for smaller touch targets and vertical stacking.
+ */
 @media (max-width: 720px) {
     .parser-page {
         padding: 1rem;
@@ -530,3 +560,35 @@ body.page-leaving {
 .is-hidden {
     display: none !important;
 }
+
+/**
+ * Credit Tooltip
+ * Subtle floating label to acknowledge curriculum data contributors.
+ */
+.credit-tooltip {
+    position: absolute;
+    z-index: 500;
+    padding: 0.5rem 0.8rem;
+    background: rgba(15, 23, 42, 0.9);
+    backdrop-filter: blur(8px);
+    border: 1px solid var(--border-main);
+    border-radius: 0.6rem;
+    color: var(--text-accent);
+    font-size: 0.78rem;
+    font-weight: 600;
+    pointer-events: none;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px) translateX(-50%);
+    transition: opacity 200ms ease, transform 200ms ease, visibility 200ms;
+    white-space: nowrap;
+}
+
+.credit-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) translateX(-50%);
+}
+
+
