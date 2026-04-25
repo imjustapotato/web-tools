@@ -1078,6 +1078,8 @@ body.page-leaving {
     border-radius: 0.375rem;
     padding: 0.4rem 0.5rem;
     transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .saved-schedule-item:hover {
@@ -1149,6 +1151,8 @@ body.page-leaving {
 
 .schedule-block {
     overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 .schedule-block-header {

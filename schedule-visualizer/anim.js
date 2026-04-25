@@ -67,7 +67,7 @@ export function animateModalOut(modalEl, cardEl, onComplete) {
     timeline.to(modalEl, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '<0.05');
 }
 
-// 🚀 v2.0 Color Selector: "Teleport & Snap" Target Lock
+// v2.0 Color Selector: "Teleport & Snap" Target Lock
 export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false) {
     if (!colorPicker || !buttonEl) {
         return;
@@ -182,62 +182,131 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
     blockEl.addEventListener('mouseleave', onLeave);
 }
 
-// Bind hold interaction for blocks (wave animation + trigger edit)
+// Shockwave animation binded on hold - triggers edit modal
 export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
     if (!blockEl || !hasGsap()) return;
     
     let holdTimer = null;
     let isHolding = false;
-    let waveTween = null;
+    let isAnimatingShockwave = false;
     
     const startHold = (e) => {
         // Ignore if clicking on the action buttons inside the block
-        if (e.target.closest('button')) return;
+        if (e.target.closest('button') || isAnimatingShockwave) return;
         
         isHolding = true;
+
+        // 1. Pre-squish: Physical tell that it's charging
+        gsap.to(blockEl, { scale: 0.94, duration: 0.2, ease: 'power2.out' });
         
         holdTimer = setTimeout(() => {
             if (!isHolding) return;
+            isAnimatingShockwave = true;
             
             const glowColor = getBlockGlowColor(colorClass);
+            const container = blockEl.parentElement;
             
-            // Animate wave on the classblock
-            waveTween = gsap.to(blockEl, {
-                scale: 1.05,
-                boxShadow: `0 0 30px ${glowColor}, 0 0 0 6px rgba(255,255,255,0.5)`,
-                duration: 0.25,
-                yoyo: true,
-                repeat: 1,
-                ease: 'sine.inOut',
+            // Lock pointer events during chaos so we don't trigger phantom hovers
+            if (container) container.classList.add('is-animating');
+
+            const allBlocks = Array.from(container.querySelectorAll('.schedule-block'));
+            const otherBlocks = allBlocks.filter(b => b !== blockEl);
+            
+            // Calculate origin point of the blast (Center of held block)
+            const targetRect = blockEl.getBoundingClientRect();
+            const tx = targetRect.left + targetRect.width / 2;
+            const ty = targetRect.top + targetRect.height / 2;
+
+            // Engine logic: Pre-calculate vectors, distance, and blast power for all other blocks
+            const shockwaveData = otherBlocks.map(block => {
+                const rect = block.getBoundingClientRect();
+                const bx = rect.left + rect.width / 2;
+                const by = rect.top + rect.height / 2;
+                
+                // Math time: Calculate distance and trajectory angle
+                const dx = bx - tx;
+                const dy = by - ty;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                
+                // Blast decay physics: Closer blocks get yeeted harder (max 45px push, decays over distance)
+                const pushStrength = Math.max(10, 45 - (distance * 0.04));
+                
+                return {
+                    block,
+                    distance,
+                    pushX: Math.cos(angle) * pushStrength,
+                    pushY: Math.sin(angle) * pushStrength,
+                    rotation: (Math.random() - 0.5) * 8 // Sprinkle in some chaotic wobble
+                };
+            });
+
+            // Sort by distance so the ripple moves perfectly outward
+            shockwaveData.sort((a, b) => a.distance - b.distance);
+
+            // Master Timeline
+            const tl = gsap.timeline({
                 onComplete: () => {
-                    // After the wave animation ends, open the edit modal
+                    if (container) container.classList.remove('is-animating');
+                    isAnimatingShockwave = false;
+                    isHolding = false;
                     onHoldComplete();
                     
-                    // Recover gracefully
+                    // Recover the held block gracefully behind the modal
                     gsap.to(blockEl, {
                         scale: 1,
                         boxShadow: '0 0 0 rgba(0,0,0,0)',
-                        duration: 0.3
+                        duration: 0.4,
+                        ease: 'power2.out'
                     });
                 }
             });
+
+            // 2. BOOM. The Held block erupts.
+            tl.to(blockEl, {
+                scale: 1.1,
+                boxShadow: `0 0 45px ${glowColor}, 0 0 0 12px rgba(255,255,255,0)`,
+                duration: 0.3,
+                ease: 'expo.out'
+            }, 0);
+
+            // 3. The Shockwave hits everything else
+            shockwaveData.forEach((data) => {
+                // Time delay scales exactly with distance to create an expanding wave front
+                const delay = data.distance * 0.00035; 
+
+                // Blast Outward
+                tl.to(data.block, {
+                    x: data.pushX,
+                    y: data.pushY,
+                    scale: 0.95, // Depth effect as they get bowled over
+                    rotation: data.rotation,
+                    duration: 0.2,
+                    ease: 'power4.out'
+                }, delay);
+
+                // Rubber-band Snap Back
+                tl.to(data.block, {
+                    x: 0,
+                    y: 0,
+                    scale: 1,
+                    rotation: 0,
+                    duration: 0.6,
+                    ease: 'elastic.out(1, 0.4)'
+                }, delay + 0.15); // Trigger right as the outward push peaks
+            });
             
-        }, 400); // Hold required before wave starts
+        }, 400); // 400ms charge time
     };
     
     const cancelHold = (e) => {
+        if (isAnimatingShockwave) return; // Cannot cancel a blast once the trigger is pulled
+        
         isHolding = false;
         clearTimeout(holdTimer);
         
-        if (waveTween && waveTween.isActive()) {
-            waveTween.kill();
-            gsap.to(blockEl, { 
-                scale: 1, 
-                boxShadow: '0 0 0 rgba(0,0,0,0)', 
-                duration: 0.2, 
-                ease: 'power2.out' 
-            });
-        }
+        // Recover from the pre-squish charge
+        gsap.to(blockEl, { scale: 1, duration: 0.2, ease: 'power2.out' });
     };
     
     blockEl.addEventListener('mousedown', startHold);
@@ -248,7 +317,7 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
     blockEl.addEventListener('touchend', cancelHold);
     blockEl.addEventListener('touchcancel', cancelHold);
     
-    // Prevent default context menu to allow custom long-press to work cleanly
+    // Nuke the context menu so long-press works cleanly without the browser interfering
     blockEl.addEventListener('contextmenu', (e) => {
         e.preventDefault();
     });
