@@ -1,14 +1,15 @@
 /* Import GSAP for animation library
-* Houses mostly used anims in the app
+* Houses the animation engine
 */
-
 import { gsap } from 'gsap';
 
+/* 1. Animation Engine Utilities */
 // Checks if GSAP is loaded
 export function hasGsap() {
     return typeof gsap !== 'undefined';
 }
 
+/* 2. Global UI Feedback Animations */
 // Animation trigger for clickable elements - Upgraded to a tactile spring
 export function animatePressFeedback(targetEl) {
     if (!targetEl || !hasGsap()) {
@@ -22,6 +23,42 @@ export function animatePressFeedback(targetEl) {
     );
 }
 
+// Hover physics for interactive sidebar elements like schedule saves
+export function bindInteractiveHover(element) {
+    if (!element || !hasGsap()) return;
+    
+    element.addEventListener('mouseenter', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1.015, y: -1, duration: 0.3, ease: 'back.out(2)' });
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+    });
+}
+
+// Press physics
+export function bindInteractivePress(element) {
+    if (!element || !hasGsap()) return;
+    
+    element.addEventListener('mousedown', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 0.96, duration: 0.15, ease: 'power2.out' });
+    });
+    
+    element.addEventListener('mouseup', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1.015, duration: 0.4, ease: 'elastic.out(1, 0.4)' });
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        // cleanup if dragging off
+        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+    });
+}
+
+/* 3. Modal & Overlay Animations */
 // Animation trigger for modal entrance - Upgraded to modern snappy expo
 export function animateModalIn(modalEl, cardEl) {
     if (!modalEl) {
@@ -67,6 +104,7 @@ export function animateModalOut(modalEl, cardEl, onComplete) {
     timeline.to(modalEl, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '<0.05');
 }
 
+/* 4. Color Logic Animations */
 // v2.0 Color Selector: "Teleport & Snap" Target Lock
 export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false) {
     if (!colorPicker || !buttonEl) {
@@ -123,6 +161,7 @@ export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false)
     });
 }
 
+/* 5. Timetable Block Animations */
 // Helper to map standard background classes to glow colors for hover effects.
 export function getBlockGlowColor(colorClass) {
     const hue = String(colorClass || '').replace(/^bg-/, '').split('-')[0];
@@ -455,6 +494,7 @@ export function animateMassBlockExit(blockElements, onComplete) {
     }, '<');
 }
 
+/* 6. UI Component Animations */
 // Animation for toast entrance - Elastic jump
 export function animateToastIn(toastEl) {
     if (!toastEl || !hasGsap()) {
@@ -554,40 +594,5 @@ export function animateSecondaryRowOut(rowEl, onComplete) {
         duration: 0.4,
         ease: 'power4.in',
         onComplete: () => onComplete?.()
-    });
-}
-
-// Hover physics for interactive sidebar elements like schedule saves
-export function bindInteractiveHover(element) {
-    if (!element || !hasGsap()) return;
-    
-    element.addEventListener('mouseenter', () => {
-        gsap.killTweensOf(element);
-        gsap.to(element, { scale: 1.015, y: -1, duration: 0.3, ease: 'back.out(2)' });
-    });
-    
-    element.addEventListener('mouseleave', () => {
-        gsap.killTweensOf(element);
-        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
-    });
-}
-
-// Press physics
-export function bindInteractivePress(element) {
-    if (!element || !hasGsap()) return;
-    
-    element.addEventListener('mousedown', () => {
-        gsap.killTweensOf(element);
-        gsap.to(element, { scale: 0.96, duration: 0.15, ease: 'power2.out' });
-    });
-    
-    element.addEventListener('mouseup', () => {
-        gsap.killTweensOf(element);
-        gsap.to(element, { scale: 1.015, duration: 0.4, ease: 'elastic.out(1, 0.4)' });
-    });
-    
-    element.addEventListener('mouseleave', () => {
-        // cleanup if dragging off
-        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
     });
 }

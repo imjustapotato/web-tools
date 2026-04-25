@@ -3,111 +3,28 @@ import { exportScheduleAsPng } from './export/export-png.js';
 import { SUBJECT_CATALOG } from './subjects.js';
 import * as anim from './anim.js';
 
-/* Internal state and shared exports for extension hooks */
+/* 1. Global State & App Constants */
 const SNAPSHOTS_STORAGE_KEY = 'feu_snapshots';
 const ACTIVE_ID_STORAGE_KEY = 'feu_active_id';
 const LIVE_SYNC_ID = 'auto-sched-live-sync';
 
 export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
-let selectedColor = 'bg-emerald-600';
 export let savedSchedules = JSON.parse(localStorage.getItem(SNAPSHOTS_STORAGE_KEY)) || [];
 export let activeScheduleId = localStorage.getItem(ACTIVE_ID_STORAGE_KEY) || null;
-let editingIndex = null;
 
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
 const HEADER_HEIGHT_PX = 40;
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
-
-const form = document.getElementById('class-form');
-const colorBtns = document.querySelectorAll('.color-btn');
-const container = document.getElementById('blocks-container');
-const timeAxis = document.getElementById('time-axis');
-const countDisplay = document.getElementById('class-count');
-const exportPngBtn = document.getElementById('export-png-btn');
-const exportModal = document.getElementById('export-modal');
-const exportModalCard = exportModal?.querySelector('.export-modal-card');
-const exportForm = document.getElementById('export-form');
-const exportNameInput = document.getElementById('export-name-input');
-const exportSizePresetInput = document.getElementById('export-size-preset');
-const exportCloseBtn = document.getElementById('export-close-btn');
-const exportCancelBtn = document.getElementById('export-cancel-btn');
-const courseDayInput = document.getElementById('course-day');
-const courseStartInput = document.getElementById('course-start');
-const courseEndInput = document.getElementById('course-end');
-const courseRoomInput = document.getElementById('course-room');
-const courseSectionInput = document.getElementById('course-section');
-const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
-const secondaryDaysContainer = document.getElementById('secondary-days-container');
-const timetableExportArea = document.getElementById('timetable-export-area');
-const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
-
-/* UI state */
-const appContent = document.querySelector('.app-content');
-const mobileWarning = document.getElementById('mobile-warning');
-const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
-const mobileToggleViewBtn = document.getElementById('mobile-toggle-view-btn');
-const mobileFullPreviewBtn = document.getElementById('mobile-full-preview-btn');
-const mobilePreviewModal = document.getElementById('mobile-preview-modal');
-const mobilePreviewCloseBtn = document.getElementById('mobile-preview-close-btn');
-const mobilePreviewContainer = document.getElementById('mobile-preview-container');
-
-const editModal = document.getElementById('edit-modal');
-const editForm = document.getElementById('edit-class-form');
-const editCourseName = document.getElementById('edit-course-name');
-const editCourseDay = document.getElementById('edit-course-day');
-const editCourseStart = document.getElementById('edit-course-start');
-const editCourseEnd = document.getElementById('edit-course-end');
-const editCourseRoom = document.getElementById('edit-course-room');
-const editCourseSection = document.getElementById('edit-course-section');
-const editExtendRelated = document.getElementById('edit-extend-related');
-const editCancelBtn = document.getElementById('edit-cancel-btn');
-const toastStack = document.getElementById('toast-stack');
-const messageModal = document.getElementById('message-modal');
-const messageModalTitle = document.getElementById('message-modal-title');
-const messageModalBody = document.getElementById('message-modal-body');
-const messageModalInputWrap = document.getElementById('message-modal-input-wrap');
-const messageModalInput = document.getElementById('message-modal-input');
-const messageModalCancel = document.getElementById('message-modal-cancel');
-const messageModalConfirm = document.getElementById('message-modal-confirm');
-const colorPicker = document.getElementById('color-picker');
-const editModalCard = editModal?.querySelector('.modal-card');
-const mobilePreviewCard = mobilePreviewModal?.querySelector('.mobile-preview-card');
-const messageModalCard = messageModal?.querySelector('.message-card');
-
-const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
-
-const DAY_OPTIONS = [
-    { value: '0', label: 'Monday' },
-    { value: '1', label: 'Tuesday' },
-    { value: '2', label: 'Wednesday' },
-    { value: '3', label: 'Thursday' },
-    { value: '4', label: 'Friday' },
-    { value: '5', label: 'Saturday' }
-];
-
-let mobileViewMode = 'plotter';
-let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
-let pendingAddedCount = 0;
-let pendingEditedIndexes = [];
-let pendingFullLoad = false;
-let emptyClearSpamCount = 0;
-
-const WALANG_LAMAN_SCHEDULE_MO = [
-    "Are you sure you want to clear a schedule that's already empty?",
-    "Still empty, champ.",
-    "Clicking it again won't make it any emptier.",
-    "You're really dedicated to this empty schedule thing, huh?",
-    "Stop it. Get some help.",
-    "Okay, now you're just spamming."
-];
 
 export function setPendingFullLoad(value) {
     pendingFullLoad = Boolean(value);
 }
 
+/* 2. Storage Health & Persistence */
+const storageFill = document.getElementById('storage-health-fill');
+const storageText = document.getElementById('storage-health-text');
 /* Storage Health Indicator */
 function syncSnapshotsToStorage() {
     try {
@@ -127,15 +44,20 @@ function syncSnapshotsToStorage() {
 function updateStorageHealth() {
     const usage = calculateStorageUsage();
     
-    const fill = document.getElementById('storage-health-fill');
-    const text = document.getElementById('storage-health-text');
-    
-    if (fill) fill.style.width = `${usage.percentage}%`;
-    if (text) text.innerText = `${usage.percentage}% Used`;
+    if (storageFill) storageFill.style.width = `${usage.percentage}%`;
+    if (storageText) storageText.innerText = `${usage.percentage}% Used`;
 
     // Dispatch an event so other components can react
     window.dispatchEvent(new CustomEvent('storage-health-update', { detail: usage }));
 }
+
+/* 3. Color Logic & UI Feedback */
+const colorPicker = document.getElementById('color-picker');
+const colorBtns = document.querySelectorAll('.color-btn');
+let selectedColor = 'bg-emerald-600';
+
+const toastStack = document.getElementById('toast-stack');
+const managerStatus = document.getElementById('manager-status');
 
 function calculateStorageUsage() {
     let totalChars = 0;
@@ -266,6 +188,16 @@ function setEditExtendRelatedState(isEnabled) {
     }
 }
 
+/* 4. Message Dialog System (Alert/Confirm/Prompt) */
+const messageModal = document.getElementById('message-modal');
+const messageModalCard = messageModal?.querySelector('.message-card');
+const messageModalTitle = document.getElementById('message-modal-title');
+const messageModalBody = document.getElementById('message-modal-body');
+const messageModalInputWrap = document.getElementById('message-modal-input-wrap');
+const messageModalInput = document.getElementById('message-modal-input');
+const messageModalCancel = document.getElementById('message-modal-cancel');
+const messageModalConfirm = document.getElementById('message-modal-confirm');
+
 let activeMessageDialog = null;
 let activeMessageKeydownHandler = null;
 
@@ -383,6 +315,19 @@ function hasAcknowledgedMobileWarning() {
     return localStorage.getItem(MOBILE_WARNING_ACK_KEY) === '1';
 }
 
+/* 5. Mobile Layout & Preview Management */
+const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
+const appContent = document.querySelector('.app-content');
+const mobileWarning = document.getElementById('mobile-warning');
+const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
+const mobileToggleViewBtn = document.getElementById('mobile-toggle-view-btn');
+const mobilePreviewModal = document.getElementById('mobile-preview-modal');
+const mobilePreviewCard = mobilePreviewModal?.querySelector('.mobile-preview-card');
+const mobilePreviewCloseBtn = document.getElementById('mobile-preview-close-btn');
+const mobilePreviewContainer = document.getElementById('mobile-preview-container');
+
+let mobileViewMode = 'plotter';
+
 /* Mobile layout management */
 function syncMobileWarningVisibility() {
     if (!mobileWarning) {
@@ -468,6 +413,17 @@ function syncMobileLayoutState() {
 
     setMobileViewMode(mobileViewMode);
 }
+
+/* 6. Timetable Rendering Core */
+const container = document.getElementById('blocks-container');
+const timeAxis = document.getElementById('time-axis');
+const countDisplay = document.getElementById('class-count');
+const timetableExportArea = document.getElementById('timetable-export-area');
+const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
+
+let pendingFullLoad = false;
+let pendingAddedCount = 0;
+let pendingEditedIndexes = [];
 
 /* Sets timetable grid CSS variables */
 function applyLiveTimetableMetrics() {
@@ -562,8 +518,26 @@ function syncActionStates() {
     exportPngBtn.disabled = !hasPlotted;
 }
 
-/* Renders the saved schedules library */
-const managerStatus = document.getElementById('manager-status');
+/* 7. Plotter Form Logic */
+const form = document.getElementById('class-form');
+const courseDayInput = document.getElementById('course-day');
+const courseStartInput = document.getElementById('course-start');
+const courseEndInput = document.getElementById('course-end');
+const courseRoomInput = document.getElementById('course-room');
+const courseSectionInput = document.getElementById('course-section');
+const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
+const secondaryDaysContainer = document.getElementById('secondary-days-container');
+
+const DAY_OPTIONS = [
+    { value: '0', label: 'Monday' },
+    { value: '1', label: 'Tuesday' },
+    { value: '2', label: 'Wednesday' },
+    { value: '3', label: 'Thursday' },
+    { value: '4', label: 'Friday' },
+    { value: '5', label: 'Saturday' }
+];
+
+/* 8. Library & Persistence Management */
 const savedSchedulesList = document.getElementById('saved-schedules-list');
 const scheduleNameInput = document.getElementById('schedule-name');
 const saveSnapshotBtn = document.getElementById('save-snapshot-btn');
@@ -859,9 +833,26 @@ function getScheduleEntries() {
     return entries;
 }
 
+/* 9. Class Block Editor (Modal) */
+const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
+const editModal = document.getElementById('edit-modal');
+const editModalCard = editModal?.querySelector('.modal-card');
+const editForm = document.getElementById('edit-class-form');
+const editCourseName = document.getElementById('edit-course-name');
+const editCourseDay = document.getElementById('edit-course-day');
+const editCourseStart = document.getElementById('edit-course-start');
+const editCourseEnd = document.getElementById('edit-course-end');
+const editCourseRoom = document.getElementById('edit-course-room');
+const editCourseSection = document.getElementById('edit-course-section');
+const editExtendRelated = document.getElementById('edit-extend-related');
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+
 const editColorPicker = document.getElementById('edit-color-picker');
 const editColorBtns = editColorPicker?.querySelectorAll('.color-btn') || [];
+
+let editingIndex = null;
 let editSelectedColor = 'bg-blue-600';
+let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
 
 function syncEditColorButtons(selectedBtn = null) {
     const activeButton = selectedBtn || Array.from(editColorBtns).find(btn => btn.dataset.color === editSelectedColor);
@@ -1121,6 +1112,16 @@ async function importScheduleFiles(fileList) {
         setStatus('Invalid JSON file.', 'error');
     }
 }
+
+/* 10. PNG Export Management */
+const exportModal = document.getElementById('export-modal');
+const exportModalCard = exportModal?.querySelector('.export-modal-card');
+const exportForm = document.getElementById('export-form');
+const exportNameInput = document.getElementById('export-name-input');
+const exportSizePresetInput = document.getElementById('export-size-preset');
+const exportCloseBtn = document.getElementById('export-close-btn');
+const exportCancelBtn = document.getElementById('export-cancel-btn');
+const exportPngBtn = document.getElementById('export-png-btn');
 
 async function exportCurrentTimetablePng() {
     const requestedName = exportNameInput?.value.trim() || getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
@@ -1437,6 +1438,18 @@ window.removeClass = (index) => {
     renderSchedule();
 };
 window.openEditModal = openEditModal;
+
+/* 11. Schedule Clearing Logic */
+const WALANG_LAMAN_SCHEDULE_MO = [
+    "Are you sure you want to clear a schedule that's already empty?",
+    "Still empty, champ.",
+    "Clicking it again won't make it any emptier.",
+    "You're really dedicated to this empty schedule thing, huh?",
+    "Stop it. Get some help.",
+    "Okay, now you're just spamming."
+];
+
+let emptyClearSpamCount = 0;
 
 document.getElementById('clear-btn').addEventListener('click', async () => {
     if (classes.length === 0) {
