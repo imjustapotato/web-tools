@@ -99,6 +99,21 @@ let mobileViewMode = 'plotter';
 let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
 let pendingAddedCount = 0;
 let pendingEditedIndexes = [];
+let pendingFullLoad = false;
+let emptyClearSpamCount = 0;
+
+const WALANG_LAMAN_SCHEDULE_MO = [
+    "Are you sure you want to clear a schedule that's already empty?",
+    "Still empty, champ.",
+    "Clicking it again won't make it any emptier.",
+    "You're really dedicated to this empty schedule thing, huh?",
+    "Stop it. Get some help.",
+    "Okay, now you're just spamming."
+];
+
+export function setPendingFullLoad(value) {
+    pendingFullLoad = Boolean(value);
+}
 
 /* Global event delegation for feedback. */
 function setupButtonFeedbackDelegation() {
@@ -188,13 +203,12 @@ export function setStatus(message, tone = 'info') {
     `;
 
     const removeToast = () => {
-        toast.classList.remove('show');
-        window.setTimeout(() => toast.remove(), 220);
+        anim.animateToastOut(toast, () => toast.remove());
     };
 
     toast.querySelector('.toast-dismiss')?.addEventListener('click', removeToast);
     toastStack.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
+    anim.animateToastIn(toast);
     window.setTimeout(removeToast, 3600);
 }
 
@@ -656,12 +670,11 @@ function buildSecondaryDayRow({ day = '0', start = '', end = '', room = '', sect
 
     daySelect.addEventListener('change', syncRowDefaults);
     removeBtn.addEventListener('click', () => {
-        row.classList.add('secondary-day-removing');
-        window.setTimeout(() => row.remove(), 220);
+        anim.animateSecondaryRowOut(row, () => row.remove());
     });
 
     secondaryDaysContainer.appendChild(row);
-    window.requestAnimationFrame(() => row.classList.remove('secondary-day-enter'));
+    anim.animateSecondaryRowIn(row);
     syncRowDefaults();
     return row;
 }
@@ -860,6 +873,7 @@ async function loadSelectedSchedule() {
     classes = selected.blocks.map((b) => ({ ...b }));
     selectedColor = selected.meta?.defaultColor || selectedColor;
     syncColorButtons();
+    pendingFullLoad = true;
     renderSchedule();
     setStatus(`Loaded ${selected.name}.`, 'success');
 }
@@ -1023,7 +1037,7 @@ export function renderSchedule() {
         const leftPercent = c.day * (100 / 6);
 
         const block = document.createElement('div');
-        block.className = `absolute rounded-lg border border-white/10 shadow-lg p-2 ${c.color} hover:brightness-110 transition cursor-default group schedule-block`;
+        block.className = `absolute rounded-lg border border-white/10 shadow-lg p-2 ${c.color} cursor-default group schedule-block`;
         block.style.top = `${topPx}px`;
         block.style.height = `${heightPx}px`;
         block.style.left = `${leftPercent}%`;
@@ -1063,7 +1077,10 @@ export function renderSchedule() {
     });
 
     if (anim.hasGsap()) {
-        if (pendingAddedCount > 0) {
+        if (pendingFullLoad) {
+            const allBlocks = Array.from(container.children);
+            anim.animateAddedBlocks(allBlocks);
+        } else if (pendingAddedCount > 0) {
             const startIndex = Math.max(0, container.children.length - pendingAddedCount);
             const addedEls = Array.from(container.children).slice(startIndex);
             anim.animateAddedBlocks(addedEls);
@@ -1080,6 +1097,7 @@ export function renderSchedule() {
 
     pendingAddedCount = 0;
     pendingEditedIndexes = [];
+    pendingFullLoad = false;
 
     countDisplay.innerText = classes.length;
     localStorage.setItem('feu_schedule', JSON.stringify(classes));
@@ -1256,10 +1274,32 @@ window.removeClass = (index) => {
 window.openEditModal = openEditModal;
 
 document.getElementById('clear-btn').addEventListener('click', async () => {
+    if (classes.length === 0) {
+        emptyClearSpamCount++;
+        let message = "";
+        
+        if (emptyClearSpamCount <= WALANG_LAMAN_SCHEDULE_MO.length) {
+            message = WALANG_LAMAN_SCHEDULE_MO[emptyClearSpamCount - 1];
+        } else {
+            const lastMsg = WALANG_LAMAN_SCHEDULE_MO[WALANG_LAMAN_SCHEDULE_MO.length - 1];
+            const multiplier = emptyClearSpamCount - WALANG_LAMAN_SCHEDULE_MO.length + 1;
+            message = `${lastMsg} x${multiplier}`;
+        }
+
+        setStatus(message, 'error');
+        return;
+    }
+
+    // Reset spam count if they actually have something to clear
+    emptyClearSpamCount = 0;
+
     if (await showConfirmDialog('Nuke the entire schedule?', 'Clear Schedule?')) {
-        classes = [];
-        renderSchedule();
-        setStatus('Cleared plotted schedule.', 'info');
+        const allBlocks = Array.from(container.children);
+        anim.animateMassBlockExit(allBlocks, () => {
+            classes = [];
+            renderSchedule();
+            setStatus('Cleared plotted schedule.', 'info');
+        });
     }
 });
 

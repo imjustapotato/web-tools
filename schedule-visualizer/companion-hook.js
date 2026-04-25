@@ -11,7 +11,8 @@ import {
     renderSchedule,
     setStatus,
     updateClasses,
-    updateActiveScheduleId
+    updateActiveScheduleId,
+    setPendingFullLoad
 } from './script.js';
 
 // DOM elements for the Dynamic Island-style status pill and portal connection indicators
@@ -178,6 +179,7 @@ window.addEventListener('message', (event) => {
             updateClasses(normalized.blocks.map((b) => ({ ...b })));
 
             renderSavedSchedulesList();
+            setPendingFullLoad(true);
             renderSchedule();
             setStatus('Auto Plotter Synced from OSES!', 'success');
         } catch (err) {
