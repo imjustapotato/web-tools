@@ -3,14 +3,17 @@ import { exportScheduleAsPng } from './export/export-png.js';
 import { SUBJECT_CATALOG } from './subjects.js';
 import * as anim from './anim.js';
 
-/* Persistent state and shared exports for extension hooks. */
+/* Internal state and shared exports for extension hooks */
+const SNAPSHOTS_STORAGE_KEY = 'feu_snapshots';
+const ACTIVE_ID_STORAGE_KEY = 'feu_active_id';
+const LIVE_SYNC_ID = 'auto-sched-live-sync';
+
 export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 let selectedColor = 'bg-emerald-600';
-export let savedSchedules = [];
-export let activeScheduleId = null;
+export let savedSchedules = JSON.parse(localStorage.getItem(SNAPSHOTS_STORAGE_KEY)) || [];
+export let activeScheduleId = localStorage.getItem(ACTIVE_ID_STORAGE_KEY) || null;
 let editingIndex = null;
 
-/* Timetable grid and responsiveness constants. */
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
@@ -23,15 +26,6 @@ const colorBtns = document.querySelectorAll('.color-btn');
 const container = document.getElementById('blocks-container');
 const timeAxis = document.getElementById('time-axis');
 const countDisplay = document.getElementById('class-count');
-const scheduleNameInput = document.getElementById('schedule-name');
-const managerStatus = document.getElementById('manager-status');
-const savedSchedulesList = document.getElementById('saved-schedules-list');
-const jsonFileInput = document.getElementById('json-file-input');
-const saveSnapshotBtn = document.getElementById('save-snapshot-btn');
-const importJsonBtn = document.getElementById('import-json-btn');
-const loadSelectedBtn = document.getElementById('load-selected-btn');
-const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
-const deleteSelectedBtn = document.getElementById('delete-selected-btn');
 const exportPngBtn = document.getElementById('export-png-btn');
 const exportModal = document.getElementById('export-modal');
 const exportModalCard = exportModal?.querySelector('.export-modal-card');
@@ -40,7 +34,6 @@ const exportNameInput = document.getElementById('export-name-input');
 const exportSizePresetInput = document.getElementById('export-size-preset');
 const exportCloseBtn = document.getElementById('export-close-btn');
 const exportCancelBtn = document.getElementById('export-cancel-btn');
-const jsonDropZone = document.getElementById('json-drop-zone');
 const courseDayInput = document.getElementById('course-day');
 const courseStartInput = document.getElementById('course-start');
 const courseEndInput = document.getElementById('course-end');
@@ -51,7 +44,7 @@ const secondaryDaysContainer = document.getElementById('secondary-days-container
 const timetableExportArea = document.getElementById('timetable-export-area');
 const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
 
-/* UI state and DOM references. */
+/* UI state */
 const appContent = document.querySelector('.app-content');
 const mobileWarning = document.getElementById('mobile-warning');
 const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
@@ -115,10 +108,59 @@ export function setPendingFullLoad(value) {
     pendingFullLoad = Boolean(value);
 }
 
-/* Global event delegation for feedback. */
+/* Storage Health Indicator */
+function syncSnapshotsToStorage() {
+    try {
+        localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(savedSchedules));
+        if (activeScheduleId) {
+            localStorage.setItem(ACTIVE_ID_STORAGE_KEY, activeScheduleId);
+        } else {
+            localStorage.removeItem(ACTIVE_ID_STORAGE_KEY);
+        }
+        updateStorageHealth();
+    } catch (err) {
+        console.error('Failed to sync snapshots to localStorage:', err);
+        setStatus('Storage is full! Please export and delete some schedules.', 'error');
+    }
+}
+
+function updateStorageHealth() {
+    const usage = calculateStorageUsage();
+    
+    const fill = document.getElementById('storage-health-fill');
+    const text = document.getElementById('storage-health-text');
+    
+    if (fill) fill.style.width = `${usage.percentage}%`;
+    if (text) text.innerText = `${usage.percentage}% Used`;
+
+    // Dispatch an event so other components can react
+    window.dispatchEvent(new CustomEvent('storage-health-update', { detail: usage }));
+}
+
+function calculateStorageUsage() {
+    let totalChars = 0;
+    for (const key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+            totalChars += (localStorage[key].length + key.length);
+        }
+    }
+    
+    // localStorage uses UTF-16, so each char is 2 bytes
+    const totalBytes = totalChars * 2;
+    const limitBytes = 5 * 1024 * 1024; // 5MB estimate
+    const percentage = Math.min(100, (totalBytes / limitBytes) * 100).toFixed(1);
+    
+    return {
+        bytes: totalBytes,
+        formatted: (totalBytes / 1024).toFixed(1) + ' KB',
+        percentage
+    };
+}
+
+/* Global event delegation */
 function setupButtonFeedbackDelegation() {
     document.addEventListener('click', (event) => {
-        const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn');
+        const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn, .schedule-block');
         if (targetButton) {
             anim.animatePressFeedback(targetButton);
         }
@@ -163,7 +205,7 @@ function syncColorButtons(selectedBtn = null) {
     anim.animateColorSelectorTo(activeButton, colorPicker);
 }
 
-/* Populates course search datalist. */
+/* Populates course search */
 function populateSubjectOptions() {
     const datalist = document.getElementById('pending-courses');
     const seen = new Set();
@@ -181,7 +223,7 @@ function populateSubjectOptions() {
     });
 }
 
-/* Displays toast notifications and status messages. */
+/* Displays status notifications */
 export function setStatus(message, tone = 'info') {
     managerStatus.className = 'status-text';
     if (tone === 'error') {
@@ -246,7 +288,7 @@ function closeMessageDialog(result) {
     });
 }
 
-/* Promise-based custom dialog system. */
+/* Custom dialog system */
 function openMessageDialog({
     title = 'Message',
     message = '',
@@ -341,7 +383,7 @@ function hasAcknowledgedMobileWarning() {
     return localStorage.getItem(MOBILE_WARNING_ACK_KEY) === '1';
 }
 
-/* Mobile layout and view management. */
+/* Mobile layout management */
 function syncMobileWarningVisibility() {
     if (!mobileWarning) {
         return;
@@ -427,7 +469,7 @@ function syncMobileLayoutState() {
     setMobileViewMode(mobileViewMode);
 }
 
-/* Sets timetable grid CSS variables. */
+/* Sets timetable grid CSS variables */
 function applyLiveTimetableMetrics() {
     const bodyHeight = (END_HOUR - START_HOUR) * LIVE_ROW_HEIGHT_PIXELS;
     const totalHeight = HEADER_HEIGHT_PX + bodyHeight;
@@ -442,7 +484,7 @@ function applyLiveTimetableMetrics() {
     }
 }
 
-/* Drag-and-drop file imports. */
+/* File imports */
 function wireDropImport() {
     if (!jsonDropZone) {
         return;
@@ -514,46 +556,134 @@ function syncActionStates() {
     const hasPlotted = classes.length > 0;
     loadSelectedBtn.disabled = !hasSelection;
     overwriteSelectedBtn.disabled = !hasSelection || !hasPlotted;
+    downloadSelectedBtn.disabled = !hasSelection;
     deleteSelectedBtn.disabled = !hasSelection;
     saveSnapshotBtn.disabled = !hasPlotted;
     exportPngBtn.disabled = !hasPlotted;
 }
 
-/* Renders saved schedules list. */
-export function renderSavedSchedulesList() {
-    savedSchedulesList.innerHTML = '';
+/* Renders the saved schedules library */
+const managerStatus = document.getElementById('manager-status');
+const savedSchedulesList = document.getElementById('saved-schedules-list');
+const scheduleNameInput = document.getElementById('schedule-name');
+const saveSnapshotBtn = document.getElementById('save-snapshot-btn');
+const importJsonBtn = document.getElementById('import-json-btn');
+const jsonFileInput = document.getElementById('json-file-input');
+const jsonDropZone = document.getElementById('json-drop-zone');
+const loadSelectedBtn = document.getElementById('load-selected-btn');
+const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
+const downloadSelectedBtn = document.getElementById('download-selected-btn');
+const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+[loadSelectedBtn, overwriteSelectedBtn, downloadSelectedBtn, deleteSelectedBtn, saveSnapshotBtn, importJsonBtn].forEach(btn => {
+    anim.bindInteractiveHover?.(btn);
+    anim.bindInteractivePress?.(btn);
+});
+
+export function renderSavedSchedulesList(companionPayload = null) {
+    // Determine if we should completely rebuild the list or just update classes
+    // We rebuild if the count differs, or if we force a re-render.
+    const isAutoPlotting = companionPayload?.autoSchedEnabled === true;
 
     if (savedSchedules.length === 0) {
+        savedSchedulesList.innerHTML = '';
         const li = document.createElement('li');
         li.className = 'saved-list-empty';
         li.innerText = 'No schedules loaded yet.';
         savedSchedulesList.appendChild(li);
         syncActionStates();
+        updateStorageHealth();
         return;
     }
 
-    savedSchedules.forEach((schedule) => {
+    // Sort: Pin LIVE_SYNC_ID to the top, then by updatedAt desc
+    const sorted = [...savedSchedules].sort((a, b) => {
+        if (a.id === LIVE_SYNC_ID) return -1;
+        if (b.id === LIVE_SYNC_ID) return 1;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+
+    // Instead of always destroying, check if we can just patch
+    const existingItems = Array.from(savedSchedulesList.querySelectorAll('.saved-schedule-item'));
+    if (existingItems.length === sorted.length && !savedSchedulesList.querySelector('.saved-list-empty')) {
+        // Just patch classes to prevent DOM ghosting/flashing and preserve GSAP transforms
+        existingItems.forEach((btn, index) => {
+            const schedule = sorted[index];
+            const isLive = schedule.id === LIVE_SYNC_ID;
+            
+            btn.dataset.id = schedule.id; // ensure correct mapping
+            
+            if (schedule.id === activeScheduleId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            
+            if (isLive) {
+                btn.classList.add('pinned-sync');
+                if (isAutoPlotting) btn.classList.add('is-live-plotting');
+                else btn.classList.remove('is-live-plotting');
+            } else {
+                btn.classList.remove('pinned-sync', 'is-live-plotting');
+            }
+            
+            // Also patch inner text just in case name/count changed
+            const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
+            const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
+            btn.innerHTML = `
+                <div class="saved-item-row">
+                    <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
+                    <span class="saved-item-meta">${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}</span>
+                </div>
+                <div class="saved-item-updated">${isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString()}</div>
+            `;
+        });
+        
+        syncActionStates();
+        updateStorageHealth();
+        return;
+    }
+
+    // Full rebuild if counts differ
+    savedSchedulesList.innerHTML = '';
+    
+    sorted.forEach((schedule) => {
         const li = document.createElement('li');
         const button = document.createElement('button');
+        const isLive = schedule.id === LIVE_SYNC_ID;
+        
         button.type = 'button';
-        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''}`;
+        button.dataset.id = schedule.id;
+        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''} ${isLive ? 'pinned-sync' : ''} ${(isLive && isAutoPlotting) ? 'is-live-plotting' : ''}`;
+        
+        const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
+        const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
+        
         button.innerHTML = `
             <div class="saved-item-row">
-                <span class="saved-item-name">${createIconMarkup('mdi:bookmark-outline')}${schedule.name}</span>
+                <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
                 <span class="saved-item-meta">${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}</span>
             </div>
-            <div class="saved-item-updated">Updated ${new Date(schedule.updatedAt).toLocaleString()}</div>
+            <div class="saved-item-updated">${isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString()}</div>
         `;
+        
+        // Add physics bindings
+        anim.bindInteractiveHover?.(button);
+        anim.bindInteractivePress?.(button);
+        
         button.addEventListener('click', () => {
             activeScheduleId = schedule.id;
-            renderSavedSchedulesList();
+            anim.animatePressFeedback?.(button); // trigger press animation
+            renderSavedSchedulesList(companionPayload); // this will now fast-patch
             syncActionStates();
         });
+        
         li.appendChild(button);
         savedSchedulesList.appendChild(li);
     });
 
     syncActionStates();
+    updateStorageHealth();
 }
 
 colorBtns.forEach((btn) => {
@@ -844,16 +974,29 @@ function saveSnapshot() {
 
     savedSchedules.unshift(schedule);
     activeScheduleId = schedule.id;
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
 
-    const safeName = slugify(snapshotName) || 'schedule';
-    const stamp = formatTimestamp(now);
+    setStatus(`Saved ${snapshotName} to Local Library.`, 'success');
+}
+
+function downloadSelectedSchedule() {
+    const schedule = getActiveSchedule();
+    if (!schedule) {
+        setStatus('Select a schedule from your library to download.', 'warning');
+        return;
+    }
+
+    const safeName = slugify(schedule.name) || 'schedule';
+    const stamp = formatTimestamp(new Date(schedule.updatedAt || Date.now()));
+    
     const payload = {
         version: 1,
         ...schedule
     };
+    
     triggerDownload(`${safeName}-${stamp}.json`, JSON.stringify(payload, null, 2), 'application/json');
-    setStatus(`Saved and downloaded ${snapshotName}.`, 'success');
+    setStatus(`Exported ${schedule.name} as JSON.`, 'success');
 }
 
 async function loadSelectedSchedule() {
@@ -892,16 +1035,10 @@ function overwriteSelectedSchedule() {
     selected.blocks = classes.map((c) => ({ ...c }));
     selected.updatedAt = Date.now();
     selected.meta = { defaultColor: selectedColor };
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
 
-    const safeName = slugify(selected.name) || 'schedule';
-    const stamp = formatTimestamp(selected.updatedAt);
-    triggerDownload(
-        `${safeName}-${stamp}.json`,
-        JSON.stringify({ version: 1, ...selected }, null, 2),
-        'application/json'
-    );
-    setStatus(`Overwrote and downloaded ${selected.name}.`, 'success');
+    setStatus(`Overwrote ${selected.name}.`, 'success');
 }
 
 async function deleteSelectedSchedule() {
@@ -917,8 +1054,21 @@ async function deleteSelectedSchedule() {
 
     savedSchedules = savedSchedules.filter((s) => s.id !== selected.id);
     activeScheduleId = savedSchedules[0]?.id || null;
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
     setStatus(`Deleted ${selected.name} from saved list.`, 'success');
+}
+
+function generateSmartName(baseName) {
+    let name = baseName;
+    let counter = 1;
+    
+    while (savedSchedules.some(s => s.name === name)) {
+        name = `${baseName} (${counter})`;
+        counter++;
+    }
+    
+    return name;
 }
 
 async function importScheduleFiles(fileList) {
@@ -934,11 +1084,24 @@ async function importScheduleFiles(fileList) {
             const parsed = JSON.parse(text);
             const normalized = normalizeSchedulePayload(parsed, file.name.replace(/\.json$/i, ''));
 
-            if (savedSchedules.some((s) => s.id === normalized.id)) {
-                normalized.id = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+            if (existingIndex !== -1) {
+                const ok = await showConfirmDialog(
+                    `Schedule "${normalized.name}" already exists in your library. Overwrite it?`,
+                    'Duplicate ID Detected'
+                );
+                if (ok) {
+                    savedSchedules[existingIndex] = normalized;
+                } else {
+                    normalized.id = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    normalized.name = generateSmartName(normalized.name);
+                    savedSchedules.unshift(normalized);
+                }
+            } else {
+                normalized.name = generateSmartName(normalized.name);
+                savedSchedules.unshift(normalized);
             }
 
-            savedSchedules.unshift(normalized);
             activeScheduleId = normalized.id;
             importedCount += 1;
         } catch (error) {
@@ -946,6 +1109,7 @@ async function importScheduleFiles(fileList) {
         }
     }
 
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
     if (importedCount > 0) {
         setStatus(`Imported ${importedCount} schedule${importedCount === 1 ? '' : 's'}.`, 'success');
@@ -1072,6 +1236,7 @@ export function renderSchedule() {
         `;
 
         anim.bindBlockHoverAnimation(block, c.color);
+        anim.bindBlockHoldInteraction?.(block, c.color, () => openEditModal(index));
 
         container.appendChild(block);
     });
@@ -1304,6 +1469,7 @@ document.getElementById('clear-btn').addEventListener('click', async () => {
 });
 
 saveSnapshotBtn.addEventListener('click', saveSnapshot);
+downloadSelectedBtn.addEventListener('click', downloadSelectedSchedule);
 importJsonBtn.addEventListener('click', () => jsonFileInput.click());
 jsonFileInput.addEventListener('change', async (event) => {
     await importScheduleFiles(normalizeDroppedFiles(event.target.files));
@@ -1352,11 +1518,12 @@ initTimeAxis();
 applyLiveTimetableMetrics();
 populateSubjectOptions();
 renderSavedSchedulesList();
+updateStorageHealth();
 initColorSelectorHighlight();
 syncColorButtons();
 setupButtonFeedbackDelegation();
 syncMobileLayoutState();
-setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
+setStatus('Tip: Export your schedules as JSON, then import them back anytime.');
 wireDropImport();
 renderSchedule();
 

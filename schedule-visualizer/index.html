@@ -63,36 +63,12 @@
                 </div>
             </a>
 
+            <p class="persistence-info persistence-info-top">
+                <span class="iconify info-icon" data-icon="mdi:shield-check-outline"></span>
+                Data is saved locally. Export to JSON for backups.
+            </p>
+
             <h2 class="section-title">Add Class Block</h2>
-
-            <div class="snapshot-name-group">
-                <label class="field-label" for="schedule-name">
-                    <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
-                    Snapshot Name
-                </label>
-                <input type="text" id="schedule-name" placeholder="whats it gonna be?" class="field-input">
-            </div>
-
-            <div class="snapshot-panel">
-                <div class="snapshot-actions">
-                    <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
-                        <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
-                        Save JSON
-                    </button>
-                    <button type="button" id="import-json-btn" class="btn btn-sm btn-load">
-                        <span class="iconify btn-icon" data-icon="mdi:file-import-outline" aria-hidden="true"></span>
-                        Load JSON
-                    </button>
-                </div>
-                <input type="file" id="json-file-input" accept="application/json,.json" class="hidden" multiple>
-                <div id="json-drop-zone" class="drop-zone" aria-label="Drop saved schedule JSON files here">
-                    Drop saved schedule JSON here
-                </div>
-                <p class="persistence-info">
-                    <span class="iconify info-icon" data-icon="mdi:shield-check-outline"></span>
-                    No data is saved to any server. Export to JSON to persist your work.
-                </p>
-            </div>
 
             <form id="class-form" class="class-form">
                 <div>
@@ -220,38 +196,77 @@
                 </button>
             </div>
 
-            <div class="sidebar-divider"></div>
+            <h2 class="section-title">Local Saves</h2>
 
-            <div class="stats-section">
-                <h3 class="stats-label">Total</h3>
-                <div class="stats-value" id="class-count">0</div>
-                <p class="stats-note">classes plotted</p>
+                <div class="persistence-panel">
+                    <div class="schedule-name-group">
+                        <label class="field-label" for="schedule-name">
+                            <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
+                            Schedule Name
+                        </label>
+                        <input type="text" id="schedule-name" placeholder="Name your schedule..." class="field-input">
+                    </div>
 
-                <div class="saved-panel" id="saved-panel">
-                    <h3 class="stats-label">
-                        <span class="iconify label-icon" data-icon="mdi:bookmark-outline" aria-hidden="true"></span>
-                        Saved Schedules
-                    </h3>
-                    <div class="saved-actions-grid">
-                        <button type="button" id="load-selected-btn" class="manager-btn manager-load">
-                            <span class="iconify btn-icon" data-icon="mdi:folder-open-outline"
-                                aria-hidden="true"></span>
-                            Load Selected
+                    <div class="persistence-actions">
+                        <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
+                            <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
+                            Save Local
                         </button>
-                        <button type="button" id="overwrite-selected-btn" class="manager-btn manager-overwrite">
-                            <span class="iconify btn-icon" data-icon="mdi:content-save-edit-outline"
-                                aria-hidden="true"></span>
-                            Overwrite
-                        </button>
-                        <button type="button" id="delete-selected-btn" class="manager-btn manager-delete">
-                            <span class="iconify btn-icon" data-icon="mdi:delete-outline" aria-hidden="true"></span>
-                            Delete Selected
+                        <button type="button" id="import-json-btn" class="btn btn-sm btn-load">
+                            <span class="iconify btn-icon" data-icon="mdi:file-import-outline" aria-hidden="true"></span>
+                            Import JSON
                         </button>
                     </div>
+                    <input type="file" id="json-file-input" accept="application/json,.json" class="hidden" multiple>
+                    <div id="json-drop-zone" class="drop-zone" aria-label="Drop saved schedule JSON files here">
+                        Drop JSON files here
+                    </div>
+                </div>
+
+                <div class="saved-actions-grid">
+                    <button type="button" id="load-selected-btn" class="manager-btn manager-load">
+                        <span class="iconify btn-icon" data-icon="mdi:folder-open-outline" aria-hidden="true"></span>
+                        Load Selected
+                    </button>
+                    <button type="button" id="overwrite-selected-btn" class="manager-btn manager-overwrite">
+                        <span class="iconify btn-icon" data-icon="mdi:content-save-edit-outline" aria-hidden="true"></span>
+                        Overwrite Selected
+                    </button>
+                    <button type="button" id="download-selected-btn" class="manager-btn manager-download">
+                        <span class="iconify btn-icon" data-icon="mdi:download-outline" aria-hidden="true"></span>
+                        Download JSON
+                    </button>
+                    <button type="button" id="delete-selected-btn" class="manager-btn manager-delete">
+                        <span class="iconify btn-icon" data-icon="mdi:delete-outline" aria-hidden="true"></span>
+                        Delete Selected
+                    </button>
+                </div>
+
+                <div class="saved-panel" id="saved-panel">
                     <ul id="saved-schedules-list" class="saved-list custom-scrollbar"></ul>
                     <p id="manager-status" class="status-text"></p>
                 </div>
-            </div>
+
+                <div class="storage-section">
+                    <label class="field-label">
+                        <span class="iconify label-icon" data-icon="mdi:database-outline" aria-hidden="true"></span>
+                        Storage Capacity
+                    </label>
+                    <div class="storage-health">
+                        <div class="storage-health-bar">
+                            <div id="storage-health-fill" class="storage-health-fill"></div>
+                        </div>
+                        <span id="storage-health-text" class="storage-health-text">0% Used</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-divider divider-sm"></div>
+
+                <div class="stats-section">
+                    <h3 class="stats-label">Total</h3>
+                    <div class="stats-value" id="class-count">0</div>
+                    <p class="stats-note">classes plotted</p>
+                </div>
         </aside>
 
         <!-- Timetable Panel: The primary visualization canvas for plotted classes -->

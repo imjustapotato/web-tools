@@ -18,6 +18,8 @@ import {
 // DOM elements for the Dynamic Island-style status pill and portal connection indicators
 const companionStatusEl = document.getElementById('companion-status');
 const companionStatusIcon = companionStatusEl?.querySelector('.status-icon');
+const LIVE_SYNC_ID = 'auto-sched-live-sync';
+let lastCompanionPayload = null;
 const companionStatusTitle = companionStatusEl?.querySelector('.status-title');
 const companionStatusSubtitle = companionStatusEl?.querySelector('.status-subtitle');
 const headerPortalContainer = document.getElementById('header-portal-container');
@@ -156,19 +158,23 @@ window.addEventListener('message', (event) => {
         }
 
         const payload = event.data.payload || {};
+        lastCompanionPayload = payload;
         if (payload.autoSchedEnabled) {
             setCompanionStatus('auto', payload);
         } else {
             setCompanionStatus('primed', payload);
         }
+        renderSavedSchedulesList(lastCompanionPayload);
     }
 
     if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
         const payload = event.data.payload;
         try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Extension Schedule');
+            const normalized = normalizeSchedulePayload(payload, payload.name || 'Auto Sched Live Sync');
+            normalized.id = LIVE_SYNC_ID; // Pinning ID
+            normalized.isLiveSync = true;
 
-            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+            const existingIndex = savedSchedules.findIndex((s) => s.id === LIVE_SYNC_ID);
             if (existingIndex !== -1) {
                 savedSchedules[existingIndex] = normalized;
             } else {
@@ -178,7 +184,7 @@ window.addEventListener('message', (event) => {
             updateActiveScheduleId(normalized.id);
             updateClasses(normalized.blocks.map((b) => ({ ...b })));
 
-            renderSavedSchedulesList();
+            renderSavedSchedulesList(lastCompanionPayload);
             setPendingFullLoad(true);
             renderSchedule();
             setStatus('Auto Plotter Synced from OSES!', 'success');

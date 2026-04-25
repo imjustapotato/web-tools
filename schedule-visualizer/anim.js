@@ -182,6 +182,78 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
     blockEl.addEventListener('mouseleave', onLeave);
 }
 
+// Bind hold interaction for blocks (wave animation + trigger edit)
+export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
+    if (!blockEl || !hasGsap()) return;
+    
+    let holdTimer = null;
+    let isHolding = false;
+    let waveTween = null;
+    
+    const startHold = (e) => {
+        // Ignore if clicking on the action buttons inside the block
+        if (e.target.closest('button')) return;
+        
+        isHolding = true;
+        
+        holdTimer = setTimeout(() => {
+            if (!isHolding) return;
+            
+            const glowColor = getBlockGlowColor(colorClass);
+            
+            // Animate wave on the classblock
+            waveTween = gsap.to(blockEl, {
+                scale: 1.05,
+                boxShadow: `0 0 30px ${glowColor}, 0 0 0 6px rgba(255,255,255,0.5)`,
+                duration: 0.25,
+                yoyo: true,
+                repeat: 1,
+                ease: 'sine.inOut',
+                onComplete: () => {
+                    // After the wave animation ends, open the edit modal
+                    onHoldComplete();
+                    
+                    // Recover gracefully
+                    gsap.to(blockEl, {
+                        scale: 1,
+                        boxShadow: '0 0 0 rgba(0,0,0,0)',
+                        duration: 0.3
+                    });
+                }
+            });
+            
+        }, 400); // Hold required before wave starts
+    };
+    
+    const cancelHold = (e) => {
+        isHolding = false;
+        clearTimeout(holdTimer);
+        
+        if (waveTween && waveTween.isActive()) {
+            waveTween.kill();
+            gsap.to(blockEl, { 
+                scale: 1, 
+                boxShadow: '0 0 0 rgba(0,0,0,0)', 
+                duration: 0.2, 
+                ease: 'power2.out' 
+            });
+        }
+    };
+    
+    blockEl.addEventListener('mousedown', startHold);
+    blockEl.addEventListener('touchstart', startHold, { passive: true });
+    
+    blockEl.addEventListener('mouseup', cancelHold);
+    blockEl.addEventListener('mouseleave', cancelHold);
+    blockEl.addEventListener('touchend', cancelHold);
+    blockEl.addEventListener('touchcancel', cancelHold);
+    
+    // Prevent default context menu to allow custom long-press to work cleanly
+    blockEl.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+}
+
 // Animation for newly added blocks - Drops in like physical cards
 export function animateAddedBlocks(blockElements) {
     if (!hasGsap() || !Array.isArray(blockElements) || blockElements.length === 0) {
@@ -413,5 +485,40 @@ export function animateSecondaryRowOut(rowEl, onComplete) {
         duration: 0.4,
         ease: 'power4.in',
         onComplete: () => onComplete?.()
+    });
+}
+
+// Hover physics for interactive sidebar elements like schedule saves
+export function bindInteractiveHover(element) {
+    if (!element || !hasGsap()) return;
+    
+    element.addEventListener('mouseenter', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1.015, y: -1, duration: 0.3, ease: 'back.out(2)' });
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
+    });
+}
+
+// Press physics
+export function bindInteractivePress(element) {
+    if (!element || !hasGsap()) return;
+    
+    element.addEventListener('mousedown', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 0.96, duration: 0.15, ease: 'power2.out' });
+    });
+    
+    element.addEventListener('mouseup', () => {
+        gsap.killTweensOf(element);
+        gsap.to(element, { scale: 1.015, duration: 0.4, ease: 'elastic.out(1, 0.4)' });
+    });
+    
+    element.addEventListener('mouseleave', () => {
+        // cleanup if dragging off
+        gsap.to(element, { scale: 1, y: 0, duration: 0.3, ease: 'power2.out' });
     });
 }
