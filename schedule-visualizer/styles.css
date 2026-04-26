@@ -110,61 +110,13 @@ body.page-leaving {
     justify-self: end;
 }
 
-@media (max-width: 1200px) {
-    .app-header {
-        grid-template-columns: 1fr auto;
-        gap: 1rem;
-    }
-}
-
 /* Flex layout for sidebar and timetable. */
 .app-content {
     flex: 1;
     display: flex;
     gap: 1.5rem;
     min-height: 0;
-}
-
-@media (max-width: 768px) {
-    .app-header {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-
-    .header-actions {
-        width: 100%;
-        justify-content: center;
-        margin-top: 0.5rem;
-    }
-}
-
-.mobile-only-control {
-    display: none;
-}
-
-.mobile-warning {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 1rem;
-    border: 1px solid rgba(245, 158, 11, 0.4);
-    border-radius: 0.65rem;
-    background: rgba(120, 53, 15, 0.25);
-    padding: 0.65rem 0.8rem;
-}
-
-.mobile-warning.hidden {
-    display: none;
-}
-
-.mobile-warning-text {
-    margin: 0;
-    font-size: 0.8rem;
-    color: #fde68a;
-    line-height: 1.3;
+    height: calc(100vh - 120px);
 }
 
 /* Universal button styles with tactile feedback. */
@@ -257,13 +209,6 @@ body.page-leaving {
     background: #6ee7b7;
 }
 
-/* Viewport constraints for independent scrolling. */
-.app-content {
-    display: flex;
-    gap: 1.5rem;
-    height: calc(100vh - 120px);
-}
-
 /* Primary sidebar for entry and management. */
 .sidebar-panel {
     width: 20rem;
@@ -306,8 +251,7 @@ body.page-leaving {
     padding-bottom: 0.5rem;
 }
 
-.persistence-panel,
-.saved-panel {
+.persistence-panel {
     border: 1px solid #334155;
     border-radius: 0.5rem;
     background: rgba(15, 23, 42, 0.55);
@@ -324,11 +268,13 @@ body.page-leaving {
 }
 
 .persistence-info-top {
-    margin: 0.25rem 0 1rem 0;
+    position: relative;
+    margin: -0.5rem 0 1rem 0;
     padding: 0.65rem;
     background: rgba(30, 41, 59, 0.3);
     border-radius: 0.5rem;
     border: 1px solid rgba(148, 163, 184, 0.1);
+    top: -4px;
 }
 
 .persistence-info .info-icon {
@@ -349,6 +295,7 @@ body.page-leaving {
 
 .persistence-actions {
     display: flex;
+    justify-content: center;
     gap: 0.5rem;
     margin-bottom: 0.75rem;
 }
@@ -364,17 +311,17 @@ body.page-leaving {
 }
 
 .saved-panel {
-    border: 1px solid #334155;
-    border-radius: 0.5rem;
-    background: rgba(15, 23, 42, 0.45);
-    padding: 0.85rem;
+    border: none;
+    background: transparent;
+    padding: 0.5rem 0;
 }
 
 .saved-actions-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
-    margin-bottom: 1rem;
+    margin-top: 0.75rem;
+    margin-bottom: 0;
     padding: 0 4px;
     overflow: visible;
 }
@@ -906,11 +853,8 @@ body.page-leaving {
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 0.3rem;
-    max-height: 10rem;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding-right: 4px;
+    gap: 0.35rem;
+    overflow: visible;
 }
 
 .status-text {
@@ -1087,19 +1031,40 @@ body.page-leaving {
     background: rgba(30, 41, 59, 0.8);
 }
 
-.saved-schedule-item.active {
+.saved-schedule-item.active:not(.pinned-sync) {
     border-color: #34d399;
     box-shadow: inset 0 0 0 1px rgba(52, 211, 153, 0.35);
 }
 
 /* Live Sync Pinned Entry */
 .saved-schedule-item.pinned-sync {
+    position: relative;
+    overflow: hidden;
     border-left: 3px solid #3b82f6;
     background: rgba(59, 130, 246, 0.05);
 }
 
 .saved-schedule-item.pinned-sync.is-live-plotting {
     animation: live-sync-glow 3s infinite ease-in-out;
+}
+
+.saved-schedule-item.pinned-sync.is-live-plotting::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        90deg, 
+        transparent, 
+        rgba(59, 130, 246, 0.12), 
+        transparent
+    );
+    transform: skewX(-25deg);
+    animation: island-scan 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    z-index: 1;
+    pointer-events: none;
 }
 
 @keyframes live-sync-glow {
@@ -1285,29 +1250,7 @@ body.page-leaving {
     background: rgba(15, 23, 42, 0.55);
 }
 
-@media (prefers-reduced-motion: reduce) {
 
-    .btn,
-    .toast,
-    .message-card,
-    .secondary-day-row,
-    .schedule-block,
-    .block-actions,
-    .remove-secondary-day-btn {
-        transition: none !important;
-        animation: none !important;
-    }
-
-    .schedule-block:hover {
-        transform: none;
-        filter: none;
-    }
-
-    .toast {
-        transform: none !important;
-        opacity: 1 !important;
-    }
-}
 
 .modal-overlay {
     position: fixed;
@@ -1323,6 +1266,90 @@ body.page-leaving {
 
 .modal-overlay.hidden {
     display: none;
+}
+
+
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(3px);
+    z-index: 80;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.modal-overlay.hidden {
+    display: none;
+}
+
+.modal-card {
+    width: min(32rem, 95vw);
+    background: #1e293b;
+    border: 1px solid #475569;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    box-shadow: 0 25px 40px -25px rgba(0, 0, 0, 0.8);
+}
+
+.modal-title {
+    margin-bottom: 0.9rem;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.export-modal-card {
+    width: min(30rem, 94vw);
+    padding: 0;
+    overflow: hidden;
+}
+
+.export-modal-header {
+    margin: 0;
+}
+
+.export-modal-header h3 {
+    margin: 0;
+}
+
+.export-form {
+    padding: 0.9rem;
+}
+
+
+/* Mobile-Only Elements */
+.mobile-only-control {
+    display: none;
+}
+
+.mobile-warning {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+    border-radius: 0.65rem;
+    background: rgba(120, 53, 15, 0.25);
+    padding: 0.65rem 0.8rem;
+}
+
+.mobile-warning.hidden {
+    display: none;
+}
+
+.mobile-warning-text {
+    margin: 0;
+    font-size: 0.8rem;
+    color: #fde68a;
+    line-height: 1.3;
 }
 
 .mobile-preview-modal {
@@ -1383,45 +1410,14 @@ body.page-leaving {
     height: auto;
 }
 
-.modal-card {
-    width: min(32rem, 95vw);
-    background: #1e293b;
-    border: 1px solid #475569;
-    border-radius: 0.75rem;
-    padding: 1rem;
-    box-shadow: 0 25px 40px -25px rgba(0, 0, 0, 0.8);
+/* Responsive Overrides & Media Queries */
+@media (max-width: 1200px) {
+    .app-header {
+        grid-template-columns: 1fr auto;
+        gap: 1rem;
+    }
 }
 
-.modal-title {
-    margin-bottom: 0.9rem;
-}
-
-.modal-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 0.5rem;
-}
-
-.export-modal-card {
-    width: min(30rem, 94vw);
-    padding: 0;
-    overflow: hidden;
-}
-
-.export-modal-header {
-    margin: 0;
-}
-
-.export-modal-header h3 {
-    margin: 0;
-}
-
-.export-form {
-    padding: 0.9rem;
-}
-
-
-/* Mobile Layout Refinements: Transitions to a single-column scrollable stack for ergonomics */
 @media (max-width: 768px) {
     .mobile-only-control {
         display: inline-flex;
@@ -1430,9 +1426,23 @@ body.page-leaving {
     }
 
     .app-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
         padding-left: 0;
         margin-top: 4.25rem;
         margin-bottom: 1.25rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+        margin-top: 0.5rem;
+    }
+
+    .mobile-only-control {
+        margin-bottom: 0.5rem;
     }
 
     .app-title {
@@ -1499,8 +1509,27 @@ body.page-leaving {
     .sidebar-panel {
         padding: 1rem;
     }
+}
 
-    .mobile-only-control {
-        margin-bottom: 0.5rem;
+@media (prefers-reduced-motion: reduce) {
+    .btn,
+    .toast,
+    .message-card,
+    .secondary-day-row,
+    .schedule-block,
+    .block-actions,
+    .remove-secondary-day-btn {
+        transition: none !important;
+        animation: none !important;
+    }
+
+    .schedule-block:hover {
+        transform: none;
+        filter: none;
+    }
+
+    .toast {
+        transform: none !important;
+        opacity: 1 !important;
     }
 }

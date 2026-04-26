@@ -138,6 +138,7 @@
                 </div>
 
                 <div class="secondary-days-panel">
+                    <div id="secondary-days-container" class="secondary-days-list"></div>
                     <div class="secondary-days-header-row">
                         <button type="button" id="add-secondary-day-btn"
                             class="btn btn-sm btn-load secondary-day-trigger">
@@ -145,7 +146,6 @@
                             Add Secondary Day
                         </button>
                     </div>
-                    <div id="secondary-days-container" class="secondary-days-list"></div>
                 </div>
 
                 <div>
@@ -198,29 +198,48 @@
 
             <h2 class="section-title">Local Saves</h2>
 
-                <div class="persistence-panel">
-                    <div class="schedule-name-group">
-                        <label class="field-label" for="schedule-name">
-                            <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
-                            Schedule Name
-                        </label>
-                        <input type="text" id="schedule-name" placeholder="Name your schedule..." class="field-input">
+            <div class="storage-section">
+                <label class="field-label">
+                    <span class="iconify label-icon" data-icon="mdi:database-outline" aria-hidden="true"></span>
+                    Storage Capacity
+                </label>
+                <div class="storage-health">
+                    <div class="storage-health-bar">
+                        <div id="storage-health-fill" class="storage-health-fill"></div>
                     </div>
+                    <span id="storage-health-text" class="storage-health-text">0% Used</span>
+                </div>
+            </div>
 
-                    <div class="persistence-actions">
-                        <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
-                            <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
-                            Save Local
-                        </button>
-                        <button type="button" id="import-json-btn" class="btn btn-sm btn-load">
-                            <span class="iconify btn-icon" data-icon="mdi:file-import-outline" aria-hidden="true"></span>
-                            Import JSON
-                        </button>
-                    </div>
-                    <input type="file" id="json-file-input" accept="application/json,.json" class="hidden" multiple>
-                    <div id="json-drop-zone" class="drop-zone" aria-label="Drop saved schedule JSON files here">
-                        Drop JSON files here
-                    </div>
+            <div class="persistence-panel">
+                <div class="schedule-name-group">
+                    <label class="field-label" for="schedule-name">
+                        <span class="iconify label-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
+                        Schedule Name
+                    </label>
+                    <input type="text" id="schedule-name" placeholder="Name your schedule..." class="field-input">
+                </div>
+
+                <div class="persistence-actions">
+                    <button type="button" id="save-snapshot-btn" class="btn btn-sm btn-save">
+                        <span class="iconify btn-icon" data-icon="mdi:content-save-outline" aria-hidden="true"></span>
+                        Save Local
+                    </button>
+                    <button type="button" id="import-json-btn" class="btn btn-sm btn-load">
+                        <span class="iconify btn-icon" data-icon="mdi:file-import-outline" aria-hidden="true"></span>
+                        Import JSON
+                    </button>
+                </div>
+                <input type="file" id="json-file-input" accept="application/json,.json" class="hidden" multiple>
+                <div id="json-drop-zone" class="drop-zone" aria-label="Drop saved schedule JSON files here">
+                    Drop JSON files here
+                </div>
+
+                <div class="sidebar-divider divider-sm"></div>
+
+                <div class="saved-panel" id="saved-panel">
+                    <ul id="saved-schedules-list" class="saved-list custom-scrollbar"></ul>
+                    <p id="manager-status" class="status-text"></p>
                 </div>
 
                 <div class="saved-actions-grid">
@@ -234,39 +253,21 @@
                     </button>
                     <button type="button" id="download-selected-btn" class="manager-btn manager-download">
                         <span class="iconify btn-icon" data-icon="mdi:download-outline" aria-hidden="true"></span>
-                        Download JSON
+                        Download Selected
                     </button>
                     <button type="button" id="delete-selected-btn" class="manager-btn manager-delete">
                         <span class="iconify btn-icon" data-icon="mdi:delete-outline" aria-hidden="true"></span>
                         Delete Selected
                     </button>
                 </div>
+            </div>
+            <div class="sidebar-divider divider-sm"></div>
 
-                <div class="saved-panel" id="saved-panel">
-                    <ul id="saved-schedules-list" class="saved-list custom-scrollbar"></ul>
-                    <p id="manager-status" class="status-text"></p>
-                </div>
-
-                <div class="storage-section">
-                    <label class="field-label">
-                        <span class="iconify label-icon" data-icon="mdi:database-outline" aria-hidden="true"></span>
-                        Storage Capacity
-                    </label>
-                    <div class="storage-health">
-                        <div class="storage-health-bar">
-                            <div id="storage-health-fill" class="storage-health-fill"></div>
-                        </div>
-                        <span id="storage-health-text" class="storage-health-text">0% Used</span>
-                    </div>
-                </div>
-
-                <div class="sidebar-divider divider-sm"></div>
-
-                <div class="stats-section">
-                    <h3 class="stats-label">Total</h3>
-                    <div class="stats-value" id="class-count">0</div>
-                    <p class="stats-note">classes plotted</p>
-                </div>
+            <div class="stats-section">
+                <h3 class="stats-label">Total</h3>
+                <div class="stats-value" id="class-count">0</div>
+                <p class="stats-note">classes plotted</p>
+            </div>
         </aside>
 
         <!-- Timetable Panel: The primary visualization canvas for plotted classes -->

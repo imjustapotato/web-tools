@@ -554,10 +554,17 @@ const deleteSelectedBtn = document.getElementById('delete-selected-btn');
     anim.bindInteractivePress?.(btn);
 });
 
-export function renderSavedSchedulesList(companionPayload = null) {
+let lastAutoPlottingState = false;
+
+export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate = null) {
     // Determine if we should completely rebuild the list or just update classes
     // We rebuild if the count differs, or if we force a re-render.
-    const isAutoPlotting = companionPayload?.autoSchedEnabled === true;
+    
+    // Update the cached state if a payload is provided, otherwise keep the last known state
+    if (companionPayload !== null) {
+        lastAutoPlottingState = companionPayload?.autoSchedEnabled === true;
+    }
+    const isAutoPlotting = lastAutoPlottingState;
 
     if (savedSchedules.length === 0) {
         savedSchedulesList.innerHTML = '';
@@ -579,7 +586,7 @@ export function renderSavedSchedulesList(companionPayload = null) {
 
     // Instead of always destroying, check if we can just patch
     const existingItems = Array.from(savedSchedulesList.querySelectorAll('.saved-schedule-item'));
-    if (existingItems.length === sorted.length && !savedSchedulesList.querySelector('.saved-list-empty')) {
+    if (existingItems.length === sorted.length && !savedSchedulesList.querySelector('.saved-list-empty') && !newIdToAnimate) {
         // Just patch classes to prevent DOM ghosting/flashing and preserve GSAP transforms
         existingItems.forEach((btn, index) => {
             const schedule = sorted[index];
@@ -601,16 +608,24 @@ export function renderSavedSchedulesList(companionPayload = null) {
                 btn.classList.remove('pinned-sync', 'is-live-plotting');
             }
             
-            // Also patch inner text just in case name/count changed
+            // Only patch inner content if the data actually changed to prevent GSAP/Animation stuttering
             const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
             const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
-            btn.innerHTML = `
-                <div class="saved-item-row">
-                    <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
-                    <span class="saved-item-meta">${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}</span>
-                </div>
-                <div class="saved-item-updated">${isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString()}</div>
-            `;
+            const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+            const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
+            
+            // We use a simple composite key to check for changes
+            const contentKey = `${icon}|${nameLabel}|${blockCountLabel}|${updatedLabel}`;
+            if (btn.dataset.contentKey !== contentKey) {
+                btn.innerHTML = `
+                    <div class="saved-item-row">
+                        <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
+                        <span class="saved-item-meta">${blockCountLabel}</span>
+                    </div>
+                    <div class="saved-item-updated">${updatedLabel}</div>
+                `;
+                btn.dataset.contentKey = contentKey;
+            }
         });
         
         syncActionStates();
@@ -632,14 +647,18 @@ export function renderSavedSchedulesList(companionPayload = null) {
         
         const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
         const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
+        const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+        const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
         
         button.innerHTML = `
             <div class="saved-item-row">
                 <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
-                <span class="saved-item-meta">${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}</span>
+                <span class="saved-item-meta">${blockCountLabel}</span>
             </div>
-            <div class="saved-item-updated">${isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString()}</div>
+            <div class="saved-item-updated">${updatedLabel}</div>
         `;
+
+        button.dataset.contentKey = `${icon}|${nameLabel}|${blockCountLabel}|${updatedLabel}`;
         
         // Add physics bindings
         anim.bindInteractiveHover?.(button);
@@ -654,6 +673,11 @@ export function renderSavedSchedulesList(companionPayload = null) {
         
         li.appendChild(button);
         savedSchedulesList.appendChild(li);
+
+        // Trigger entrance animation if this is a new item
+        if (schedule.id === newIdToAnimate) {
+            anim.animateSavedItemIn?.(li);
+        }
     });
 
     syncActionStates();
@@ -966,7 +990,7 @@ function saveSnapshot() {
     savedSchedules.unshift(schedule);
     activeScheduleId = schedule.id;
     syncSnapshotsToStorage();
-    renderSavedSchedulesList();
+    renderSavedSchedulesList(null, schedule.id);
 
     setStatus(`Saved ${snapshotName} to Local Library.`, 'success');
 }
@@ -1043,11 +1067,21 @@ async function deleteSelectedSchedule() {
         return;
     }
 
-    savedSchedules = savedSchedules.filter((s) => s.id !== selected.id);
-    activeScheduleId = savedSchedules[0]?.id || null;
-    syncSnapshotsToStorage();
-    renderSavedSchedulesList();
-    setStatus(`Deleted ${selected.name} from saved list.`, 'success');
+    const itemEl = savedSchedulesList.querySelector(`button[data-id="${selected.id}"]`)?.closest('li');
+    
+    const performDeletion = () => {
+        savedSchedules = savedSchedules.filter((s) => s.id !== selected.id);
+        activeScheduleId = savedSchedules[0]?.id || null;
+        syncSnapshotsToStorage();
+        renderSavedSchedulesList();
+        setStatus(`Deleted ${selected.name} from saved list.`, 'success');
+    };
+
+    if (itemEl) {
+        anim.animateSavedItemOut?.(itemEl, performDeletion);
+    } else {
+        performDeletion();
+    }
 }
 
 function generateSmartName(baseName) {

@@ -531,6 +531,64 @@ export function animateToastOut(toastEl, onComplete) {
     });
 }
 
+// Animation for saved schedule item entrance 
+export function animateSavedItemIn(itemEl) {
+    if (!itemEl || !hasGsap()) return;
+
+    gsap.killTweensOf(itemEl);
+    gsap.fromTo(itemEl,
+        { 
+            opacity: 0, 
+            y: -10, 
+            scale: 0.95, 
+            height: 0, 
+            marginBottom: 0,
+            overflow: 'hidden'
+        },
+        { 
+            opacity: 1, 
+            y: 0, 
+            scale: 1, 
+            height: 'auto', 
+            marginBottom: 0, 
+            duration: 0.5, 
+            ease: 'power3.out', 
+            clearProps: 'all' 
+        }
+    );
+}
+
+// Animation for saved schedule item removal
+export function animateSavedItemOut(itemEl, onComplete) {
+    if (!itemEl) {
+        onComplete?.();
+        return;
+    }
+
+    if (!hasGsap()) {
+        onComplete?.();
+        return;
+    }
+
+    gsap.killTweensOf(itemEl);
+    gsap.to(itemEl, {
+        opacity: 0,
+        x: 20,
+        scale: 0.9,
+        height: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        marginTop: 0,
+        marginBottom: 0,
+        overflow: 'hidden',
+        duration: 0.4,
+        ease: 'power3.inOut',
+        onComplete: () => {
+            onComplete?.();
+        }
+    });
+}
+
 // Animation for secondary day row entrance
 export function animateSecondaryRowIn(rowEl) {
     if (!rowEl || !hasGsap()) {
