@@ -173,12 +173,17 @@ window.addEventListener('message', (event) => {
 
     if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
         const payload = event.data.payload;
+        const source = payload.source || 'auto-plot';
+        const isManual = source === 'manual-saf';
+        
         try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Auto Sched Live Sync');
-            normalized.id = LIVE_SYNC_ID; // Pinning ID
+            const defaultName = isManual ? 'Extracted Data SAF' : 'Auto Sched Live Sync';
+            const normalized = normalizeSchedulePayload(payload, payload.name || defaultName);
+            
+            normalized.id = payload.id || (isManual ? 'saf-manual-extract' : LIVE_SYNC_ID);
             normalized.isLiveSync = true;
 
-            const existingIndex = savedSchedules.findIndex((s) => s.id === LIVE_SYNC_ID);
+            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
             if (existingIndex !== -1) {
                 savedSchedules[existingIndex] = normalized;
             } else {
@@ -191,7 +196,9 @@ window.addEventListener('message', (event) => {
             renderSavedSchedulesList(lastCompanionPayload);
             setPendingFullLoad(true);
             renderSchedule();
-            setStatus('Auto Plotter Synced from OSES!', 'success');
+            
+            const statusMsg = isManual ? 'SAF Data Extracted!' : 'Auto Plotter Synced from OSES!';
+            setStatus(statusMsg, 'success');
         } catch (err) {
             console.error('[Web Tools] Failed to sync extension schedule:', err);
             setStatus('Failed to sync schedule from extension.', 'error');
