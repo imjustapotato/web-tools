@@ -2,14 +2,15 @@
  * Manages graph animations using GSAP.
  * Visualizes course dependencies and selection states for clear feedback.
  */
-
 import gsap from 'gsap';
 
+/* 1. Animation Constants & Tokens */
 const TRAIL_STEP_SECONDS = 0.15;
 const GLOW_SELECTED = 'drop-shadow(0 0 12px #86efac) drop-shadow(0 0 24px rgba(134,239,172,0.9))';
 const GLOW_DIRECT = 'drop-shadow(0 0 10px #60a5fa)';
 const GLOW_OTHER = 'drop-shadow(0 0 8px #fb923c)';
 
+/* 2. Global Reset Logic */
 /**
  * Resets the graph to its default visual state.
  * Prevents animation artifacts when switching selections.
@@ -75,6 +76,7 @@ export function clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdge
     });
 }
 
+/* 3. Selection Orchestration */
 /**
  * Animates the prerequisite hierarchy for a selected course.
  * Uses staggered delays to show the directional flow of dependencies.
@@ -115,6 +117,7 @@ export function animateNodeSelection(selectedCourseCode, context) {
     return timeline;
 }
 
+/* 4. SVG Marker Utilities */
 /**
  * Ensures SVG markers exist for edge arrowheads.
  * Keeps marker setup isolated from animation logic.
@@ -143,6 +146,7 @@ function ensureArrowheadMarkerExists(svgElement) {
     defs.appendChild(marker);
 }
 
+/* 5. Node State Management */
 /**
  * Transforms nodes based on their role in the current selection.
  * Distinguishes between active chain members and background nodes.
@@ -258,6 +262,7 @@ function getActiveNodeVisualConfig(distance) {
     return { glow: GLOW_OTHER, scale: 1.01, stroke: '#fb923c', strokeWidth: 2.2 };
 }
 
+/* 6. Edge State Management */
 /**
  * Animates edges to illustrate the direction of dependency.
  */

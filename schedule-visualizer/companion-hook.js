@@ -11,17 +11,21 @@ import {
     renderSchedule,
     setStatus,
     updateClasses,
-    updateActiveScheduleId
+    updateActiveScheduleId,
+    setPendingFullLoad
 } from './script.js';
 
-// DOM elements for the Dynamic Island-style status pill and portal connection indicators
+const LIVE_SYNC_ID = 'auto-sched-live-sync';
+
+/* 1. Status Pill (Dynamic Island) UI Management */
 const companionStatusEl = document.getElementById('companion-status');
 const companionStatusIcon = companionStatusEl?.querySelector('.status-icon');
 const companionStatusTitle = companionStatusEl?.querySelector('.status-title');
 const companionStatusSubtitle = companionStatusEl?.querySelector('.status-subtitle');
 const headerPortalContainer = document.getElementById('header-portal-container');
-let companionHandshakeTimeout = null;
+
 let companionExpansionTimeout = null;
+let companionHoverTimeout = null;
 
 // Updates the visual state and messaging of the companion status pill based on connection health
 function setCompanionStatus(state, data = {}) {
@@ -83,17 +87,6 @@ function setCompanionStatus(state, data = {}) {
     }
 }
 
-// Initiates the heartbeat handshake with the extension to verify if it is installed and active
-function initCompanionHandshake() {
-    setCompanionStatus('checking');
-
-    window.postMessage({ type: 'WEB_TOOLS_HEARTBEAT_REQUEST' }, '*');
-
-    companionHandshakeTimeout = setTimeout(() => {
-        setCompanionStatus('not-installed');
-    }, 2000);
-}
-
 // Triggers the expanded state animation for the status pill to grab user attention
 function triggerCompanionExpansion(keepExpanded = false) {
     if (!companionStatusEl) return;
@@ -113,8 +106,6 @@ function triggerCompanionExpansion(keepExpanded = false) {
         }, 5000);
     }
 }
-
-let companionHoverTimeout = null;
 
 if (companionStatusEl) {
     companionStatusEl.addEventListener('mouseenter', () => {
@@ -143,6 +134,22 @@ if (companionStatusEl) {
     });
 }
 
+/* 2. Handshake & Connection Logic */
+let companionHandshakeTimeout = null;
+
+// Initiates the heartbeat handshake with the extension to verify if it is installed and active
+function initCompanionHandshake() {
+    setCompanionStatus('checking');
+
+    window.postMessage({ type: 'WEB_TOOLS_HEARTBEAT_REQUEST' }, '*');
+
+    companionHandshakeTimeout = setTimeout(() => {
+        setCompanionStatus('not-installed');
+    }, 2000);
+}
+
+/* 3. Message Bridge (Communication with Extension) */
+let lastCompanionPayload = null;
 
 // Main bridge listener for cross-window messages from the extension's content script
 window.addEventListener('message', (event) => {
@@ -155,19 +162,23 @@ window.addEventListener('message', (event) => {
         }
 
         const payload = event.data.payload || {};
+        lastCompanionPayload = payload;
         if (payload.autoSchedEnabled) {
             setCompanionStatus('auto', payload);
         } else {
             setCompanionStatus('primed', payload);
         }
+        renderSavedSchedulesList(lastCompanionPayload);
     }
 
     if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
         const payload = event.data.payload;
         try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Extension Schedule');
+            const normalized = normalizeSchedulePayload(payload, payload.name || 'Auto Sched Live Sync');
+            normalized.id = LIVE_SYNC_ID; // Pinning ID
+            normalized.isLiveSync = true;
 
-            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+            const existingIndex = savedSchedules.findIndex((s) => s.id === LIVE_SYNC_ID);
             if (existingIndex !== -1) {
                 savedSchedules[existingIndex] = normalized;
             } else {
@@ -177,7 +188,8 @@ window.addEventListener('message', (event) => {
             updateActiveScheduleId(normalized.id);
             updateClasses(normalized.blocks.map((b) => ({ ...b })));
 
-            renderSavedSchedulesList();
+            renderSavedSchedulesList(lastCompanionPayload);
+            setPendingFullLoad(true);
             renderSchedule();
             setStatus('Auto Plotter Synced from OSES!', 'success');
         } catch (err) {
@@ -187,6 +199,7 @@ window.addEventListener('message', (event) => {
     }
 });
 
+/* 4. Initialization */
 // Notify the bridge that the web app is fully loaded and ready to receive data
 window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
 initCompanionHandshake();

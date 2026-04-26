@@ -5,9 +5,9 @@
 import mermaid from 'mermaid';
 import gsap from 'gsap';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
-
 import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
 
+/* 1. Global App Config & State */
 mermaid.initialize({
     startOnLoad: false,
     theme: 'base',
@@ -24,20 +24,7 @@ mermaid.initialize({
 
 window.mermaid = mermaid;
 
-
-/**
- * Application state.
- * Tracks navigation, selection, and dependency data.
- */
-// State
 let mermaidRawCode = '';
-let scale = 1;
-let pointX = 0;
-let pointY = 0;
-let startX = 0;
-let startY = 0;
-let panning = false;
-let didPan = false;
 let selectedNodeId = null;
 let activeSelectionTimeline = null;
 let isViewTransitioning = false;
@@ -46,30 +33,8 @@ let isViewTransitioning = false;
 let adjacencyGraph = new Map();
 let courseTitleMap = new Map();
 
-// DOM References
+/* 2. File Ingestion (Dropzone & Input) */
 const dropzone = document.getElementById('dropzone');
-const wrapper = document.getElementById('graph-wrapper');
-const container = document.getElementById('graph-container');
-const controls = document.getElementById('controls');
-const copyBtn = document.getElementById('copy-btn');
-const resetBtn = document.getElementById('reset-btn');
-const zoomInBtn = document.getElementById('zoom-in');
-const zoomOutBtn = document.getElementById('zoom-out');
-const zoomResetBtn = document.getElementById('zoom-reset');
-const fullViewBtn = document.getElementById('full-view-btn');
-const fullViewCloseBtn = document.getElementById('full-view-close');
-const deselectBtnFull = document.getElementById('deselect-btn-full');
-const presetButtonsContainer = document.getElementById('preset-buttons');
-const summaryDock = document.getElementById('summary-dock');
-const summarySubjectDock = document.getElementById('summary-subject-dock');
-const summaryListDock = document.getElementById('summary-list-dock');
-const summaryExpandBtn = document.getElementById('summary-expand-btn');
-const summaryIndirectContainer = document.getElementById('summary-indirect-container');
-const summaryIndirectListDock = document.getElementById('summary-indirect-list-dock');
-let isFullView = false;
-let isSummaryExpanded = false;
-
-// File Input
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
 fileInput.accept = '.mhtml,.html,.htm';
@@ -102,89 +67,6 @@ dropzone.addEventListener('drop', (e) => {
 });
 
 /**
- * Initializes degree templates.
- * Provides quick access to common curriculum structures.
- */
-// Preset Buttons
-function buildPresetButtons() {
-    PRESET_CURRICULA.forEach((preset) => {
-        const button = document.createElement('button');
-        button.id = `preset-${preset.id}`;
-        button.className = 'btn btn-preset';
-        button.type = 'button';
-        button.textContent = preset.label;
-        button.addEventListener('click', () => loadPresetCurriculum(preset, button));
-        
-        // Hover Tooltip for Credits
-        button.addEventListener('mouseenter', () => {
-            const credit = CURRICULA_CREDITS[preset.id] || 'Contributor';
-            showCreditTooltip(credit, button);
-        });
-
-        button.addEventListener('mouseleave', () => {
-            hideCreditTooltip();
-        });
-
-        presetButtonsContainer.appendChild(button);
-    });
-}
-
-
-/**
- * Credit Tooltip Logic
- * Displays a non-intrusive credit label below preset buttons.
- */
-const creditTooltip = document.createElement('div');
-creditTooltip.className = 'credit-tooltip';
-document.body.appendChild(creditTooltip);
-
-
-let creditTooltipTimeout = null;
-
-function showCreditTooltip(credit, targetEl) {
-    if (creditTooltipTimeout) {
-        clearTimeout(creditTooltipTimeout);
-        creditTooltipTimeout = null;
-    }
-    
-    creditTooltip.textContent = `Data provided by: ${credit}`;
-    creditTooltip.classList.add('visible');
-    
-    // Position the tooltip centered below the button
-    const rect = targetEl.getBoundingClientRect();
-    const tooltipX = rect.left + window.scrollX + (rect.width / 2);
-    const tooltipY = rect.bottom + window.scrollY + 8;
-    
-    creditTooltip.style.left = `${tooltipX}px`;
-    creditTooltip.style.top = `${tooltipY}px`;
-}
-
-function hideCreditTooltip() {
-    creditTooltip.classList.remove('visible');
-    if (creditTooltipTimeout) {
-        clearTimeout(creditTooltipTimeout);
-        creditTooltipTimeout = null;
-    }
-}
-
-
-async function loadPresetCurriculum(preset, button) {
-    button.classList.add('is-loading');
-    button.disabled = true;
-
-    try {
-        await renderMermaidCode(preset.content.trim());
-    } catch (error) {
-        console.error('Preset load error:', error);
-        container.innerHTML = `<p class="status-message status-message--error">Failed to load preset curriculum.</p>`;
-    } finally {
-        button.classList.remove('is-loading');
-        button.disabled = false;
-    }
-}
-
-// File Parsing
-/**
  * Processes HTML and MHTML exports.
  * Handles encoding (Base64/Quoted-Printable) to extract the raw course table.
  */
@@ -213,6 +95,83 @@ async function handleFile(file) {
     parseAndRender(rawHtml);
 }
 
+/* 3. Curriculum Presets */
+const presetButtonsContainer = document.getElementById('preset-buttons');
+const creditTooltip = document.createElement('div');
+creditTooltip.className = 'credit-tooltip';
+document.body.appendChild(creditTooltip);
+
+let creditTooltipTimeout = null;
+
+/**
+ * Initializes degree templates.
+ * Provides quick access to common curriculum structures.
+ */
+function buildPresetButtons() {
+    PRESET_CURRICULA.forEach((preset) => {
+        const button = document.createElement('button');
+        button.id = `preset-${preset.id}`;
+        button.className = 'btn btn-preset';
+        button.type = 'button';
+        button.textContent = preset.label;
+        button.addEventListener('click', () => loadPresetCurriculum(preset, button));
+        
+        // Hover Tooltip for Credits
+        button.addEventListener('mouseenter', () => {
+            const credit = CURRICULA_CREDITS[preset.id] || 'Contributor';
+            showCreditTooltip(credit, button);
+        });
+
+        button.addEventListener('mouseleave', () => {
+            hideCreditTooltip();
+        });
+
+        presetButtonsContainer.appendChild(button);
+    });
+}
+
+function showCreditTooltip(credit, targetEl) {
+    if (creditTooltipTimeout) {
+        clearTimeout(creditTooltipTimeout);
+        creditTooltipTimeout = null;
+    }
+    
+    creditTooltip.textContent = `Data provided by: ${credit}`;
+    creditTooltip.classList.add('visible');
+    
+    // Position the tooltip centered below the button
+    const rect = targetEl.getBoundingClientRect();
+    const tooltipX = rect.left + window.scrollX + (rect.width / 2);
+    const tooltipY = rect.bottom + window.scrollY + 8;
+    
+    creditTooltip.style.left = `${tooltipX}px`;
+    creditTooltip.style.top = `${tooltipY}px`;
+}
+
+function hideCreditTooltip() {
+    creditTooltip.classList.remove('visible');
+    if (creditTooltipTimeout) {
+        clearTimeout(creditTooltipTimeout);
+        creditTooltipTimeout = null;
+    }
+}
+
+async function loadPresetCurriculum(preset, button) {
+    button.classList.add('is-loading');
+    button.disabled = true;
+
+    try {
+        await renderMermaidCode(preset.content.trim());
+    } catch (error) {
+        console.error('Preset load error:', error);
+        container.innerHTML = `<p class="status-message status-message--error">Failed to load preset curriculum.</p>`;
+    } finally {
+        button.classList.remove('is-loading');
+        button.disabled = false;
+    }
+}
+
+/* 4. Course Table Parser (Heuristic Parsing) */
 /**
  * Extracts course data from HTML.
  * Uses heuristic column detection for robustness across portal versions.
@@ -278,7 +237,10 @@ async function parseAndRender(html) {
     await renderMermaidCode(mermaidCode);
 }
 
-// Core Render
+/* 5. Mermaid Rendering Engine */
+const container = document.getElementById('graph-container');
+const controls = document.getElementById('controls');
+
 /**
  * Renders Mermaid syntax into an interactive SVG graph.
  * Builds the logical adjacency map once the SVG is available in the DOM.
@@ -293,8 +255,6 @@ async function renderMermaidCode(mermaidCode) {
     if (courseTitleMap.size === 0) {
         courseTitleMap = extractCourseTitleMapFromMermaid(mermaidCode);
     }
-
-    updateSummaryButtonsState();
 
     try {
         const { svg } = await window.mermaid.render('mermaid-svg', mermaidCode);
@@ -333,11 +293,7 @@ function getCourseDisplayLabel(courseCode) {
     return `${courseCode} - ${courseTitle}`;
 }
 
-function updateSummaryButtonsState() {
-    // No longer needed, left as no-op to prevent ReferenceErrors if called elsewhere
-}
-
-// Adjacency Graph Builder
+/* 6. Graph Analysis (Adjacency & Traversal) */
 function normalizeCourseCode(rawValue) {
     if (!rawValue || typeof rawValue !== 'string') {
         return null;
@@ -410,53 +366,6 @@ function getGraphEdges(svgElement) {
     });
 
     return Array.from(uniqueEdges);
-}
-
-function setNodeGlow(shapeElement, glowFilter) {
-    if (!shapeElement) {
-        return;
-    }
-
-    shapeElement.style.filter = glowFilter;
-}
-
-function getNodeTextElements(nodeElement) {
-    return nodeElement.querySelectorAll('text, tspan, span.nodeLabel, div.nodeLabel');
-}
-
-function getSafePathLength(pathElement) {
-    if (!pathElement) {
-        return 300;
-    }
-
-    let pathLength = 0;
-    try {
-        pathLength = pathElement.getTotalLength?.() ?? 0;
-    } catch (error) {
-        pathLength = 0;
-    }
-
-    if (pathLength > 50) {
-        return pathLength;
-    }
-
-    try {
-        const bbox = pathElement.getBBox?.();
-        if (bbox) {
-            const diagonal = Math.sqrt((bbox.width ** 2) + (bbox.height ** 2));
-            if (diagonal > 50) {
-                return diagonal;
-            }
-        }
-    } catch (error) {
-        // Ignore bbox fallback failures and use default.
-    }
-
-    return 300;
-}
-
-function isKnownEdge(sourceCode, targetCode) {
-    return Boolean(adjacencyGraph.get(sourceCode)?.outgoing.has(targetCode));
 }
 
 /**
@@ -572,6 +481,67 @@ function getOrderedPrerequisiteList(startCode) {
         });
 }
 
+/* 7. Interaction & Selection */
+function attachNodeClickListeners() {
+    const svgElement = container.querySelector('svg');
+    if (!svgElement) {
+        return;
+    }
+
+    getGraphNodes(svgElement).forEach((nodeElement) => {
+        nodeElement.style.cursor = 'pointer';
+        nodeElement.addEventListener('click', handleNodeClick);
+    });
+}
+
+/**
+ * Handles node selection on click.
+ * Ignored during panning to prevent accidental triggers.
+ */
+function handleNodeClick(event) {
+    event.stopPropagation();
+
+    // Ignore if the user was panning
+    if (didPan) {
+        return;
+    }
+
+    const nodeElement = event.currentTarget;
+    const courseCode = extractCourseCodeFromNodeElement(nodeElement);
+    if (!courseCode) {
+        console.warn('[Tree Animation] Unable to resolve course code for clicked node:', nodeElement?.id ?? '(no id)');
+        return;
+    }
+
+    if (selectedNodeId === courseCode) {
+        clearAllHighlights();
+        return;
+    }
+
+    selectedNodeId = courseCode;
+
+    if (!isFullView) {
+        fullViewBtn.click();
+    }
+    openSummaryDock();
+
+    activeSelectionTimeline = animateNodeSelection(courseCode, {
+        svgElement: container.querySelector('svg'),
+        activeSelectionTimeline,
+        collectPrerequisiteChain,
+        buildPrerequisiteDistanceMap,
+        buildPrerequisiteEdgeDistanceMap,
+        getGraphNodes,
+        getGraphEdges,
+        extractCourseCodeFromNodeElement,
+        setNodeGlow,
+        getNodeTextElements,
+        buildNodeCenterLookup,
+        resolveEdgeKey,
+        getSafePathLength
+    });
+}
+
 function clearAllHighlights() {
     const svgElement = container.querySelector('svg');
     if (!svgElement) return;
@@ -579,6 +549,54 @@ function clearAllHighlights() {
     clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdges, setNodeGlow, getNodeTextElements });
     selectedNodeId = null;
     closeSummaryDock();
+}
+
+/* 8. Edge Resolution Fallback */
+function setNodeGlow(shapeElement, glowFilter) {
+    if (!shapeElement) {
+        return;
+    }
+
+    shapeElement.style.filter = glowFilter;
+}
+
+function getNodeTextElements(nodeElement) {
+    return nodeElement.querySelectorAll('text, tspan, span.nodeLabel, div.nodeLabel');
+}
+
+function getSafePathLength(pathElement) {
+    if (!pathElement) {
+        return 300;
+    }
+
+    let pathLength = 0;
+    try {
+        pathLength = pathElement.getTotalLength?.() ?? 0;
+    } catch (error) {
+        pathLength = 0;
+    }
+
+    if (pathLength > 50) {
+        return pathLength;
+    }
+
+    try {
+        const bbox = pathElement.getBBox?.();
+        if (bbox) {
+            const diagonal = Math.sqrt((bbox.width ** 2) + (bbox.height ** 2));
+            if (diagonal > 50) {
+                return diagonal;
+            }
+        }
+    } catch (error) {
+        // Ignore bbox fallback failures and use default.
+    }
+
+    return 300;
+}
+
+function isKnownEdge(sourceCode, targetCode) {
+    return Boolean(adjacencyGraph.get(sourceCode)?.outgoing.has(targetCode));
 }
 
 // Edge Key Resolution
@@ -700,7 +718,7 @@ function resolveEdgeKey(edgeElement, nodeCenterLookup = []) {
     return null;
 }
 
-function buildEdgeDistanceMap(startCode, visitedEdges) {
+function buildPrerequisiteEdgeDistanceMap(startCode, visitedEdges) {
     const distanceMap = new Map();
     const queue = [{ code: startCode, distance: 0 }];
     const visitedCodes = new Set([startCode]);
@@ -731,9 +749,15 @@ function buildEdgeDistanceMap(startCode, visitedEdges) {
     return distanceMap;
 }
 
-function buildPrerequisiteEdgeDistanceMap(startCode, visitedEdges) {
-    return buildEdgeDistanceMap(startCode, visitedEdges);
-}
+/* 9. Summary Dock */
+const summaryDock = document.getElementById('summary-dock');
+const summarySubjectDock = document.getElementById('summary-subject-dock');
+const summaryListDock = document.getElementById('summary-list-dock');
+const summaryExpandBtn = document.getElementById('summary-expand-btn');
+const summaryIndirectContainer = document.getElementById('summary-indirect-container');
+const summaryIndirectListDock = document.getElementById('summary-indirect-list-dock');
+
+let isSummaryExpanded = false;
 
 /**
  * Generates the text-based prerequisite summary for the side dock.
@@ -812,70 +836,20 @@ function closeSummaryDock() {
     summaryDock.classList.add('is-hidden');
 }
 
+/* 10. Pan & Zoom Logic */
+const wrapper = document.getElementById('graph-wrapper');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const zoomResetBtn = document.getElementById('zoom-reset');
 
+let scale = 1;
+let pointX = 0;
+let pointY = 0;
+let startX = 0;
+let startY = 0;
+let panning = false;
+let didPan = false;
 
-// Node Click Listeners
-function attachNodeClickListeners() {
-    const svgElement = container.querySelector('svg');
-    if (!svgElement) {
-        return;
-    }
-
-    getGraphNodes(svgElement).forEach((nodeElement) => {
-        nodeElement.style.cursor = 'pointer';
-        nodeElement.addEventListener('click', handleNodeClick);
-    });
-}
-
-/**
- * Handles node selection on click.
- * Ignored during panning to prevent accidental triggers.
- */
-function handleNodeClick(event) {
-    event.stopPropagation();
-
-    // Ignore if the user was panning
-    if (didPan) {
-        return;
-    }
-
-    const nodeElement = event.currentTarget;
-    const courseCode = extractCourseCodeFromNodeElement(nodeElement);
-    if (!courseCode) {
-        console.warn('[Tree Animation] Unable to resolve course code for clicked node:', nodeElement?.id ?? '(no id)');
-        return;
-    }
-
-    if (selectedNodeId === courseCode) {
-        clearAllHighlights();
-        return;
-    }
-
-    selectedNodeId = courseCode;
-
-    if (!isFullView) {
-        fullViewBtn.click();
-    }
-    openSummaryDock();
-
-    activeSelectionTimeline = animateNodeSelection(courseCode, {
-        svgElement: container.querySelector('svg'),
-        activeSelectionTimeline,
-        collectPrerequisiteChain,
-        buildPrerequisiteDistanceMap,
-        buildPrerequisiteEdgeDistanceMap,
-        getGraphNodes,
-        getGraphEdges,
-        extractCourseCodeFromNodeElement,
-        setNodeGlow,
-        getNodeTextElements,
-        buildNodeCenterLookup,
-        resolveEdgeKey,
-        getSafePathLength
-    });
-}
-
-// Pan & Zoom
 /**
  * Applies zoom and pan offsets to the graph container.
  */
@@ -950,7 +924,6 @@ wrapper.addEventListener('wheel', (e) => {
     setTransform();
 });
 
-// Button Controls
 zoomInBtn.addEventListener('click', () => {
     scale = Math.min(scale * 1.3, 8);
     setTransform();
@@ -963,7 +936,14 @@ zoomOutBtn.addEventListener('click', () => {
 
 zoomResetBtn.addEventListener('click', resetZoom);
 
-deselectBtnFull.addEventListener('click', clearAllHighlights);
+/* 11. Navigation & Global Controls */
+const copyBtn = document.getElementById('copy-btn');
+const resetBtn = document.getElementById('reset-btn');
+const fullViewBtn = document.getElementById('full-view-btn');
+const fullViewCloseBtn = document.getElementById('full-view-close');
+const deselectBtnFull = document.getElementById('deselect-btn-full');
+
+let isFullView = false;
 
 copyBtn.addEventListener('click', () => {
     if (!mermaidRawCode) {
@@ -1041,12 +1021,7 @@ function closeFullView() {
     });
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isFullView) {
-        closeFullView();
-    }
-});
-
+deselectBtnFull.addEventListener('click', clearAllHighlights);
 fullViewCloseBtn.addEventListener('click', closeFullView);
 
 resetBtn.addEventListener('click', () => {
@@ -1070,10 +1045,14 @@ resetBtn.addEventListener('click', () => {
     courseTitleMap = new Map();
     wrapper.classList.remove('is-panning');
     gsap.set(wrapper, { clearProps: 'transform' });
-    updateSummaryButtonsState();
     resetZoom();
 });
 
-// Init
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isFullView) {
+        closeFullView();
+    }
+});
+
+/* 12. Initialization */
 buildPresetButtons();
-updateSummaryButtonsState();

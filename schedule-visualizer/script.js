@@ -3,107 +3,86 @@ import { exportScheduleAsPng } from './export/export-png.js';
 import { SUBJECT_CATALOG } from './subjects.js';
 import * as anim from './anim.js';
 
-/* Persistent state and shared exports for extension hooks. */
-export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
-let selectedColor = 'bg-emerald-600';
-export let savedSchedules = [];
-export let activeScheduleId = null;
-let editingIndex = null;
+/* 1. Global State & App Constants */
+const SNAPSHOTS_STORAGE_KEY = 'feu_snapshots';
+const ACTIVE_ID_STORAGE_KEY = 'feu_active_id';
+const LIVE_SYNC_ID = 'auto-sched-live-sync';
 
-/* Timetable grid and responsiveness constants. */
+export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
+export let savedSchedules = JSON.parse(localStorage.getItem(SNAPSHOTS_STORAGE_KEY)) || [];
+export let activeScheduleId = localStorage.getItem(ACTIVE_ID_STORAGE_KEY) || null;
+
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
 const HEADER_HEIGHT_PX = 40;
 const MOBILE_BREAKPOINT = 768;
-const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
 
-const form = document.getElementById('class-form');
-const colorBtns = document.querySelectorAll('.color-btn');
-const container = document.getElementById('blocks-container');
-const timeAxis = document.getElementById('time-axis');
-const countDisplay = document.getElementById('class-count');
-const scheduleNameInput = document.getElementById('schedule-name');
-const managerStatus = document.getElementById('manager-status');
-const savedSchedulesList = document.getElementById('saved-schedules-list');
-const jsonFileInput = document.getElementById('json-file-input');
-const saveSnapshotBtn = document.getElementById('save-snapshot-btn');
-const importJsonBtn = document.getElementById('import-json-btn');
-const loadSelectedBtn = document.getElementById('load-selected-btn');
-const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
-const deleteSelectedBtn = document.getElementById('delete-selected-btn');
-const exportPngBtn = document.getElementById('export-png-btn');
-const exportModal = document.getElementById('export-modal');
-const exportModalCard = exportModal?.querySelector('.export-modal-card');
-const exportForm = document.getElementById('export-form');
-const exportNameInput = document.getElementById('export-name-input');
-const exportSizePresetInput = document.getElementById('export-size-preset');
-const exportCloseBtn = document.getElementById('export-close-btn');
-const exportCancelBtn = document.getElementById('export-cancel-btn');
-const jsonDropZone = document.getElementById('json-drop-zone');
-const courseDayInput = document.getElementById('course-day');
-const courseStartInput = document.getElementById('course-start');
-const courseEndInput = document.getElementById('course-end');
-const courseRoomInput = document.getElementById('course-room');
-const courseSectionInput = document.getElementById('course-section');
-const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
-const secondaryDaysContainer = document.getElementById('secondary-days-container');
-const timetableExportArea = document.getElementById('timetable-export-area');
-const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
+export function setPendingFullLoad(value) {
+    pendingFullLoad = Boolean(value);
+}
 
-/* UI state and DOM references. */
-const appContent = document.querySelector('.app-content');
-const mobileWarning = document.getElementById('mobile-warning');
-const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
-const mobileToggleViewBtn = document.getElementById('mobile-toggle-view-btn');
-const mobileFullPreviewBtn = document.getElementById('mobile-full-preview-btn');
-const mobilePreviewModal = document.getElementById('mobile-preview-modal');
-const mobilePreviewCloseBtn = document.getElementById('mobile-preview-close-btn');
-const mobilePreviewContainer = document.getElementById('mobile-preview-container');
+/* 2. Storage Health & Persistence */
+const storageFill = document.getElementById('storage-health-fill');
+const storageText = document.getElementById('storage-health-text');
+/* Storage Health Indicator */
+function syncSnapshotsToStorage() {
+    try {
+        localStorage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(savedSchedules));
+        if (activeScheduleId) {
+            localStorage.setItem(ACTIVE_ID_STORAGE_KEY, activeScheduleId);
+        } else {
+            localStorage.removeItem(ACTIVE_ID_STORAGE_KEY);
+        }
+        updateStorageHealth();
+    } catch (err) {
+        console.error('Failed to sync snapshots to localStorage:', err);
+        setStatus('Storage is full! Please export and delete some schedules.', 'error');
+    }
+}
 
-const editModal = document.getElementById('edit-modal');
-const editForm = document.getElementById('edit-class-form');
-const editCourseName = document.getElementById('edit-course-name');
-const editCourseDay = document.getElementById('edit-course-day');
-const editCourseStart = document.getElementById('edit-course-start');
-const editCourseEnd = document.getElementById('edit-course-end');
-const editCourseRoom = document.getElementById('edit-course-room');
-const editCourseSection = document.getElementById('edit-course-section');
-const editExtendRelated = document.getElementById('edit-extend-related');
-const editCancelBtn = document.getElementById('edit-cancel-btn');
-const toastStack = document.getElementById('toast-stack');
-const messageModal = document.getElementById('message-modal');
-const messageModalTitle = document.getElementById('message-modal-title');
-const messageModalBody = document.getElementById('message-modal-body');
-const messageModalInputWrap = document.getElementById('message-modal-input-wrap');
-const messageModalInput = document.getElementById('message-modal-input');
-const messageModalCancel = document.getElementById('message-modal-cancel');
-const messageModalConfirm = document.getElementById('message-modal-confirm');
+function updateStorageHealth() {
+    const usage = calculateStorageUsage();
+    
+    if (storageFill) storageFill.style.width = `${usage.percentage}%`;
+    if (storageText) storageText.innerText = `${usage.percentage}% Used`;
+
+    // Dispatch an event so other components can react
+    window.dispatchEvent(new CustomEvent('storage-health-update', { detail: usage }));
+}
+
+/* 3. Color Logic & UI Feedback */
 const colorPicker = document.getElementById('color-picker');
-const editModalCard = editModal?.querySelector('.modal-card');
-const mobilePreviewCard = mobilePreviewModal?.querySelector('.mobile-preview-card');
-const messageModalCard = messageModal?.querySelector('.message-card');
+const colorBtns = document.querySelectorAll('.color-btn');
+let selectedColor = 'bg-emerald-600';
 
-const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
+const toastStack = document.getElementById('toast-stack');
+const managerStatus = document.getElementById('manager-status');
 
-const DAY_OPTIONS = [
-    { value: '0', label: 'Monday' },
-    { value: '1', label: 'Tuesday' },
-    { value: '2', label: 'Wednesday' },
-    { value: '3', label: 'Thursday' },
-    { value: '4', label: 'Friday' },
-    { value: '5', label: 'Saturday' }
-];
+function calculateStorageUsage() {
+    let totalChars = 0;
+    for (const key in localStorage) {
+        if (Object.prototype.hasOwnProperty.call(localStorage, key)) {
+            totalChars += (localStorage[key].length + key.length);
+        }
+    }
+    
+    // localStorage uses UTF-16, so each char is 2 bytes
+    const totalBytes = totalChars * 2;
+    const limitBytes = 5 * 1024 * 1024; // 5MB estimate
+    const percentage = Math.min(100, (totalBytes / limitBytes) * 100).toFixed(1);
+    
+    return {
+        bytes: totalBytes,
+        formatted: (totalBytes / 1024).toFixed(1) + ' KB',
+        percentage
+    };
+}
 
-let mobileViewMode = 'plotter';
-let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
-let pendingAddedCount = 0;
-let pendingEditedIndexes = [];
-
-/* Global event delegation for feedback. */
+/* Global event delegation */
 function setupButtonFeedbackDelegation() {
     document.addEventListener('click', (event) => {
-        const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn');
+        const targetButton = event.target.closest('.btn, .manager-btn, .color-btn, .block-action-btn, .remove-secondary-day-btn, .schedule-block');
         if (targetButton) {
             anim.animatePressFeedback(targetButton);
         }
@@ -148,7 +127,7 @@ function syncColorButtons(selectedBtn = null) {
     anim.animateColorSelectorTo(activeButton, colorPicker);
 }
 
-/* Populates course search datalist. */
+/* Populates course search */
 function populateSubjectOptions() {
     const datalist = document.getElementById('pending-courses');
     const seen = new Set();
@@ -166,7 +145,7 @@ function populateSubjectOptions() {
     });
 }
 
-/* Displays toast notifications and status messages. */
+/* Displays status notifications */
 export function setStatus(message, tone = 'info') {
     managerStatus.className = 'status-text';
     if (tone === 'error') {
@@ -188,13 +167,12 @@ export function setStatus(message, tone = 'info') {
     `;
 
     const removeToast = () => {
-        toast.classList.remove('show');
-        window.setTimeout(() => toast.remove(), 220);
+        anim.animateToastOut(toast, () => toast.remove());
     };
 
     toast.querySelector('.toast-dismiss')?.addEventListener('click', removeToast);
     toastStack.appendChild(toast);
-    requestAnimationFrame(() => toast.classList.add('show'));
+    anim.animateToastIn(toast);
     window.setTimeout(removeToast, 3600);
 }
 
@@ -209,6 +187,16 @@ function setEditExtendRelatedState(isEnabled) {
         editExtendRelated.checked = editExtendRelatedState;
     }
 }
+
+/* 4. Message Dialog System (Alert/Confirm/Prompt) */
+const messageModal = document.getElementById('message-modal');
+const messageModalCard = messageModal?.querySelector('.message-card');
+const messageModalTitle = document.getElementById('message-modal-title');
+const messageModalBody = document.getElementById('message-modal-body');
+const messageModalInputWrap = document.getElementById('message-modal-input-wrap');
+const messageModalInput = document.getElementById('message-modal-input');
+const messageModalCancel = document.getElementById('message-modal-cancel');
+const messageModalConfirm = document.getElementById('message-modal-confirm');
 
 let activeMessageDialog = null;
 let activeMessageKeydownHandler = null;
@@ -232,7 +220,7 @@ function closeMessageDialog(result) {
     });
 }
 
-/* Promise-based custom dialog system. */
+/* Custom dialog system */
 function openMessageDialog({
     title = 'Message',
     message = '',
@@ -327,7 +315,20 @@ function hasAcknowledgedMobileWarning() {
     return localStorage.getItem(MOBILE_WARNING_ACK_KEY) === '1';
 }
 
-/* Mobile layout and view management. */
+/* 5. Mobile Layout & Preview Management */
+const MOBILE_WARNING_ACK_KEY = 'feu_mobile_warning_ack';
+const appContent = document.querySelector('.app-content');
+const mobileWarning = document.getElementById('mobile-warning');
+const mobileWarningAckBtn = document.getElementById('mobile-warning-ack-btn');
+const mobileToggleViewBtn = document.getElementById('mobile-toggle-view-btn');
+const mobilePreviewModal = document.getElementById('mobile-preview-modal');
+const mobilePreviewCard = mobilePreviewModal?.querySelector('.mobile-preview-card');
+const mobilePreviewCloseBtn = document.getElementById('mobile-preview-close-btn');
+const mobilePreviewContainer = document.getElementById('mobile-preview-container');
+
+let mobileViewMode = 'plotter';
+
+/* Mobile layout management */
 function syncMobileWarningVisibility() {
     if (!mobileWarning) {
         return;
@@ -413,7 +414,18 @@ function syncMobileLayoutState() {
     setMobileViewMode(mobileViewMode);
 }
 
-/* Sets timetable grid CSS variables. */
+/* 6. Timetable Rendering Core */
+const container = document.getElementById('blocks-container');
+const timeAxis = document.getElementById('time-axis');
+const countDisplay = document.getElementById('class-count');
+const timetableExportArea = document.getElementById('timetable-export-area');
+const timetableCanvasEl = timetableExportArea?.querySelector('.timetable-canvas');
+
+let pendingFullLoad = false;
+let pendingAddedCount = 0;
+let pendingEditedIndexes = [];
+
+/* Sets timetable grid CSS variables */
 function applyLiveTimetableMetrics() {
     const bodyHeight = (END_HOUR - START_HOUR) * LIVE_ROW_HEIGHT_PIXELS;
     const totalHeight = HEADER_HEIGHT_PX + bodyHeight;
@@ -428,7 +440,7 @@ function applyLiveTimetableMetrics() {
     }
 }
 
-/* Drag-and-drop file imports. */
+/* File imports */
 function wireDropImport() {
     if (!jsonDropZone) {
         return;
@@ -500,46 +512,176 @@ function syncActionStates() {
     const hasPlotted = classes.length > 0;
     loadSelectedBtn.disabled = !hasSelection;
     overwriteSelectedBtn.disabled = !hasSelection || !hasPlotted;
+    downloadSelectedBtn.disabled = !hasSelection;
     deleteSelectedBtn.disabled = !hasSelection;
     saveSnapshotBtn.disabled = !hasPlotted;
     exportPngBtn.disabled = !hasPlotted;
 }
 
-/* Renders saved schedules list. */
-export function renderSavedSchedulesList() {
-    savedSchedulesList.innerHTML = '';
+/* 7. Plotter Form Logic */
+const form = document.getElementById('class-form');
+const courseDayInput = document.getElementById('course-day');
+const courseStartInput = document.getElementById('course-start');
+const courseEndInput = document.getElementById('course-end');
+const courseRoomInput = document.getElementById('course-room');
+const courseSectionInput = document.getElementById('course-section');
+const addSecondaryDayBtn = document.getElementById('add-secondary-day-btn');
+const secondaryDaysContainer = document.getElementById('secondary-days-container');
+
+const DAY_OPTIONS = [
+    { value: '0', label: 'Monday' },
+    { value: '1', label: 'Tuesday' },
+    { value: '2', label: 'Wednesday' },
+    { value: '3', label: 'Thursday' },
+    { value: '4', label: 'Friday' },
+    { value: '5', label: 'Saturday' }
+];
+
+/* 8. Library & Persistence Management */
+const savedSchedulesList = document.getElementById('saved-schedules-list');
+const scheduleNameInput = document.getElementById('schedule-name');
+const saveSnapshotBtn = document.getElementById('save-snapshot-btn');
+const importJsonBtn = document.getElementById('import-json-btn');
+const jsonFileInput = document.getElementById('json-file-input');
+const jsonDropZone = document.getElementById('json-drop-zone');
+const loadSelectedBtn = document.getElementById('load-selected-btn');
+const overwriteSelectedBtn = document.getElementById('overwrite-selected-btn');
+const downloadSelectedBtn = document.getElementById('download-selected-btn');
+const deleteSelectedBtn = document.getElementById('delete-selected-btn');
+
+[loadSelectedBtn, overwriteSelectedBtn, downloadSelectedBtn, deleteSelectedBtn, saveSnapshotBtn, importJsonBtn].forEach(btn => {
+    anim.bindInteractiveHover?.(btn);
+    anim.bindInteractivePress?.(btn);
+});
+
+let lastAutoPlottingState = false;
+
+export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate = null) {
+    // Determine if we should completely rebuild the list or just update classes
+    // We rebuild if the count differs, or if we force a re-render.
+    
+    // Update the cached state if a payload is provided, otherwise keep the last known state
+    if (companionPayload !== null) {
+        lastAutoPlottingState = companionPayload?.autoSchedEnabled === true;
+    }
+    const isAutoPlotting = lastAutoPlottingState;
 
     if (savedSchedules.length === 0) {
+        savedSchedulesList.innerHTML = '';
         const li = document.createElement('li');
         li.className = 'saved-list-empty';
         li.innerText = 'No schedules loaded yet.';
         savedSchedulesList.appendChild(li);
         syncActionStates();
+        updateStorageHealth();
         return;
     }
 
-    savedSchedules.forEach((schedule) => {
+    // Sort: Pin LIVE_SYNC_ID to the top, then by updatedAt desc
+    const sorted = [...savedSchedules].sort((a, b) => {
+        if (a.id === LIVE_SYNC_ID) return -1;
+        if (b.id === LIVE_SYNC_ID) return 1;
+        return (b.updatedAt || 0) - (a.updatedAt || 0);
+    });
+
+    // Instead of always destroying, check if we can just patch
+    const existingItems = Array.from(savedSchedulesList.querySelectorAll('.saved-schedule-item'));
+    if (existingItems.length === sorted.length && !savedSchedulesList.querySelector('.saved-list-empty') && !newIdToAnimate) {
+        // Just patch classes to prevent DOM ghosting/flashing and preserve GSAP transforms
+        existingItems.forEach((btn, index) => {
+            const schedule = sorted[index];
+            const isLive = schedule.id === LIVE_SYNC_ID;
+            
+            btn.dataset.id = schedule.id; // ensure correct mapping
+            
+            if (schedule.id === activeScheduleId) {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+            
+            if (isLive) {
+                btn.classList.add('pinned-sync');
+                if (isAutoPlotting) btn.classList.add('is-live-plotting');
+                else btn.classList.remove('is-live-plotting');
+            } else {
+                btn.classList.remove('pinned-sync', 'is-live-plotting');
+            }
+            
+            // Only patch inner content if the data actually changed to prevent GSAP/Animation stuttering
+            const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
+            const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
+            const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+            const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
+            
+            // We use a simple composite key to check for changes
+            const contentKey = `${icon}|${nameLabel}|${blockCountLabel}|${updatedLabel}`;
+            if (btn.dataset.contentKey !== contentKey) {
+                btn.innerHTML = `
+                    <div class="saved-item-row">
+                        <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
+                        <span class="saved-item-meta">${blockCountLabel}</span>
+                    </div>
+                    <div class="saved-item-updated">${updatedLabel}</div>
+                `;
+                btn.dataset.contentKey = contentKey;
+            }
+        });
+        
+        syncActionStates();
+        updateStorageHealth();
+        return;
+    }
+
+    // Full rebuild if counts differ
+    savedSchedulesList.innerHTML = '';
+    
+    sorted.forEach((schedule) => {
         const li = document.createElement('li');
         const button = document.createElement('button');
+        const isLive = schedule.id === LIVE_SYNC_ID;
+        
         button.type = 'button';
-        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''}`;
+        button.dataset.id = schedule.id;
+        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''} ${isLive ? 'pinned-sync' : ''} ${(isLive && isAutoPlotting) ? 'is-live-plotting' : ''}`;
+        
+        const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
+        const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
+        const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+        const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
+        
         button.innerHTML = `
             <div class="saved-item-row">
-                <span class="saved-item-name">${createIconMarkup('mdi:bookmark-outline')}${schedule.name}</span>
-                <span class="saved-item-meta">${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}</span>
+                <span class="saved-item-name">${createIconMarkup(icon)}${nameLabel}</span>
+                <span class="saved-item-meta">${blockCountLabel}</span>
             </div>
-            <div class="saved-item-updated">Updated ${new Date(schedule.updatedAt).toLocaleString()}</div>
+            <div class="saved-item-updated">${updatedLabel}</div>
         `;
+
+        button.dataset.contentKey = `${icon}|${nameLabel}|${blockCountLabel}|${updatedLabel}`;
+        
+        // Add physics bindings
+        anim.bindInteractiveHover?.(button);
+        anim.bindInteractivePress?.(button);
+        
         button.addEventListener('click', () => {
             activeScheduleId = schedule.id;
-            renderSavedSchedulesList();
+            anim.animatePressFeedback?.(button); // trigger press animation
+            renderSavedSchedulesList(companionPayload); // this will now fast-patch
             syncActionStates();
         });
+        
         li.appendChild(button);
         savedSchedulesList.appendChild(li);
+
+        // Trigger entrance animation if this is a new item
+        if (schedule.id === newIdToAnimate) {
+            anim.animateSavedItemIn?.(li);
+        }
     });
 
     syncActionStates();
+    updateStorageHealth();
 }
 
 colorBtns.forEach((btn) => {
@@ -656,12 +798,11 @@ function buildSecondaryDayRow({ day = '0', start = '', end = '', room = '', sect
 
     daySelect.addEventListener('change', syncRowDefaults);
     removeBtn.addEventListener('click', () => {
-        row.classList.add('secondary-day-removing');
-        window.setTimeout(() => row.remove(), 220);
+        anim.animateSecondaryRowOut(row, () => row.remove());
     });
 
     secondaryDaysContainer.appendChild(row);
-    window.requestAnimationFrame(() => row.classList.remove('secondary-day-enter'));
+    anim.animateSecondaryRowIn(row);
     syncRowDefaults();
     return row;
 }
@@ -716,9 +857,26 @@ function getScheduleEntries() {
     return entries;
 }
 
+/* 9. Class Block Editor (Modal) */
+const EDIT_EXTEND_RELATED_KEY = 'feu_edit_extend_related';
+const editModal = document.getElementById('edit-modal');
+const editModalCard = editModal?.querySelector('.modal-card');
+const editForm = document.getElementById('edit-class-form');
+const editCourseName = document.getElementById('edit-course-name');
+const editCourseDay = document.getElementById('edit-course-day');
+const editCourseStart = document.getElementById('edit-course-start');
+const editCourseEnd = document.getElementById('edit-course-end');
+const editCourseRoom = document.getElementById('edit-course-room');
+const editCourseSection = document.getElementById('edit-course-section');
+const editExtendRelated = document.getElementById('edit-extend-related');
+const editCancelBtn = document.getElementById('edit-cancel-btn');
+
 const editColorPicker = document.getElementById('edit-color-picker');
 const editColorBtns = editColorPicker?.querySelectorAll('.color-btn') || [];
+
+let editingIndex = null;
 let editSelectedColor = 'bg-blue-600';
+let editExtendRelatedState = localStorage.getItem(EDIT_EXTEND_RELATED_KEY) === '1';
 
 function syncEditColorButtons(selectedBtn = null) {
     const activeButton = selectedBtn || Array.from(editColorBtns).find(btn => btn.dataset.color === editSelectedColor);
@@ -831,16 +989,29 @@ function saveSnapshot() {
 
     savedSchedules.unshift(schedule);
     activeScheduleId = schedule.id;
-    renderSavedSchedulesList();
+    syncSnapshotsToStorage();
+    renderSavedSchedulesList(null, schedule.id);
 
-    const safeName = slugify(snapshotName) || 'schedule';
-    const stamp = formatTimestamp(now);
+    setStatus(`Saved ${snapshotName} to Local Library.`, 'success');
+}
+
+function downloadSelectedSchedule() {
+    const schedule = getActiveSchedule();
+    if (!schedule) {
+        setStatus('Select a schedule from your library to download.', 'warning');
+        return;
+    }
+
+    const safeName = slugify(schedule.name) || 'schedule';
+    const stamp = formatTimestamp(new Date(schedule.updatedAt || Date.now()));
+    
     const payload = {
         version: 1,
         ...schedule
     };
+    
     triggerDownload(`${safeName}-${stamp}.json`, JSON.stringify(payload, null, 2), 'application/json');
-    setStatus(`Saved and downloaded ${snapshotName}.`, 'success');
+    setStatus(`Exported ${schedule.name} as JSON.`, 'success');
 }
 
 async function loadSelectedSchedule() {
@@ -860,6 +1031,7 @@ async function loadSelectedSchedule() {
     classes = selected.blocks.map((b) => ({ ...b }));
     selectedColor = selected.meta?.defaultColor || selectedColor;
     syncColorButtons();
+    pendingFullLoad = true;
     renderSchedule();
     setStatus(`Loaded ${selected.name}.`, 'success');
 }
@@ -878,16 +1050,10 @@ function overwriteSelectedSchedule() {
     selected.blocks = classes.map((c) => ({ ...c }));
     selected.updatedAt = Date.now();
     selected.meta = { defaultColor: selectedColor };
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
 
-    const safeName = slugify(selected.name) || 'schedule';
-    const stamp = formatTimestamp(selected.updatedAt);
-    triggerDownload(
-        `${safeName}-${stamp}.json`,
-        JSON.stringify({ version: 1, ...selected }, null, 2),
-        'application/json'
-    );
-    setStatus(`Overwrote and downloaded ${selected.name}.`, 'success');
+    setStatus(`Overwrote ${selected.name}.`, 'success');
 }
 
 async function deleteSelectedSchedule() {
@@ -901,10 +1067,33 @@ async function deleteSelectedSchedule() {
         return;
     }
 
-    savedSchedules = savedSchedules.filter((s) => s.id !== selected.id);
-    activeScheduleId = savedSchedules[0]?.id || null;
-    renderSavedSchedulesList();
-    setStatus(`Deleted ${selected.name} from saved list.`, 'success');
+    const itemEl = savedSchedulesList.querySelector(`button[data-id="${selected.id}"]`)?.closest('li');
+    
+    const performDeletion = () => {
+        savedSchedules = savedSchedules.filter((s) => s.id !== selected.id);
+        activeScheduleId = savedSchedules[0]?.id || null;
+        syncSnapshotsToStorage();
+        renderSavedSchedulesList();
+        setStatus(`Deleted ${selected.name} from saved list.`, 'success');
+    };
+
+    if (itemEl) {
+        anim.animateSavedItemOut?.(itemEl, performDeletion);
+    } else {
+        performDeletion();
+    }
+}
+
+function generateSmartName(baseName) {
+    let name = baseName;
+    let counter = 1;
+    
+    while (savedSchedules.some(s => s.name === name)) {
+        name = `${baseName} (${counter})`;
+        counter++;
+    }
+    
+    return name;
 }
 
 async function importScheduleFiles(fileList) {
@@ -920,11 +1109,24 @@ async function importScheduleFiles(fileList) {
             const parsed = JSON.parse(text);
             const normalized = normalizeSchedulePayload(parsed, file.name.replace(/\.json$/i, ''));
 
-            if (savedSchedules.some((s) => s.id === normalized.id)) {
-                normalized.id = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+            if (existingIndex !== -1) {
+                const ok = await showConfirmDialog(
+                    `Schedule "${normalized.name}" already exists in your library. Overwrite it?`,
+                    'Duplicate ID Detected'
+                );
+                if (ok) {
+                    savedSchedules[existingIndex] = normalized;
+                } else {
+                    normalized.id = `sched-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    normalized.name = generateSmartName(normalized.name);
+                    savedSchedules.unshift(normalized);
+                }
+            } else {
+                normalized.name = generateSmartName(normalized.name);
+                savedSchedules.unshift(normalized);
             }
 
-            savedSchedules.unshift(normalized);
             activeScheduleId = normalized.id;
             importedCount += 1;
         } catch (error) {
@@ -932,6 +1134,7 @@ async function importScheduleFiles(fileList) {
         }
     }
 
+    syncSnapshotsToStorage();
     renderSavedSchedulesList();
     if (importedCount > 0) {
         setStatus(`Imported ${importedCount} schedule${importedCount === 1 ? '' : 's'}.`, 'success');
@@ -943,6 +1146,16 @@ async function importScheduleFiles(fileList) {
         setStatus('Invalid JSON file.', 'error');
     }
 }
+
+/* 10. PNG Export Management */
+const exportModal = document.getElementById('export-modal');
+const exportModalCard = exportModal?.querySelector('.export-modal-card');
+const exportForm = document.getElementById('export-form');
+const exportNameInput = document.getElementById('export-name-input');
+const exportSizePresetInput = document.getElementById('export-size-preset');
+const exportCloseBtn = document.getElementById('export-close-btn');
+const exportCancelBtn = document.getElementById('export-cancel-btn');
+const exportPngBtn = document.getElementById('export-png-btn');
 
 async function exportCurrentTimetablePng() {
     const requestedName = exportNameInput?.value.trim() || getActiveSchedule()?.name || scheduleNameInput.value.trim() || 'Schedule';
@@ -1023,7 +1236,7 @@ export function renderSchedule() {
         const leftPercent = c.day * (100 / 6);
 
         const block = document.createElement('div');
-        block.className = `absolute rounded-lg border border-white/10 shadow-lg p-2 ${c.color} hover:brightness-110 transition cursor-default group schedule-block`;
+        block.className = `absolute rounded-lg border border-white/10 shadow-lg p-2 ${c.color} cursor-default group schedule-block`;
         block.style.top = `${topPx}px`;
         block.style.height = `${heightPx}px`;
         block.style.left = `${leftPercent}%`;
@@ -1058,12 +1271,16 @@ export function renderSchedule() {
         `;
 
         anim.bindBlockHoverAnimation(block, c.color);
+        anim.bindBlockHoldInteraction?.(block, c.color, () => openEditModal(index));
 
         container.appendChild(block);
     });
 
     if (anim.hasGsap()) {
-        if (pendingAddedCount > 0) {
+        if (pendingFullLoad) {
+            const allBlocks = Array.from(container.children);
+            anim.animateAddedBlocks(allBlocks);
+        } else if (pendingAddedCount > 0) {
             const startIndex = Math.max(0, container.children.length - pendingAddedCount);
             const addedEls = Array.from(container.children).slice(startIndex);
             anim.animateAddedBlocks(addedEls);
@@ -1080,6 +1297,7 @@ export function renderSchedule() {
 
     pendingAddedCount = 0;
     pendingEditedIndexes = [];
+    pendingFullLoad = false;
 
     countDisplay.innerText = classes.length;
     localStorage.setItem('feu_schedule', JSON.stringify(classes));
@@ -1255,15 +1473,50 @@ window.removeClass = (index) => {
 };
 window.openEditModal = openEditModal;
 
+/* 11. Schedule Clearing Logic */
+const WALANG_LAMAN_SCHEDULE_MO = [
+    "Are you sure you want to clear a schedule that's already empty?",
+    "Still empty, champ.",
+    "Clicking it again won't make it any emptier.",
+    "You're really dedicated to this empty schedule thing, huh?",
+    "Stop it. Get some help.",
+    "Okay, now you're just spamming."
+];
+
+let emptyClearSpamCount = 0;
+
 document.getElementById('clear-btn').addEventListener('click', async () => {
+    if (classes.length === 0) {
+        emptyClearSpamCount++;
+        let message = "";
+        
+        if (emptyClearSpamCount <= WALANG_LAMAN_SCHEDULE_MO.length) {
+            message = WALANG_LAMAN_SCHEDULE_MO[emptyClearSpamCount - 1];
+        } else {
+            const lastMsg = WALANG_LAMAN_SCHEDULE_MO[WALANG_LAMAN_SCHEDULE_MO.length - 1];
+            const multiplier = emptyClearSpamCount - WALANG_LAMAN_SCHEDULE_MO.length + 1;
+            message = `${lastMsg} x${multiplier}`;
+        }
+
+        setStatus(message, 'error');
+        return;
+    }
+
+    // Reset spam count if they actually have something to clear
+    emptyClearSpamCount = 0;
+
     if (await showConfirmDialog('Nuke the entire schedule?', 'Clear Schedule?')) {
-        classes = [];
-        renderSchedule();
-        setStatus('Cleared plotted schedule.', 'info');
+        const allBlocks = Array.from(container.children);
+        anim.animateMassBlockExit(allBlocks, () => {
+            classes = [];
+            renderSchedule();
+            setStatus('Cleared plotted schedule.', 'info');
+        });
     }
 });
 
 saveSnapshotBtn.addEventListener('click', saveSnapshot);
+downloadSelectedBtn.addEventListener('click', downloadSelectedSchedule);
 importJsonBtn.addEventListener('click', () => jsonFileInput.click());
 jsonFileInput.addEventListener('change', async (event) => {
     await importScheduleFiles(normalizeDroppedFiles(event.target.files));
@@ -1312,11 +1565,12 @@ initTimeAxis();
 applyLiveTimetableMetrics();
 populateSubjectOptions();
 renderSavedSchedulesList();
+updateStorageHealth();
 initColorSelectorHighlight();
 syncColorButtons();
 setupButtonFeedbackDelegation();
 syncMobileLayoutState();
-setStatus('Tip: Save snapshots as JSON, then load them back anytime.');
+setStatus('Tip: Export your schedules as JSON, then import them back anytime.');
 wireDropImport();
 renderSchedule();
 

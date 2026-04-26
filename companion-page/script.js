@@ -4,10 +4,10 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 gsap.registerPlugin(ScrollTrigger);
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Trigger the animation when the page loads
+    /* 1. Page Initialization */
     document.body.classList.add('page-ready');
 
-    // Hero Section Animation
+    /* 2. Hero Typing Animation Engine */
     const textElement = document.querySelector('.typing-text');
     const cursorElement = document.querySelector('.typing-cursor');
     const modules = [
@@ -27,12 +27,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentWord = currentModule.text;
 
         if (isDeleting) {
-            // Remove a character
             textElement.textContent = currentWord.substring(0, charIndex - 1);
             charIndex--;
             typeDelay = 40; // delete faster
         } else {
-            // Add a character
             textElement.textContent = currentWord.substring(0, charIndex + 1);
             textElement.style.color = currentModule.color;
             if (cursorElement) {
@@ -43,22 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
             typeDelay = 100; // type normal speed
         }
 
-        // Handle word completion and deletion state.
         if (!isDeleting && charIndex === currentWord.length) {
-            // Pause at the end of word
             typeDelay = 2000;
             isDeleting = true;
         } else if (isDeleting && charIndex === 0) {
-            // Move to next word
             isDeleting = false;
             featureIndex = (featureIndex + 1) % modules.length;
-            typeDelay = 500; // pause before typing next word
+            typeDelay = 500;
         }
 
         setTimeout(typeEffect, typeDelay);
     }
 
-    // Start typing loop
     if (textElement) {
         setTimeout(typeEffect, 1000);
     }
