@@ -192,6 +192,9 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
 
     const onEnter = () => {
         if (!hasGsap()) return;
+        const container = blockEl.parentElement;
+        if (container && container.classList.contains('is-animating')) return;
+
         // Kill existing tweens on this specific block so rapid hovers don't stack and deadlock
         gsap.killTweensOf(blockEl); 
         gsap.to(blockEl, {
@@ -206,6 +209,9 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
 
     const onLeave = () => {
         if (!hasGsap()) return;
+        const container = blockEl.parentElement;
+        if (container && container.classList.contains('is-animating')) return;
+
         gsap.killTweensOf(blockEl);
         gsap.to(blockEl, {
             y: 0,
@@ -219,6 +225,152 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
 
     blockEl.addEventListener('mouseenter', onEnter);
     blockEl.addEventListener('mouseleave', onLeave);
+}
+
+// Edit interaction - Card Flip & Ripple Ink
+export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplete) {
+    if (!blockEl || !hasGsap()) {
+        onComplete?.();
+        return;
+    }
+
+    const container = blockEl.parentElement;
+    if (container) container.classList.add('is-animating');
+    
+    const glowColor = getBlockGlowColor(colorClass);
+
+    // --- 1. RIPPLE INK ---
+    const btnRect = editBtnEl.getBoundingClientRect();
+    
+    // Create ripple element
+    const ripple = document.createElement('div');
+    ripple.className = 'edit-ripple-ink';
+    ripple.style.position = 'fixed';
+    ripple.style.left = `${btnRect.left + btnRect.width / 2}px`;
+    ripple.style.top = `${btnRect.top + btnRect.height / 2}px`;
+    ripple.style.width = '40px';
+    ripple.style.height = '40px';
+    ripple.style.marginTop = '-20px';
+    ripple.style.marginLeft = '-20px';
+    ripple.style.borderRadius = '50%';
+    ripple.style.backgroundColor = glowColor; // Use block's theme color
+    ripple.style.pointerEvents = 'none';
+    ripple.style.zIndex = '100'; // Ensure it's above the grid but below modal
+    document.body.appendChild(ripple);
+
+    // Animate ripple
+    gsap.fromTo(ripple,
+        { scale: 0, opacity: 0.8 },
+        {
+            scale: 45, // Enough to cover the screen
+            opacity: 0,
+            duration: 0.7,
+            ease: 'power2.out',
+            onComplete: () => ripple.remove()
+        }
+    );
+
+    // Gather siblings and animate dimming
+    const allBlocks = Array.from(container.querySelectorAll('.schedule-block'));
+    const otherBlocks = allBlocks.filter(b => b !== blockEl);
+    
+    const tx = btnRect.left + btnRect.width / 2;
+    const ty = btnRect.top + btnRect.height / 2;
+    let maxDelay = 0;
+
+    otherBlocks.forEach(block => {
+        const rect = block.getBoundingClientRect();
+        const bx = rect.left + rect.width / 2;
+        const by = rect.top + rect.height / 2;
+        const dx = bx - tx;
+        const dy = by - ty;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        // Delay based on distance (ripple wave effect)
+        const delay = distance * 0.0005;
+        maxDelay = Math.max(maxDelay, delay);
+
+        gsap.to(block, {
+            opacity: 0.3,
+            filter: 'blur(2px) saturate(0.4)',
+            duration: 0.35,
+            ease: 'power2.out',
+            delay: delay
+        });
+    });
+
+    // --- 2. CARD FLIP ---
+    // Set perspective on block for 3D flip
+    gsap.set(blockEl, { perspective: 800, transformStyle: 'preserve-3d' });
+
+    const children = Array.from(blockEl.children);
+    const totalAnimTime = Math.max(0.6, maxDelay + 0.35); // Flip takes 0.5s
+
+    const tl = gsap.timeline({
+        onComplete: () => {
+            // Defer completion to let staggered animation finish
+            gsap.delayedCall(Math.max(0, totalAnimTime - 0.5) + 0.1, () => {
+                if (container) container.classList.remove('is-animating');
+                onComplete?.();
+                // Note: Siblings will be recovered later by recoverSiblingBlocks()
+            });
+        }
+    });
+
+    // Acknowledgment scale up & hide text
+    tl.to(blockEl, { scale: 1.05, duration: 0.15 });
+    tl.to(children, { opacity: 0, duration: 0.15 }, 0);
+    
+    // Flip to back (180deg)
+    tl.to(blockEl, { 
+        rotateY: 180, 
+        boxShadow: `0 0 30px ${glowColor}, 0 0 0 1px rgba(255,255,255,0.2) inset`,
+        duration: 0.45, 
+        ease: 'back.out(1.4)' 
+    }, 0.1);
+}
+
+// Recover sibling blocks after edit modal closes
+export function recoverSiblingBlocks(blockEl) {
+    if (!blockEl || !hasGsap()) return;
+    
+    const container = blockEl.parentElement;
+    if (!container) return;
+    
+    // Protect recovery animation from hover events
+    container.classList.add('is-animating');
+    
+    const allBlocks = Array.from(container.querySelectorAll('.schedule-block'));
+    const otherBlocks = allBlocks.filter(b => b !== blockEl);
+    
+    // Sort slightly randomly or just left-to-right for a nice recovery stagger
+    gsap.to(otherBlocks, {
+        opacity: 1,
+        filter: 'blur(0px) saturate(1)',
+        duration: 0.4,
+        ease: 'power2.out',
+        stagger: 0.02,
+        clearProps: 'opacity,filter'
+    });
+
+    // Recover flipped block
+    const children = Array.from(blockEl.children);
+    const tl = gsap.timeline({
+        onComplete: () => {
+            gsap.set(blockEl, { clearProps: 'transform,boxShadow,transformStyle,perspective' });
+            gsap.set(children, { clearProps: 'opacity' });
+            container.classList.remove('is-animating');
+        }
+    });
+    
+    tl.to(blockEl, { 
+        rotateY: 0, 
+        scale: 1, 
+        boxShadow: '0 0 0 rgba(0,0,0,0)',
+        duration: 0.5, 
+        ease: 'back.out(1.2)' 
+    });
+    tl.to(children, { opacity: 1, duration: 0.2 }, 0.2);
 }
 
 // Shockwave animation binded on hold - triggers edit modal
@@ -283,21 +435,12 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
             // Sort by distance so the ripple moves perfectly outward
             shockwaveData.sort((a, b) => a.distance - b.distance);
 
-            // Master Timeline
             const tl = gsap.timeline({
                 onComplete: () => {
                     if (container) container.classList.remove('is-animating');
                     isAnimatingShockwave = false;
                     isHolding = false;
                     onHoldComplete();
-                    
-                    // Recover the held block gracefully behind the modal
-                    gsap.to(blockEl, {
-                        scale: 1,
-                        boxShadow: '0 0 0 rgba(0,0,0,0)',
-                        duration: 0.4,
-                        ease: 'power2.out'
-                    });
                 }
             });
 
@@ -308,6 +451,14 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
                 duration: 0.3,
                 ease: 'expo.out'
             }, 0);
+
+            // Recover the held block with a satisfying elastic snap while the shockwave propagates
+            tl.to(blockEl, {
+                scale: 1,
+                boxShadow: '0 0 0 rgba(0,0,0,0)',
+                duration: 0.6,
+                ease: 'elastic.out(1, 0.5)'
+            }, 0.3);
 
             // 3. The Shockwave hits everything else
             shockwaveData.forEach((data) => {

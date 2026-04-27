@@ -940,6 +940,8 @@ function openEditModal(index) {
 }
 
 function closeEditModal() {
+    const blockEl = container.children[editingIndex];
+    anim.recoverSiblingBlocks?.(blockEl);
     editingIndex = null;
     anim.animateModalOut(editModal, editModalCard);
 }
@@ -1273,7 +1275,7 @@ export function renderSchedule() {
             <div class="schedule-block-header">
                 <div class="schedule-block-code ${textModeClass}">${code.trim()}</div>
                 <div class="block-actions">
-                    <button onclick="openEditModal(${index})" class="block-action-btn" title="Edit class">✎</button>
+                    <button onclick="handleEditClick(event, ${index})" class="block-action-btn" title="Edit class">✎</button>
                     <button onclick="removeClass(${index})" class="block-action-btn" title="Remove class">✕</button>
                 </div>
             </div>
@@ -1486,6 +1488,21 @@ window.removeClass = (index) => {
     classes.splice(index, 1);
     renderSchedule();
 };
+
+window.handleEditClick = (event, index) => {
+    const block = classes[index];
+    if (!block) return;
+    
+    const editBtnEl = event.currentTarget;
+    const blockEl = editBtnEl.closest('.schedule-block');
+    
+    if (blockEl) {
+        anim.animateEditInteraction(editBtnEl, blockEl, block.color, () => openEditModal(index));
+    } else {
+        openEditModal(index);
+    }
+};
+
 window.openEditModal = openEditModal;
 
 /* 11. Schedule Clearing Logic */
