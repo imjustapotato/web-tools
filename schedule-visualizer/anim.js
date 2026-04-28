@@ -239,7 +239,7 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
     
     const glowColor = getBlockGlowColor(colorClass);
 
-    // --- 1. RIPPLE INK ---
+    // 1. RIPPLE INK
     const btnRect = editBtnEl.getBoundingClientRect();
     
     // Create ripple element
@@ -299,7 +299,7 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
         });
     });
 
-    // --- 2. CARD FLIP ---
+    // 2. CARD FLIP
     // Set perspective on block for 3D flip
     gsap.set(blockEl, { perspective: 800, transformStyle: 'preserve-3d' });
 

@@ -13,6 +13,18 @@ export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 export let savedSchedules = JSON.parse(localStorage.getItem(SNAPSHOTS_STORAGE_KEY)) || [];
 export let activeScheduleId = localStorage.getItem(ACTIVE_ID_STORAGE_KEY) || null;
 
+export const getUniqueSubjectCount = (blocksArray) => {
+    if (!Array.isArray(blocksArray)) return 0;
+    const unique = new Set();
+    blocksArray.forEach(block => {
+        let code = block.name ? block.name.split(' - ')[0] : "";
+        if (code) {
+            unique.add(code.trim().replace(/L$/i, ''));
+        }
+    });
+    return unique.size;
+};
+
 const START_HOUR = 7;
 const END_HOUR = 22;
 const LIVE_ROW_HEIGHT_PIXELS = 84;
@@ -624,7 +636,8 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
             // Only patch inner content if the data actually changed to prevent GSAP/Animation stuttering
             const icon = isPinned ? 'mdi:sync' : 'mdi:bookmark-outline';
             const nameLabel = isLive ? 'Auto Sched Live Sync' : (isManual ? 'Extracted Data SAF' : schedule.name);
-            const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+            const uniqueCount = getUniqueSubjectCount(schedule.blocks);
+            const blockCountLabel = `${uniqueCount} subject${uniqueCount === 1 ? '' : 's'}`;
             const updatedLabel = isLive ? 'Syncing via OSES' : (isManual ? 'Extracted from SAF Preview' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString());
             
             // We use a simple composite key to check for changes
@@ -662,7 +675,8 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
         
         const icon = isPinned ? 'mdi:sync' : 'mdi:bookmark-outline';
         const nameLabel = isLive ? 'Auto Sched Live Sync' : (isManual ? 'Extracted Data SAF' : schedule.name);
-        const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
+        const uniqueCount = getUniqueSubjectCount(schedule.blocks);
+        const blockCountLabel = `${uniqueCount} subject${uniqueCount === 1 ? '' : 's'}`;
         const updatedLabel = isLive ? 'Syncing via OSES' : (isManual ? 'Extracted from SAF Preview' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString());
         
         button.innerHTML = `
@@ -1316,7 +1330,7 @@ export function renderSchedule() {
     pendingEditedIndexes = [];
     pendingFullLoad = false;
 
-    countDisplay.innerText = classes.length;
+    countDisplay.innerText = getUniqueSubjectCount(classes);
     localStorage.setItem('feu_schedule', JSON.stringify(classes));
     syncActionStates();
 }
