@@ -24,6 +24,7 @@ const companionStatusIcon = companionStatusEl?.querySelector('.status-icon');
 const companionStatusTitle = companionStatusEl?.querySelector('.status-title');
 const companionStatusSubtitle = companionStatusEl?.querySelector('.status-subtitle');
 const headerPortalContainer = document.getElementById('header-portal-container');
+const managerStatusEl = document.getElementById('manager-status');
 
 let companionExpansionTimeout = null;
 let companionHoverTimeout = null;
@@ -199,7 +200,30 @@ window.addEventListener('message', (event) => {
             renderSchedule();
             
             const statusMsg = isManual ? 'SAF Data Extracted!' : 'Auto Plotter Synced from OSES!';
-            setStatus(statusMsg, 'success');
+            
+            // Direct Schedule Status Update (The "Schedule Itself")
+            if (managerStatusEl) {
+                managerStatusEl.className = 'status-text tone-success';
+                managerStatusEl.innerText = statusMsg;
+            }
+
+            // Dynamic Island Feedback (The "Island")
+            if (companionStatusTitle) companionStatusTitle.textContent = 'Synced!';
+            if (companionStatusSubtitle) {
+                companionStatusSubtitle.textContent = isManual ? 'SAF Data Captured' : 'Auto Plot Success';
+                companionStatusSubtitle.style.display = 'block';
+            }
+            
+            triggerCompanionExpansion(false);
+
+            // Revert island text after a delay to maintain heartbeat state
+            setTimeout(() => {
+                if (lastCompanionPayload?.autoSchedEnabled) {
+                    setCompanionStatus('auto', lastCompanionPayload);
+                } else {
+                    setCompanionStatus('primed', lastCompanionPayload);
+                }
+            }, 3500);
 
             // Notify the extension to clear storage
             // The bridge will decide if it's ephemeral (manual/disabled) or persistent (auto-enabled)
