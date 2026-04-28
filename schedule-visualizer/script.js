@@ -6,11 +6,24 @@ import * as anim from './anim.js';
 /* 1. Global State & App Constants */
 const SNAPSHOTS_STORAGE_KEY = 'feu_snapshots';
 const ACTIVE_ID_STORAGE_KEY = 'feu_active_id';
-const LIVE_SYNC_ID = 'auto-sched-live-sync';
+const LIVE_SYNC_ID = 'sched-live-autosync';
+const MANUAL_EXTRACT_ID = 'saf-manual-extract';
 
 export let classes = JSON.parse(localStorage.getItem('feu_schedule')) || [];
 export let savedSchedules = JSON.parse(localStorage.getItem(SNAPSHOTS_STORAGE_KEY)) || [];
 export let activeScheduleId = localStorage.getItem(ACTIVE_ID_STORAGE_KEY) || null;
+
+export const getUniqueSubjectCount = (blocksArray) => {
+    if (!Array.isArray(blocksArray)) return 0;
+    const unique = new Set();
+    blocksArray.forEach(block => {
+        let code = block.name ? block.name.split(' - ')[0] : "";
+        if (code) {
+            unique.add(code.trim().replace(/L$/i, ''));
+        }
+    });
+    return unique.size;
+};
 
 const START_HOUR = 7;
 const END_HOUR = 22;
@@ -577,10 +590,20 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
         return;
     }
 
-    // Sort: Pin LIVE_SYNC_ID to the top, then by updatedAt desc
+    // Sort: Pin Handshake IDs to the top, then by updatedAt desc
     const sorted = [...savedSchedules].sort((a, b) => {
-        if (a.id === LIVE_SYNC_ID) return -1;
-        if (b.id === LIVE_SYNC_ID) return 1;
+        const aIsPinned = a.id === LIVE_SYNC_ID || a.id === MANUAL_EXTRACT_ID;
+        const bIsPinned = b.id === LIVE_SYNC_ID || b.id === MANUAL_EXTRACT_ID;
+        
+        if (aIsPinned && !bIsPinned) return -1;
+        if (!aIsPinned && bIsPinned) return 1;
+        
+        // If both are pinned, prioritize Auto-Sync over Manual Extract
+        if (aIsPinned && bIsPinned) {
+            if (a.id === LIVE_SYNC_ID) return -1;
+            if (b.id === LIVE_SYNC_ID) return 1;
+        }
+
         return (b.updatedAt || 0) - (a.updatedAt || 0);
     });
 
@@ -591,6 +614,8 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
         existingItems.forEach((btn, index) => {
             const schedule = sorted[index];
             const isLive = schedule.id === LIVE_SYNC_ID;
+            const isManual = schedule.id === MANUAL_EXTRACT_ID;
+            const isPinned = isLive || isManual;
             
             btn.dataset.id = schedule.id; // ensure correct mapping
             
@@ -600,19 +625,20 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
                 btn.classList.remove('active');
             }
             
-            if (isLive) {
+            if (isPinned) {
                 btn.classList.add('pinned-sync');
-                if (isAutoPlotting) btn.classList.add('is-live-plotting');
+                if (isLive && isAutoPlotting) btn.classList.add('is-live-plotting');
                 else btn.classList.remove('is-live-plotting');
             } else {
                 btn.classList.remove('pinned-sync', 'is-live-plotting');
             }
             
             // Only patch inner content if the data actually changed to prevent GSAP/Animation stuttering
-            const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
-            const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
-            const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
-            const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
+            const icon = isPinned ? 'mdi:sync' : 'mdi:bookmark-outline';
+            const nameLabel = isLive ? 'Auto Sched Live Sync' : (isManual ? 'Extracted Data SAF' : schedule.name);
+            const uniqueCount = getUniqueSubjectCount(schedule.blocks);
+            const blockCountLabel = `${uniqueCount} subject${uniqueCount === 1 ? '' : 's'}`;
+            const updatedLabel = isLive ? 'Syncing via OSES' : (isManual ? 'Extracted from SAF Preview' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString());
             
             // We use a simple composite key to check for changes
             const contentKey = `${icon}|${nameLabel}|${blockCountLabel}|${updatedLabel}`;
@@ -640,15 +666,18 @@ export function renderSavedSchedulesList(companionPayload = null, newIdToAnimate
         const li = document.createElement('li');
         const button = document.createElement('button');
         const isLive = schedule.id === LIVE_SYNC_ID;
+        const isManual = schedule.id === MANUAL_EXTRACT_ID;
+        const isPinned = isLive || isManual;
         
         button.type = 'button';
         button.dataset.id = schedule.id;
-        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''} ${isLive ? 'pinned-sync' : ''} ${(isLive && isAutoPlotting) ? 'is-live-plotting' : ''}`;
+        button.className = `saved-schedule-item ${schedule.id === activeScheduleId ? 'active' : ''} ${isPinned ? 'pinned-sync' : ''} ${(isLive && isAutoPlotting) ? 'is-live-plotting' : ''}`;
         
-        const icon = isLive ? 'mdi:sync' : 'mdi:bookmark-outline';
-        const nameLabel = isLive ? 'Auto Sched Live Sync' : schedule.name;
-        const blockCountLabel = `${schedule.blocks.length} block${schedule.blocks.length === 1 ? '' : 's'}`;
-        const updatedLabel = isLive ? 'Syncing via OSES' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString();
+        const icon = isPinned ? 'mdi:sync' : 'mdi:bookmark-outline';
+        const nameLabel = isLive ? 'Auto Sched Live Sync' : (isManual ? 'Extracted Data SAF' : schedule.name);
+        const uniqueCount = getUniqueSubjectCount(schedule.blocks);
+        const blockCountLabel = `${uniqueCount} subject${uniqueCount === 1 ? '' : 's'}`;
+        const updatedLabel = isLive ? 'Syncing via OSES' : (isManual ? 'Extracted from SAF Preview' : 'Updated ' + new Date(schedule.updatedAt).toLocaleString());
         
         button.innerHTML = `
             <div class="saved-item-row">
@@ -925,6 +954,8 @@ function openEditModal(index) {
 }
 
 function closeEditModal() {
+    const blockEl = container.children[editingIndex];
+    anim.recoverSiblingBlocks?.(blockEl);
     editingIndex = null;
     anim.animateModalOut(editModal, editModalCard);
 }
@@ -1258,7 +1289,7 @@ export function renderSchedule() {
             <div class="schedule-block-header">
                 <div class="schedule-block-code ${textModeClass}">${code.trim()}</div>
                 <div class="block-actions">
-                    <button onclick="openEditModal(${index})" class="block-action-btn" title="Edit class">✎</button>
+                    <button onclick="handleEditClick(event, ${index})" class="block-action-btn" title="Edit class">✎</button>
                     <button onclick="removeClass(${index})" class="block-action-btn" title="Remove class">✕</button>
                 </div>
             </div>
@@ -1299,7 +1330,7 @@ export function renderSchedule() {
     pendingEditedIndexes = [];
     pendingFullLoad = false;
 
-    countDisplay.innerText = classes.length;
+    countDisplay.innerText = getUniqueSubjectCount(classes);
     localStorage.setItem('feu_schedule', JSON.stringify(classes));
     syncActionStates();
 }
@@ -1471,6 +1502,21 @@ window.removeClass = (index) => {
     classes.splice(index, 1);
     renderSchedule();
 };
+
+window.handleEditClick = (event, index) => {
+    const block = classes[index];
+    if (!block) return;
+    
+    const editBtnEl = event.currentTarget;
+    const blockEl = editBtnEl.closest('.schedule-block');
+    
+    if (blockEl) {
+        anim.animateEditInteraction(editBtnEl, blockEl, block.color, () => openEditModal(index));
+    } else {
+        openEditModal(index);
+    }
+};
+
 window.openEditModal = openEditModal;
 
 /* 11. Schedule Clearing Logic */

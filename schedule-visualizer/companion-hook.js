@@ -15,7 +15,8 @@ import {
     setPendingFullLoad
 } from './script.js';
 
-const LIVE_SYNC_ID = 'auto-sched-live-sync';
+const LIVE_SYNC_ID = 'sched-live-autosync';
+const MANUAL_EXTRACT_ID = 'saf-manual-extract';
 
 /* 1. Status Pill (Dynamic Island) UI Management */
 const companionStatusEl = document.getElementById('companion-status');
@@ -23,6 +24,7 @@ const companionStatusIcon = companionStatusEl?.querySelector('.status-icon');
 const companionStatusTitle = companionStatusEl?.querySelector('.status-title');
 const companionStatusSubtitle = companionStatusEl?.querySelector('.status-subtitle');
 const headerPortalContainer = document.getElementById('header-portal-container');
+const managerStatusEl = document.getElementById('manager-status');
 
 let companionExpansionTimeout = null;
 let companionHoverTimeout = null;
@@ -172,13 +174,18 @@ window.addEventListener('message', (event) => {
     }
 
     if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
-        const payload = event.data.payload;
+        const { payload, dataType } = event.data;
+        const source = payload.source || 'auto-plot';
+        const isManual = source === 'manual-saf' || dataType === 'SAF_EXTRACT';
+        
         try {
-            const normalized = normalizeSchedulePayload(payload, payload.name || 'Auto Sched Live Sync');
-            normalized.id = LIVE_SYNC_ID; // Pinning ID
+            const defaultName = isManual ? 'Extracted Data SAF' : 'Auto Sched Live Sync';
+            const normalized = normalizeSchedulePayload(payload, payload.name || defaultName);
+            
+            normalized.id = payload.id || (isManual ? MANUAL_EXTRACT_ID : LIVE_SYNC_ID);
             normalized.isLiveSync = true;
 
-            const existingIndex = savedSchedules.findIndex((s) => s.id === LIVE_SYNC_ID);
+            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
             if (existingIndex !== -1) {
                 savedSchedules[existingIndex] = normalized;
             } else {
@@ -191,7 +198,39 @@ window.addEventListener('message', (event) => {
             renderSavedSchedulesList(lastCompanionPayload);
             setPendingFullLoad(true);
             renderSchedule();
-            setStatus('Auto Plotter Synced from OSES!', 'success');
+            
+            const statusMsg = isManual ? 'SAF Data Extracted!' : 'Auto Plotter Synced from OSES!';
+            
+            // Direct Schedule Status Update (The "Schedule Itself")
+            if (managerStatusEl) {
+                managerStatusEl.className = 'status-text tone-success';
+                managerStatusEl.innerText = statusMsg;
+            }
+
+            // Dynamic Island Feedback (The "Island")
+            if (companionStatusTitle) companionStatusTitle.textContent = 'Synced!';
+            if (companionStatusSubtitle) {
+                companionStatusSubtitle.textContent = isManual ? 'SAF Data Captured' : 'Auto Plot Success';
+                companionStatusSubtitle.style.display = 'block';
+            }
+            
+            triggerCompanionExpansion(false);
+
+            // Revert island text after a delay to maintain heartbeat state
+            setTimeout(() => {
+                if (lastCompanionPayload?.autoSchedEnabled) {
+                    setCompanionStatus('auto', lastCompanionPayload);
+                } else {
+                    setCompanionStatus('primed', lastCompanionPayload);
+                }
+            }, 3500);
+
+            // Notify the extension to clear storage
+            // The bridge will decide if it's ephemeral (manual/disabled) or persistent (auto-enabled)
+            window.postMessage({ 
+                type: 'WEB_TOOLS_SYNC_ACK',
+                dataType: isManual ? 'SAF_EXTRACT' : 'SAF'
+            }, '*');
         } catch (err) {
             console.error('[Web Tools] Failed to sync extension schedule:', err);
             setStatus('Failed to sync schedule from extension.', 'error');

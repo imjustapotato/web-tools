@@ -83,6 +83,28 @@ body.page-leaving {
     vertical-align: middle;
 }
 
+.portal-connection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-left: 0.5rem;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    background: rgba(56, 189, 248, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #38bdf8;
+    -webkit-text-fill-color: initial;
+    font-size: 0.65rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    transform: translateY(-4px);
+}
+
+.portal-connection-badge .iconify {
+    font-size: 0.85rem;
+}
+
 .title-gradient {
     color: #67e8f9;
     background-image: linear-gradient(90deg, #34d399, #22d3ee);
@@ -1532,3 +1554,4 @@ body.page-leaving {
         opacity: 1 !important;
     }
 }
+

@@ -237,6 +237,9 @@ async function parseAndRender(html) {
     await renderMermaidCode(mermaidCode);
 }
 
+// Expose to window for the Companion Extension hook
+window.parseAndRender = parseAndRender;
+
 /* 5. Mermaid Rendering Engine */
 const container = document.getElementById('graph-container');
 const controls = document.getElementById('controls');
