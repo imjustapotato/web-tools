@@ -435,6 +435,7 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
             // Sort by distance so the ripple moves perfectly outward
             shockwaveData.sort((a, b) => a.distance - b.distance);
 
+            // Master Timeline
             const tl = gsap.timeline({
                 onComplete: () => {
                     if (container) container.classList.remove('is-animating');
