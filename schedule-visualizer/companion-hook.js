@@ -172,73 +172,65 @@ window.addEventListener('message', (event) => {
         }
         renderSavedSchedulesList(lastCompanionPayload);
     }
+});
 
-    if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
-        const { payload, dataType } = event.data;
-        const source = payload.source || 'auto-plot';
-        const isManual = source === 'manual-saf' || dataType === 'SAF_EXTRACT';
+window.addEventListener('NETWORK_PAYLOAD_READY', (event) => {
+    const { payload, dataType } = event.detail;
+    const source = payload.source || 'auto-plot';
+    const isManual = source === 'manual-saf' || dataType === 'SAF_EXTRACT';
+    
+    try {
+        const defaultName = isManual ? 'Extracted Data SAF' : 'Auto Sched Live Sync';
+        const normalized = normalizeSchedulePayload(payload, payload.name || defaultName);
         
-        try {
-            const defaultName = isManual ? 'Extracted Data SAF' : 'Auto Sched Live Sync';
-            const normalized = normalizeSchedulePayload(payload, payload.name || defaultName);
-            
-            normalized.id = payload.id || (isManual ? MANUAL_EXTRACT_ID : LIVE_SYNC_ID);
-            normalized.isLiveSync = true;
+        normalized.id = payload.id || (isManual ? MANUAL_EXTRACT_ID : LIVE_SYNC_ID);
+        normalized.isLiveSync = true;
 
-            const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
-            if (existingIndex !== -1) {
-                savedSchedules[existingIndex] = normalized;
-            } else {
-                savedSchedules.unshift(normalized);
-            }
-
-            updateActiveScheduleId(normalized.id);
-            updateClasses(normalized.blocks.map((b) => ({ ...b })));
-
-            renderSavedSchedulesList(lastCompanionPayload);
-            setPendingFullLoad(true);
-            renderSchedule();
-            
-            const statusMsg = isManual ? 'SAF Data Extracted!' : 'Auto Plotter Synced from OSES!';
-            
-            // Direct Schedule Status Update (The "Schedule Itself")
-            if (managerStatusEl) {
-                managerStatusEl.className = 'status-text tone-success';
-                managerStatusEl.innerText = statusMsg;
-            }
-
-            // Dynamic Island Feedback (The "Island")
-            if (companionStatusTitle) companionStatusTitle.textContent = 'Synced!';
-            if (companionStatusSubtitle) {
-                companionStatusSubtitle.textContent = isManual ? 'SAF Data Captured' : 'Auto Plot Success';
-                companionStatusSubtitle.style.display = 'block';
-            }
-            
-            triggerCompanionExpansion(false);
-
-            // Revert island text after a delay to maintain heartbeat state
-            setTimeout(() => {
-                if (lastCompanionPayload?.autoSchedEnabled) {
-                    setCompanionStatus('auto', lastCompanionPayload);
-                } else {
-                    setCompanionStatus('primed', lastCompanionPayload);
-                }
-            }, 3500);
-
-            // Notify the extension to clear storage
-            // The bridge will decide if it's ephemeral (manual/disabled) or persistent (auto-enabled)
-            window.postMessage({ 
-                type: 'WEB_TOOLS_SYNC_ACK',
-                dataType: isManual ? 'SAF_EXTRACT' : 'SAF'
-            }, '*');
-        } catch (err) {
-            console.error('[Web Tools] Failed to sync extension schedule:', err);
-            setStatus('Failed to sync schedule from extension.', 'error');
+        const existingIndex = savedSchedules.findIndex((s) => s.id === normalized.id);
+        if (existingIndex !== -1) {
+            savedSchedules[existingIndex] = normalized;
+        } else {
+            savedSchedules.unshift(normalized);
         }
+
+        updateActiveScheduleId(normalized.id);
+        updateClasses(normalized.blocks.map((b) => ({ ...b })));
+
+        renderSavedSchedulesList(lastCompanionPayload);
+        setPendingFullLoad(true);
+        renderSchedule();
+        
+        const statusMsg = isManual ? 'SAF Data Extracted!' : 'Auto Plotter Synced from OSES!';
+        
+        // Direct Schedule Status Update (The "Schedule Itself")
+        if (managerStatusEl) {
+            managerStatusEl.className = 'status-text tone-success';
+            managerStatusEl.innerText = statusMsg;
+        }
+
+        // Dynamic Island Feedback (The "Island")
+        if (companionStatusTitle) companionStatusTitle.textContent = 'Synced!';
+        if (companionStatusSubtitle) {
+            companionStatusSubtitle.textContent = isManual ? 'SAF Data Captured' : 'Auto Plot Success';
+            companionStatusSubtitle.style.display = 'block';
+        }
+        
+        triggerCompanionExpansion(false);
+
+        // Revert island text after a delay to maintain heartbeat state
+        setTimeout(() => {
+            if (lastCompanionPayload?.autoSchedEnabled) {
+                setCompanionStatus('auto', lastCompanionPayload);
+            } else {
+                setCompanionStatus('primed', lastCompanionPayload);
+            }
+        }, 3500);
+
+    } catch (err) {
+        console.error('[Web Tools] Failed to sync extension schedule:', err);
+        setStatus('Failed to sync schedule from extension.', 'error');
     }
 });
 
 /* 4. Initialization */
-// Notify the bridge that the web app is fully loaded and ready to receive data
-window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
 initCompanionHandshake();

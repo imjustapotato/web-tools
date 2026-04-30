@@ -1,0 +1,203 @@
+/* --- Core Container & Wrappers --- */
+.di-container {
+    position: fixed;
+    z-index: 999999;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+.di-pill {
+    position: relative;
+    pointer-events: auto;
+    border-radius: 999px;
+}
+
+/* --- GPU Background Proxy Layer --- */
+.di-pill-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    /* Dimensions are strictly driven by the GSAP GPU FLIP Engine */
+    width: 100%;
+    height: 100%;
+    
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 999px; /* Hot-swapped to 24px via JS on Expanded mode */
+    
+    overflow: hidden;
+    z-index: 1;
+    
+    /* GPU Optimization */
+    will-change: transform, opacity;
+    contain: paint;
+}
+
+/* --- Content Layout Layer --- */
+.di-content {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    min-height: 44px;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+/* Flex Modes (Hot-swapped by JS Engine) */
+.di-content.mode-sentry { gap: 0; justify-content: center; }
+.di-content.mode-compact { gap: 10px; }
+.di-content.mode-expanded { 
+    flex-direction: column; 
+    align-items: stretch; 
+    padding: 12px 16px; 
+    min-width: 220px; 
+}
+
+/* --- Elements --- */
+.di-indicator-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: var(--di-color, #94a3b8);
+}
+
+.di-indicator-wrapper svg {
+    width: 100%;
+    height: 100%;
+    stroke-width: 2px;
+}
+
+.di-pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--di-color, #3b82f6);
+    position: relative;
+}
+
+.di-pulse-ripple {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: inherit;
+}
+
+.di-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.di-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #f8fafc;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    position: relative;
+    overflow: hidden;
+}
+
+.di-subtitle {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: var(--di-color, #64748b);
+    line-height: 1.2;
+    margin-top: 2px;
+    position: relative;
+    overflow: hidden;
+}
+
+.di-description {
+    font-size: 11.5px;
+    color: #cbd5e1;
+    line-height: 1.5;
+    white-space: normal;
+    margin-top: 8px;
+    display: none; 
+}
+
+/* --- Surface Animation Painters (Applied to Proxy BG) --- */
+
+.di-pill-bg[data-surface="wiping"]::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transform: skewX(-20deg); animation: di-surface-wipe 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    pointer-events: none;
+}
+
+.di-pill-bg[data-surface="shimmer"]::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.05) 40%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.05) 60%, transparent 80%);
+    background-size: 200% auto; animation: di-surface-shimmer 3s linear infinite; pointer-events: none;
+}
+
+.di-pill-bg[data-surface="scanline"]::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, transparent 50%, rgba(var(--di-color-rgb, 59, 130, 246), 0.1) 51%, transparent 52%);
+    background-size: 100% 4px; animation: di-surface-scan 10s linear infinite; opacity: 0.5; pointer-events: none;
+}
+
+.di-pill-bg[data-surface="beaming"] {
+    animation: di-surface-beam 1.5s infinite alternate ease-in-out;
+}
+
+.di-pill-bg[data-surface="breathe"] {
+    animation: di-surface-breathe 3s infinite ease-in-out;
+}
+
+@keyframes di-surface-wipe { 0% { left: -100%; } 100% { left: 200%; } }
+@keyframes di-surface-shimmer { to { background-position: -200% center; } }
+@keyframes di-surface-scan { 0% { background-position: 0 0; } 100% { background-position: 0 100px; } }
+@keyframes di-surface-beam { 
+    from { box-shadow: 0 0 10px rgba(var(--di-color-rgb, 59, 130, 246), 0.2); border-color: rgba(var(--di-color-rgb, 59, 130, 246), 0.3); }
+    to { box-shadow: 0 0 25px rgba(var(--di-color-rgb, 59, 130, 246), 0.5); border-color: var(--di-color, #3b82f6); }
+}
+@keyframes di-surface-breathe {
+    0%, 100% { box-shadow: 0 8px 32px rgba(0,0,0,0.3); border-color: rgba(255,255,255,0.1); }
+    50% { box-shadow: 0 10px 25px rgba(var(--di-color-rgb, 59, 130, 246), 0.3); border-color: rgba(var(--di-color-rgb, 59, 130, 246), 0.4); }
+}
+
+.di-pill[data-breathe="true"] {
+    animation: di-surface-beam 2.5s infinite alternate ease-in-out;
+}
+
+.di-pill-bg[data-breathe="true"] {
+    animation: di-surface-beam 2.5s infinite alternate ease-in-out;
+}
+
+/* --- Particle Engine Painters --- */
+.di-particle-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 999998;
+    pointer-events: none;
+}
+
+.di-particle {
+    position: fixed; 
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(15, 23, 42, 0.98); border: 2px solid var(--di-particle-color); color: var(--di-particle-color);
+    display: flex; align-items: center; justify-content: center;
+    pointer-events: none; z-index: 9999999; 
+    box-shadow: 0 0 20px var(--di-particle-color), inset 0 0 10px rgba(0,0,0,0.5); backdrop-filter: blur(8px);
+}
+
+.di-particle.type-emoji {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+.di-particle svg { width: 18px; height: 18px; stroke-width: 2.5px; }
+.di-particle-emoji { font-size: 28px; line-height: 1; margin-top: 1px; filter: drop-shadow(0 0 10px rgba(0,0,0,0.4)); }
