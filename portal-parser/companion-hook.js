@@ -31,30 +31,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-window.addEventListener('message', (event) => {
-    if (event.source !== window) return;
+window.addEventListener('NETWORK_PAYLOAD_READY', (event) => {
+    const { payload, dataType } = event.detail;
 
-    if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
-        const { payload, dataType } = event.data;
+    if (dataType === 'CURRICULUM' && payload) {
+        console.log("[Companion Hook] Received curriculum data. Preparing for safe reload...");
+        hasLoadedFromSync = true;
+        
+        // 1. Buffer the data to session cache
+        sessionStorage.setItem(CURRICULUM_CACHE_KEY, payload);
 
-        if (dataType === 'CURRICULUM' && payload) {
-            console.log("[Companion Hook] Received curriculum data. Preparing for safe reload...");
-            hasLoadedFromSync = true;
-            
-            // 1. Buffer the data to session cache
-            sessionStorage.setItem(CURRICULUM_CACHE_KEY, payload);
-            
-            // 2. Acknowledge the sync so the extension can clear its ephemeral storage
-            window.postMessage({ 
-                type: 'WEB_TOOLS_SYNC_ACK',
-                dataType: 'CURRICULUM'
-            }, '*');
-
-            // 3. Perform a full reload to ensure a clean slate for the parsing engine
-            // We use a tiny delay to ensure the ACK message is dispatched first
-            setTimeout(() => {
-                window.location.reload();
-            }, 50);
-        }
+        // 2. Perform a full reload to ensure a clean slate for the parsing engine
+        // We use a tiny delay to ensure the ACK message is dispatched first
+        setTimeout(() => {
+            window.location.reload();
+        }, 50);
     }
 });

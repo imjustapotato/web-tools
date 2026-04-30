@@ -1,0 +1,182 @@
+Dynamic Island v2.0: Master Architectural Blueprint
+
+1. System Classification
+
+Type: API-Driven UI Organism / Standalone Module
+Core Philosophy: "Extreme Reusability."
+
+CSS acts strictly as the Painter (backdrop-filters, border-radius, base flex alignment). Any color (Hex, RGB, HSL) can be dynamically injected.
+
+TypeScript + GSAP act as the Physics Engine (dimensions, state transitions, particle trajectories, feedback, dynamic coloring).
+
+2. File Structure
+
+The component lives in its own dedicated folder and operates completely independently of any specific app context (no hardcoded "FEU" or "Schedule" logic).
+
+/dynamic-island-v2
+ ├── index.ts               # Public API (Mounting, State Pushes, Particle Triggers)
+ ├── dynamic-island.ts      # Core Class: DOM scaffolding, Queue manager, State machine
+ ├── animation-engine.ts    # Pure Physics: Transitions, Beam Math, Pulse Loops
+ ├── types.ts               # Strict TypeScript Interfaces (The API Contract)
+ └── dynamic-island.css     # Painters only (Backdrop filters, border-radius, base flex)
+
+
+
+3. The API Contract (types.ts)
+
+The Island is "dumb" but highly responsive. It only reacts to the configurations and states pushed to it.
+
+A. Initialization Configuration
+
+Defined once when the Island is attached to a page.
+
+interface IslandConfig {
+    position: 'top-left' | 'top-center' | 'top-right' | 
+              'bottom-left' | 'bottom-center' | 'bottom-right' | 
+              'center-left' | 'center-right';
+    offsetX?: number; // Granular edge-case adjustments
+    offsetY?: number;
+    
+    // Default Fallback States
+    defaultTitle?: string;
+    defaultSubtitle?: string;
+    defaultColor?: string; // Any valid CSS color format. Inherited by border and tint.
+    defaultIcon?: string; // SVG String. If null, uses Pulse Dot.
+    defaultPulse?: PulseConfig; 
+}
+
+
+B. Pulse Configuration
+
+Freely definable pulse rhythms. No hardcoded presets.
+
+interface PulseConfig {
+    speed: number; // e.g., 0.5s per pulse
+    count: number; // e.g., 1 (single) or 3 (burst)
+    gap: number;   // e.g., 2s pause before the loop repeats
+}
+
+
+C. State Payload (The Queue)
+
+Pushed dynamically by external scripts. If the Island is busy, these queue up and spotlight one by one.
+
+interface IslandState {
+    id: string; // For deduplication
+    title: string;
+    subtitle: string;
+    description?: string; // EXPANDED MODE TRIGGER: If present, island expands.
+    
+    // Dynamic styling
+    color?: string; // Overrides border/tint dynamically. Any color format accepted.
+    
+    // Indicator state (Gracefully morphs between these)
+    icon?: string; // SVG string
+    pulse?: PulseConfig; // If icon is null and this is set, reverts to dot
+    
+    surfaceAnimation?: 'none' | 'wiping' | 'shimmer' | 'scanline' | 'beaming' | 'pulse';
+    displayDuration?: number; // How long to spotlight before moving queue
+}
+
+
+D. Particle Command
+
+Triggered independently. Can overlap with ongoing Island states.
+
+interface ParticleCommand {
+    direction: 'inbound' | 'outbound';
+    type: 'icon' | 'emoji';
+    content: string; // SVG String or "❤️"
+    color: string; // Any color format
+}
+
+
+4. Core Physics & Behavior Guidelines
+
+A. The Indicator Engine (Pulse vs. Icon)
+
+Pulse Dot: Uses GSAP timelines to read the PulseConfig. It will mathematically loop count, wait gap, and repeat at speed.
+
+Morphing: If switching from Dot to SVG Icon (or vice versa), GSAP shrinks the current indicator to scale: 0, swaps the DOM node, and springs the new one to scale: 1.
+
+B. Compact vs. Expanded Mode
+
+Compact: Houses Indicator, Title, and Subtitle.
+
+Expanded: Triggered dynamically if a script sends a description.
+
+GSAP smoothly retracts the Indicator (Width: 0, Opacity: 0).
+
+Text alignment gracefully shifts.
+
+Pill max-width animates outward.
+
+Description text drops in.
+
+Reversing this state restores the Indicator and shrinks the pill.
+
+C. Omni-Directional Particle Math (The Water Droplet)
+
+Absolute Origin: Particles always track the exact getBoundingClientRect() center of the Indicator (Pulse/Icon) element, regardless of how the pill is currently stretched or expanded.
+
+Phase 1 (Origin): Spawn at / Absorb into the Indicator.
+
+Phase 2 (Snap): Animate to the relative center of the screen based on the Island's position. Randomized slightly to prevent multi-particle collision.
+
+Phase 3 (Beam): * Top positions: Beam downward into the document.
+
+Bottom positions: Beam upward into the document.
+
+Trajectory: Always randomized angles for organic variety.
+
+D. Non-Destructive Feedback Layers
+
+When a particle absorbs (Inbound) or launches (Outbound), the Island receives an impactGlow (border/tint pulse) mapped to the dynamic color.
+
+Crucial Rule: This GSAP timeline is explicitly layered on top of the Island. It will use clearProps to ensure it does not kill or override any ongoing surfaceAnimation (like wiping or shimmer) or expansion tweens.
+
+E. The Spotlight Queue
+
+If a script blasts 5 state updates at once, the Island does not glitch.
+
+It spotlights State 1, holds for displayDuration, wipes the text (GSAP text stagger), morphs the pill if necessary, and spotlights State 2.
+
+5. Development Strategy & Phases
+
+Phase 1: Core Scaffolding & API Contract [HIGH PRIORITY]
+
+Set up the TypeScript interfaces (types.ts).
+
+Build the base DOM structure and CSS painters (dynamic-island.ts, dynamic-island.css).
+
+Ensure 8-point anchoring system correctly attaches the container and dictates internal flex flow.
+
+Phase 2: The GSAP Physics Engine [HIGH PRIORITY]
+
+Architect animation-engine.ts.
+
+Implement the baseline Physics Constants (Spring, Bounce, Snap).
+
+Build the dynamic coloring engine (allowing any Hex/RGB injection to alter borders and glows without CSS class toggling).
+
+Phase 3: Indicator Engine & Queue System [HIGH PRIORITY]
+
+Build the PulseConfig GSAP timeline generator.
+
+Implement the graceful morph between SVG Icons and the Pulse Dot.
+
+Implement the Message Queue logic to spotlight stacked states natively without collision.
+
+Phase 4: Expanded Mode & Dynamic Surfacing [MEDIUM PRIORITY]
+
+Write the GSAP logic to retract the Indicator and stretch the pill max-width based on description payloads.
+
+Wire up the preset surfaceAnimation options (shimmer, wiping, scanline, beaming).
+
+Phase 5: Omni-Directional Beam Physics (Water Droplets) [MEDIUM PRIORITY]
+
+Build the trigonometry engine inside animation-engine.ts.
+
+Connect it to the ParticleCommand payload.
+
+Add the non-destructive feedback layers (impactGlow) that trigger upon particle dispatch or absorption.
