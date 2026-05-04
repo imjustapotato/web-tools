@@ -126,16 +126,32 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data.type === 'WEB_TOOLS_PROBE') {
-        console.log('[Network Bridge] Received PROBE. Replying with ACK...');
-        showOverlay('Connection Established. Preparing Data...');
+        // Reply immediately to keep the connection alive
         window.postMessage({ type: 'WEB_TOOLS_PROBE_ACK' }, '*');
+        console.log('[Network Bridge] Received PROBE. Replying with ACK...');
     }
 
     if (event.data.type === 'WEB_TOOLS_EXTENSION_SYNC') {
         const payload = event.data.payload;
         const dataType = event.data.dataType;
+        const isSilent = event.data.isSilent;
         
         console.log('[Network Bridge] Received SYNC_DATA payload.');
+
+        if (isSilent) {
+            // 1. Reply to Extension: Clear Ephemeral Storage (or check auto-sync conditions)
+            window.postMessage({ 
+                type: 'WEB_TOOLS_SYNC_ACK',
+                dataType: dataType
+            }, '*');
+
+            // 2. Dispatch data directly without overlay
+            console.log('[Network Bridge] Silent sync. Dispatching PAYLOAD_READY event to app context.');
+            window.dispatchEvent(new CustomEvent('NETWORK_PAYLOAD_READY', {
+                detail: { payload, dataType }
+            }));
+            return;
+        }
         
         // Show overlay if it wasn't already triggered by a probe (e.g., initial load cache sync)
         if (!overlayEl || overlayEl.style.display === 'none') {

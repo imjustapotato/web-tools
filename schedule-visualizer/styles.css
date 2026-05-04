@@ -78,6 +78,7 @@ body.page-leaving {
     border: 1px solid rgba(34, 211, 238, 0.3);
     border-radius: 4px;
     color: #22d3ee;
+    -webkit-text-fill-color: initial;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     vertical-align: middle;
