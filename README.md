@@ -23,9 +23,9 @@ Reworked Theme of Homepage, and applied to some parts of the webapp.
 
 ***
 
-### **Plotter (v2.0)**
+### **Plotter (v2.3.1)**
 
-![Schedule Plotter and Visualizer](src/screenshots/plotter-new.png)
+![Schedule Plotter and Visualizer](src/screenshots/plotter-v2.3.1.png)
 
 ***
 
