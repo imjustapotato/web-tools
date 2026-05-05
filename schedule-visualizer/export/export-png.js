@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Web Tools
  * Copyright (C) 2026 Kenneth Westhle A. Davila
  *
