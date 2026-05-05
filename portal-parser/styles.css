@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
 @import '../src/molecule/home-fab/home-fab.css';
 
 /* root designs */
@@ -88,8 +88,8 @@ body {
     text-transform: uppercase;
     letter-spacing: 0.02em;
     vertical-align: middle;
-    backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
 }
 
 .page-subtitle {
@@ -610,5 +610,3 @@ body.page-leaving {
     visibility: visible;
     transform: translateY(0) translateX(-50%);
 }
-
-

@@ -1,4 +1,4 @@
-const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+﻿const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 if (!prefersReducedMotion) {
     window.addEventListener('pageshow', () => {
@@ -40,3 +40,5 @@ if (!prefersReducedMotion) {
 } else {
     document.body.classList.add('page-ready');
 }
+
+

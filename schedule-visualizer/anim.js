@@ -1,16 +1,22 @@
-/* Import GSAP for animation library
-* Houses the animation engine
-*/
+/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
+// Import GSAP for animation library
+// Houses the animation engine
 import { gsap } from 'gsap';
 
-/* 1. Animation Engine Utilities */
+// Animation Engine Utilities
 // Checks if GSAP is loaded
 export function hasGsap() {
     return typeof gsap !== 'undefined';
 }
 
-/* 2. Global UI Feedback Animations */
-// Animation trigger for clickable elements - Upgraded to a tactile spring
+// Animation trigger for clickable elements
 export function animatePressFeedback(targetEl) {
     if (!targetEl || !hasGsap()) {
         return;
@@ -23,7 +29,6 @@ export function animatePressFeedback(targetEl) {
     );
 }
 
-// Hover physics for interactive sidebar elements like schedule saves
 export function bindInteractiveHover(element) {
     if (!element || !hasGsap()) return;
     
@@ -58,8 +63,7 @@ export function bindInteractivePress(element) {
     });
 }
 
-/* 3. Modal & Overlay Animations */
-// Animation trigger for modal entrance - Upgraded to modern snappy expo
+// Modal & Overlay Animations 
 export function animateModalIn(modalEl, cardEl) {
     if (!modalEl) {
         return;
@@ -72,14 +76,11 @@ export function animateModalIn(modalEl, cardEl) {
 
     gsap.killTweensOf([modalEl, cardEl]);
     gsap.set(modalEl, { opacity: 0 });
-    // Increased drop distance and scale difference for a more dramatic, premium pop-in
     gsap.set(cardEl, { opacity: 0, y: 24, scale: 0.94 });
-    
     gsap.to(modalEl, { opacity: 1, duration: 0.3, ease: 'power2.out' });
     gsap.to(cardEl, { opacity: 1, y: 0, scale: 1, duration: 0.5, ease: 'expo.out' });
 }
 
-// Animation trigger for modal exit - Fast and physically weighted drop
 export function animateModalOut(modalEl, cardEl, onComplete) {
     if (!modalEl || modalEl.classList.contains('hidden')) {
         onComplete?.();
@@ -104,8 +105,7 @@ export function animateModalOut(modalEl, cardEl, onComplete) {
     timeline.to(modalEl, { opacity: 0, duration: 0.2, ease: 'power2.in' }, '<0.05');
 }
 
-/* 4. Color Logic Animations */
-// v2.0 Color Selector: "Teleport & Snap" Target Lock
+// Color Logic Animations
 export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false) {
     if (!colorPicker || !buttonEl) {
         return;
@@ -133,14 +133,12 @@ export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false)
         return;
     }
 
-    // 1. The button being clicked does a satisfying deep squish and twist
     gsap.killTweensOf(buttonEl);
     gsap.fromTo(buttonEl,
         { scale: 0.65, rotation: -10 },
         { scale: 1, rotation: 0, duration: 0.6, ease: 'elastic.out(1.2, 0.4)' }
     );
 
-    // 2. Kill the old sliding animation. Teleport the ring instantly, but invisible and tiny.
     gsap.killTweensOf(highlight);
     gsap.set(highlight, {
         x: nextX,
@@ -151,18 +149,16 @@ export function animateColorSelectorTo(buttonEl, colorPicker, immediate = false)
         opacity: 0
     });
 
-    // 3. Explode the ring outward to lock onto the rebounding button
     gsap.to(highlight, {
         scale: 1,
         opacity: 1,
         duration: 0.4,
         ease: 'back.out(2)', 
-        delay: 0.05 // Tiny delay so the button squish leads the interaction
+        delay: 0.05
     });
 }
 
-/* 5. Timetable Block Animations */
-// Helper to map standard background classes to glow colors for hover effects.
+// Timetable Block Animations
 export function getBlockGlowColor(colorClass) {
     const hue = String(colorClass || '').replace(/^bg-/, '').split('-')[0];
     const glowMap = {
@@ -182,7 +178,7 @@ export function getBlockGlowColor(colorClass) {
     return glowMap[hue] || 'rgba(16, 185, 129, 0.55)';
 }
 
-// Bind hover interactions to a schedule block - Fixes the GSAP overlap bug
+// Bind hover interactions to a schedule block
 export function bindBlockHoverAnimation(blockEl, colorClass) {
     if (!blockEl) {
         return;
@@ -195,7 +191,6 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
         const container = blockEl.parentElement;
         if (container && container.classList.contains('is-animating')) return;
 
-        // Kill existing tweens on this specific block so rapid hovers don't stack and deadlock
         gsap.killTweensOf(blockEl); 
         gsap.to(blockEl, {
             y: -3,
@@ -203,7 +198,7 @@ export function bindBlockHoverAnimation(blockEl, colorClass) {
             boxShadow: `0 20px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.2) inset, 0 0 24px ${glowColor}`,
             duration: 0.35,
             ease: 'back.out(1.5)',
-            overwrite: true // Force overwrite
+            overwrite: true
         });
     };
 
@@ -253,16 +248,16 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
     ripple.style.marginTop = '-20px';
     ripple.style.marginLeft = '-20px';
     ripple.style.borderRadius = '50%';
-    ripple.style.backgroundColor = glowColor; // Use block's theme color
+    ripple.style.backgroundColor = glowColor;
     ripple.style.pointerEvents = 'none';
-    ripple.style.zIndex = '100'; // Ensure it's above the grid but below modal
+    ripple.style.zIndex = '100';
     document.body.appendChild(ripple);
 
     // Animate ripple
     gsap.fromTo(ripple,
         { scale: 0, opacity: 0.8 },
         {
-            scale: 45, // Enough to cover the screen
+            scale: 45, 
             opacity: 0,
             duration: 0.7,
             ease: 'power2.out',
@@ -270,7 +265,7 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
         }
     );
 
-    // Gather siblings and animate dimming
+    // Kunin yung iba then animate dimming
     const allBlocks = Array.from(container.querySelectorAll('.schedule-block'));
     const otherBlocks = allBlocks.filter(b => b !== blockEl);
     
@@ -286,7 +281,7 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
         const dy = by - ty;
         const distance = Math.sqrt(dx * dx + dy * dy);
         
-        // Delay based on distance (ripple wave effect)
+        // Delay para sa ripple wave effect
         const delay = distance * 0.0005;
         maxDelay = Math.max(maxDelay, delay);
 
@@ -304,24 +299,20 @@ export function animateEditInteraction(editBtnEl, blockEl, colorClass, onComplet
     gsap.set(blockEl, { perspective: 800, transformStyle: 'preserve-3d' });
 
     const children = Array.from(blockEl.children);
-    const totalAnimTime = Math.max(0.6, maxDelay + 0.35); // Flip takes 0.5s
+    const totalAnimTime = Math.max(0.6, maxDelay + 0.35);
 
     const tl = gsap.timeline({
         onComplete: () => {
-            // Defer completion to let staggered animation finish
             gsap.delayedCall(Math.max(0, totalAnimTime - 0.5) + 0.1, () => {
                 if (container) container.classList.remove('is-animating');
                 onComplete?.();
-                // Note: Siblings will be recovered later by recoverSiblingBlocks()
             });
         }
     });
 
-    // Acknowledgment scale up & hide text
     tl.to(blockEl, { scale: 1.05, duration: 0.15 });
     tl.to(children, { opacity: 0, duration: 0.15 }, 0);
     
-    // Flip to back (180deg)
     tl.to(blockEl, { 
         rotateY: 180, 
         boxShadow: `0 0 30px ${glowColor}, 0 0 0 1px rgba(255,255,255,0.2) inset`,
@@ -337,7 +328,7 @@ export function recoverSiblingBlocks(blockEl) {
     const container = blockEl.parentElement;
     if (!container) return;
     
-    // Protect recovery animation from hover events
+    // Protect recovery animation from hover events "para di mag stuck during animation"
     container.classList.add('is-animating');
     
     const allBlocks = Array.from(container.querySelectorAll('.schedule-block'));
@@ -387,7 +378,7 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
         
         isHolding = true;
 
-        // 1. Pre-squish: Physical tell that it's charging
+        // 1. Pre-squish: Is it charging?
         gsap.to(blockEl, { scale: 0.94, duration: 0.2, ease: 'power2.out' });
         
         holdTimer = setTimeout(() => {
@@ -420,7 +411,7 @@ export function bindBlockHoldInteraction(blockEl, colorClass, onHoldComplete) {
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const angle = Math.atan2(dy, dx);
                 
-                // Blast decay physics: Closer blocks get yeeted harder (max 45px push, decays over distance)
+                // Blast decay physics: Closer blocks get YEET!-ed harder (max 45px push, decays over distance)
                 const pushStrength = Math.max(10, 45 - (distance * 0.04));
                 
                 return {
@@ -551,7 +542,7 @@ export function animateAddedBlocks(blockElements) {
             rotateY: 0,
             filter: 'saturate(1) blur(0px) brightness(1)',
             duration: 0.6,
-            ease: 'back.out(1.2)', // Snappy elastic drop
+            ease: 'back.out(1.2)',
             stagger: { each: 0.08 }
         }
     );
@@ -646,8 +637,7 @@ export function animateMassBlockExit(blockElements, onComplete) {
     }, '<');
 }
 
-/* 6. UI Component Animations */
-// Animation for toast entrance - Elastic jump
+// UI Component Animations
 export function animateToastIn(toastEl) {
     if (!toastEl || !hasGsap()) {
         return;

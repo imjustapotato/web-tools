@@ -1,4 +1,4 @@
-import cstRaw from './src/CST.txt?raw';
+﻿import cstRaw from './src/CST.txt?raw';
 import bsceRaw from './src/BSCE.txt?raw';
 import wmaRaw from './src/WMA.txt?raw';
 
@@ -29,4 +29,3 @@ export const CURRICULA_CREDITS = {
     bsce: 'Aristotle Jr Siton',
     wma: 'Miles Tan'
 };
-

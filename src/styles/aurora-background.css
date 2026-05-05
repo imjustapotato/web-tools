@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
 :root {
     --aurora-a: rgba(82, 227, 172, 0.32);
     --aurora-b: rgba(80, 215, 255, 0.3);
@@ -232,3 +240,4 @@
         50% { opacity: 0.5; filter: blur(35px); }
     }
 }
+

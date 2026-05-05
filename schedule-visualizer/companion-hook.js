@@ -1,6 +1,12 @@
+﻿/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
 /**
- * This script handles all communications to my companion extension such as,
- * managing the connection handshake, status UI updates, and incoming schedule data syncs.
  * PING-PONG :)
  * for this case, the schedule-visualizer is the PING.
  */

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
+﻿@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700;800&display=swap');
 @import '../src/molecule/home-fab/home-fab.css';
 @import './companion.css';
 
@@ -1555,4 +1555,3 @@ body.page-leaving {
         opacity: 1 !important;
     }
 }
-

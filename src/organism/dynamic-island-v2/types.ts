@@ -1,3 +1,11 @@
+﻿/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
 /**
  * Dynamic Island v2.0 - API Contract
  * Define how the organism behaves, its visual state, and its physics.
@@ -129,3 +137,4 @@ export interface PulseConfig {
     /** Seconds to wait between pulse groups */
     gap: number;
 }
+

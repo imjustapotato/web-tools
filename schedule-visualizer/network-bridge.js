@@ -1,9 +1,16 @@
+﻿/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
 import { gsap } from 'gsap';
 
 /**
  * NETWORK BRIDGE
- * Manages the TCP-like handshake protocol between the Web App and the Extension.
- * Displays a non-blocking GSAP overlay to indicate sync state, and relays validated payloads.
+ * Handles the handshake protocol between the Web App and the Extension.
  */
 
 const OVERLAY_ID = 'network-bridge-overlay';

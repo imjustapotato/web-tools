@@ -1,4 +1,4 @@
-@import './aurora-utility.css';
+﻿@import './aurora-utility.css';
 @import '../src/styles/aurora-background.css';
 @import '../src/styles/home.css';
 @import '../src/molecule/home-fab/home-fab.css';
@@ -526,7 +526,7 @@
     transition: border-color 300ms ease, box-shadow 300ms ease;
 }
 
-/* Refraction shimmer — same as step-card */
+/* Refraction shimmer, same as step-card */
 .module-card::before {
     content: '';
     position: absolute;

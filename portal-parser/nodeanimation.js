@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Manages graph animations using GSAP.
  * Visualizes course dependencies and selection states for clear feedback.
  */

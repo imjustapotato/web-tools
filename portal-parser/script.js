@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
+
 /**
  * Application orchestrator.
  * Manages file ingestion, heuristic parsing, Mermaid rendering, and navigation.
@@ -102,11 +110,6 @@ creditTooltip.className = 'credit-tooltip';
 document.body.appendChild(creditTooltip);
 
 let creditTooltipTimeout = null;
-
-/**
- * Initializes degree templates.
- * Provides quick access to common curriculum structures.
- */
 function buildPresetButtons() {
     PRESET_CURRICULA.forEach((preset) => {
         const button = document.createElement('button');
@@ -243,11 +246,6 @@ window.parseAndRender = parseAndRender;
 /* 5. Mermaid Rendering Engine */
 const container = document.getElementById('graph-container');
 const controls = document.getElementById('controls');
-
-/**
- * Renders Mermaid syntax into an interactive SVG graph.
- * Builds the logical adjacency map once the SVG is available in the DOM.
- */
 async function renderMermaidCode(mermaidCode) {
     mermaidRawCode = mermaidCode;
     controls.classList.remove('is-hidden');
@@ -327,7 +325,6 @@ function extractCourseCodeFromNodeId(svgNodeId) {
         return null;
     }
 
-    // Mermaid IDs vary across versions. Prefer explicit flowchart patterns first.
     const flowchartMatch = svgNodeId.match(/flowchart-([A-Za-z0-9_\-]+)-\d+$/i);
     if (flowchartMatch) {
         const normalized = normalizeCourseCode(flowchartMatch[1]);
@@ -371,17 +368,12 @@ function getGraphEdges(svgElement) {
     return Array.from(uniqueEdges);
 }
 
-/**
- * Builds a map of course relationships.
- * Parses raw Mermaid code for accurate dependency tracking.
- */
 function buildAdjacencyGraph() {
     const svgElement = container.querySelector('svg');
     if (!svgElement) {
         return;
     }
 
-    // Register every node
     getGraphNodes(svgElement).forEach((nodeElement) => {
         const courseCode = extractCourseCodeFromNodeElement(nodeElement);
         if (courseCode && !adjacencyGraph.has(courseCode)) {
@@ -389,7 +381,6 @@ function buildAdjacencyGraph() {
         }
     });
 
-    // Parse edges from the Mermaid code directly (most reliable source of truth)
     const edgePattern = /^(\S+)\s+-->\s+(\S+)/gm;
     let edgeMatch;
     while ((edgeMatch = edgePattern.exec(mermaidRawCode)) !== null) {
@@ -497,14 +488,9 @@ function attachNodeClickListeners() {
     });
 }
 
-/**
- * Handles node selection on click.
- * Ignored during panning to prevent accidental triggers.
- */
 function handleNodeClick(event) {
     event.stopPropagation();
 
-    // Ignore if the user was panning
     if (didPan) {
         return;
     }
@@ -592,7 +578,6 @@ function getSafePathLength(pathElement) {
             }
         }
     } catch (error) {
-        // Ignore bbox fallback failures and use default.
     }
 
     return 300;
@@ -762,10 +747,6 @@ const summaryIndirectListDock = document.getElementById('summary-indirect-list-d
 
 let isSummaryExpanded = false;
 
-/**
- * Generates the text-based prerequisite summary for the side dock.
- * Categorizes dependencies into direct and indirect for clarity.
- */
 function renderSummaryContent(subjectElement, listElement, selectedCode) {
     subjectElement.textContent = `Selected Subject: ${getCourseDisplayLabel(selectedCode)}`;
     listElement.innerHTML = '';
@@ -853,9 +834,7 @@ let startY = 0;
 let panning = false;
 let didPan = false;
 
-/**
- * Applies zoom and pan offsets to the graph container.
- */
+
 function setTransform() {
     container.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
 }
@@ -882,7 +861,6 @@ wrapper.addEventListener('mousedown', (e) => {
 wrapper.addEventListener('mouseup', () => {
     panning = false;
     wrapper.classList.remove('is-panning');
-    // Reset didPan after a tick so click handlers can read it first
     setTimeout(() => { didPan = false; }, 0);
 });
 
@@ -998,9 +976,6 @@ fullViewBtn.addEventListener('click', () => {
     });
 });
 
-/**
- * Exits the full-screen view with a smooth transition.
- */
 function closeFullView() {
     if (!isFullView || isViewTransitioning) {
         return;

@@ -1,3 +1,10 @@
+/*
+ * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License.
+ */
 import { gsap } from 'gsap';
 import Flip from 'gsap/Flip';
 import { IslandState, PulseConfig, ParticleCommand } from './types';
@@ -579,3 +586,4 @@ export const AnimEngine = {
         }
     }
 };
+
