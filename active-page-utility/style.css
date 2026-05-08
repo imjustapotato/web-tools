@@ -98,46 +98,6 @@
     justify-content: center;
 }
 
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.75rem;
-    border-radius: 99px;
-    font-weight: 700;
-    font-size: 1rem;
-    text-decoration: none;
-    transition: transform 200ms ease, box-shadow 200ms ease, background 200ms ease;
-    cursor: pointer;
-}
-
-.btn-icon svg {
-    width: 20px;
-    height: 20px;
-}
-
-.btn-primary {
-    background: linear-gradient(135deg, rgba(82, 227, 172, 0.9), rgba(80, 215, 255, 0.9));
-    color: #040712;
-    box-shadow: 0 10px 30px rgba(80, 215, 255, 0.3);
-    border: none;
-}
-
-.btn-primary:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(82, 227, 172, 0.5);
-    background: linear-gradient(135deg, rgba(82, 227, 172, 1), rgba(80, 215, 255, 1));
-}
-
-.btn-disabled {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--muted);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    cursor: not-allowed;
-    position: relative;
-    backdrop-filter: blur(10px);
-}
-
 .badge {
     background: rgba(251, 191, 36, 0.1);
     color: var(--txt-important);
