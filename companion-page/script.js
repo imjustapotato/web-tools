@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const cursorElement = document.querySelector('.typing-cursor');
     const modules = [
         { text: "Auto Plotting (OSES)", color: "var(--txt-feature)" },
-        { text: "Extract from COR", color: "var(--txt-important)" },
+        { text: "Extract from SAF", color: "var(--txt-important)" },
         { text: "Extract Curriculum (Pre-Requisite Mapping)", color: "var(--txt-emphasis)" },
         { text: "More to Come...", color: "var(--accent-2)" }
     ];
