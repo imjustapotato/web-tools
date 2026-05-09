@@ -149,7 +149,7 @@ let companionHandshakeTimeout = null;
 function initCompanionHandshake() {
     setCompanionStatus('checking');
 
-    window.postMessage({ type: 'WEB_TOOLS_HEARTBEAT_REQUEST' }, '*');
+    window.postMessage({ type: 'WEB_TOOLS_HEARTBEAT_REQUEST' }, window.location.origin);
 
     companionHandshakeTimeout = setTimeout(() => {
         setCompanionStatus('not-installed');
