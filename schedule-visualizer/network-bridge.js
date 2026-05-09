@@ -125,7 +125,7 @@ function hideOverlay() {
 
 // Ensure the App is ready
 window.addEventListener('load', () => {
-    window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, '*');
+    window.postMessage({ type: 'WEB_TOOLS_APP_READY' }, window.location.origin);
 });
 
 // Primary Handshake Listener
@@ -133,8 +133,11 @@ window.addEventListener('message', (event) => {
     if (event.source !== window) return;
 
     if (event.data.type === 'WEB_TOOLS_PROBE') {
-        // Reply immediately to keep the connection alive
-        window.postMessage({ type: 'WEB_TOOLS_PROBE_ACK' }, '*');
+        // Reply immediately with the same nonce to keep the connection alive
+        window.postMessage({ 
+            type: 'WEB_TOOLS_PROBE_ACK',
+            nonce: event.data.nonce
+        }, window.location.origin);
         console.log('[Network Bridge] Received PROBE. Replying with ACK...');
     }
 
@@ -146,11 +149,11 @@ window.addEventListener('message', (event) => {
         console.log('[Network Bridge] Received SYNC_DATA payload.');
 
         if (isSilent) {
-            // 1. Reply to Extension: Clear Ephemeral Storage (or check auto-sync conditions)
+            // 1. Reply to Extension: Clear Ephemeral Storage
             window.postMessage({ 
                 type: 'WEB_TOOLS_SYNC_ACK',
                 dataType: dataType
-            }, '*');
+            }, window.location.origin);
 
             // 2. Dispatch data directly without overlay
             console.log('[Network Bridge] Silent sync. Dispatching PAYLOAD_READY event to app context.');
@@ -171,7 +174,7 @@ window.addEventListener('message', (event) => {
         window.postMessage({ 
             type: 'WEB_TOOLS_SYNC_ACK',
             dataType: dataType
-        }, '*');
+        }, window.location.origin);
 
         // 2. Unblur smoothly, THEN dispatch data to app logic
         setTimeout(() => {
