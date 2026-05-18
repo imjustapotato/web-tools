@@ -12,6 +12,7 @@
  */
 import mermaid from 'mermaid';
 import gsap from 'gsap';
+import '@iconify/iconify';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
 import './companion-hook.js';

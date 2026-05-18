@@ -1,5 +1,6 @@
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import '@iconify/iconify';
 
 gsap.registerPlugin(ScrollTrigger);
 
