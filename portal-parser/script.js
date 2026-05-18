@@ -14,6 +14,7 @@ import mermaid from 'mermaid';
 import gsap from 'gsap';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
+import './companion-hook.js';
 
 /* 1. Global App Config & State */
 mermaid.initialize({
