@@ -1,4 +1,5 @@
 import gsap from 'gsap';
+import '@iconify/iconify';
 
 // Tools Metadata Database
 const toolsData = {
