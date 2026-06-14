@@ -513,6 +513,54 @@ function openHub(toolId, data) {
 
 }
 
+// Reverse the open: slide the stage back to centered and hide the card.
+// Uses the same FLIP technique as openHub so only a transform animates.
+function closeHub() {
+  // FIRST: record the stage position while at the top
+  const firstTop = heroStage.getBoundingClientRect().top;
+
+  // Apply the centered layout instantly
+  homeShell.classList.add('is-animating');
+  homeShell.classList.add('centered');
+  heroCardPanel.classList.remove('is-visible');
+
+  // Reset dock active states
+  dockItems.forEach(item => item.classList.remove('active'));
+
+  // Reduced motion: snap to final state, no slide.
+  if (prefersReducedMotion) {
+    homeShell.classList.remove('is-animating');
+    return;
+  }
+
+  // LAST + INVERT: measure the settled centered position and offset
+  const lastTop = heroStage.getBoundingClientRect().top;
+  heroStage.style.transform = `translateY(${firstTop - lastTop}px)`;
+
+  // PLAY: release the offset so it eases back to centered
+  requestAnimationFrame(() => {
+    heroStage.style.transition = 'transform 0.5s cubic-bezier(0.25, 1, 0.3, 1)';
+    heroStage.style.transform = 'translateY(0)';
+  });
+
+  // SETTLE: restore glass and clean up
+  let hasSettled = false;
+  const settle = () => {
+    if (hasSettled) return;
+    hasSettled = true;
+    heroStage.removeEventListener('transitionend', onStageEnd);
+    heroStage.style.transition = '';
+    heroStage.style.transform = '';
+    homeShell.classList.remove('is-animating');
+    isFirstSelection = true;
+  };
+  const onStageEnd = (event) => {
+    if (event.target === heroStage && event.propertyName === 'transform') settle();
+  };
+  heroStage.addEventListener('transitionend', onStageEnd);
+  setTimeout(settle, 600); // fallback
+}
+
 // Cross-fade the preview body when the card is already open
 function swapPreview(toolId, data) {
   gsap.to(".preview-content-wrap", {
@@ -630,6 +678,15 @@ if (globalLightbox) {
 window.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && globalLightbox && globalLightbox.classList.contains('is-open')) {
     closeLightbox();
+  }
+});
+
+// Click the collapsed hero-intro pill to revert to centered state
+const heroIntro = document.getElementById('hero-intro-content');
+heroIntro.addEventListener('click', () => {
+  // Only act when the card is open (not centered) and not mid-animation
+  if (!homeShell.classList.contains('centered') && !homeShell.classList.contains('is-animating')) {
+    closeHub();
   }
 });
 
