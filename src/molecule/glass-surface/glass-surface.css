@@ -1,0 +1,46 @@
+/* Glass Surface Layout styles */
+.glass-surface {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    transition: opacity 260ms ease-out;
+}
+
+/* Accessible focus styling */
+.glass-surface:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+    .glass-surface:focus-visible {
+        outline-color: #0a84ff;
+    }
+}
+
+/* Inner content wrapper */
+.glass-surface-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
+    border-radius: inherit;
+    position: relative;
+    z-index: 10;
+}
+
+/* Hidden helper classes for SVG element mapping */
+.glass-surface-filter-svg {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    z-index: -10;
+}
