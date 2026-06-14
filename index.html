@@ -23,7 +23,7 @@
 <!-- Theme toggle: Swap 'theme-liquid' with 'theme-glassmorph' on body. -->
 
 <body class="theme-liquid">
-    <main class="home-shell">
+    <main class="home-shell centered">
 
         <div class="aurora-background" aria-hidden="true">
             <div class="aurora-stars"></div>
@@ -134,53 +134,107 @@
 
         </div>
 
-        <section class="hero-card">
-            <p class="eyebrow">Kenn's Workspace</p>
-            <h1>Web Tools</h1>
-            <p class="hero-copy">Pick a tool that fits your need. I will add more tools as I develop them.</p>
+        <!-- Hub Stage: groups the hero panel + dock so one transform slides them
+             together (centered on load, top on select). -->
+        <div class="hub-stage" id="hub-stage">
 
-            <div class="tool-grid">
-                <!-- Primary tool cards -->
-                <a class="tool-card tool-card-primary" href="/schedule-visualizer/">
-                    <div class="tool-badge">v2.3.2</div>
-                    <span class="tool-kicker">Planner</span>
+            <!-- Welcome Intro: glass panel on load, collapses to a slim header on select -->
+            <div class="hero-intro" id="hero-intro-content">
+                <p class="eyebrow">Kenn's Workspace</p>
+                <h1>Web Tools</h1>
+                <p class="hero-copy">Pick a tool that fits your need. I will add more tools as I develop them.</p>
+            </div>
 
-                    <strong>Schedule Plotter</strong>
-                    <span class="tool-description">Plot class schedules, manage saved snapshots, and export PNGs. With
-                        Automated Plotting Support with Companion Extension.
-                        <span class="txt-success">(Supports CST/CE/WMA)</span>
-                        <br>For Custom Subject:
-                        <span class="txt-success">(Subject Code - Subject Name)</span>
-                </a>
+            <!-- Main Header Navigation (The Dock) -->
+            <header class="hub-header" id="hub-header">
+                <nav class="hub-dock" id="hub-dock-nav" aria-label="Web Tools Dock">
+                    <button class="dock-item" data-tool="schedule-plotter" aria-label="Schedule Plotter">
+                        <span class="dock-surface">
+                            <img class="dock-icon" src="./src/assets/icons/schedule-plotter.png" alt="Schedule Plotter">
+                            <span class="dock-label">Schedule Plotter</span>
+                        </span>
+                        <span class="dock-tooltip">
+                            <span class="tooltip-title">Schedule Plotter</span>
+                            <span class="tooltip-meta">v__VERSION_SCHEDULE_PLOTTER__ • Web</span>
+                        </span>
+                    </button>
+                    <button class="dock-item" data-tool="portal-parser" aria-label="Pre-requisite Mapping">
+                        <span class="dock-surface">
+                            <img class="dock-icon" src="./src/assets/icons/portal-parser.png"
+                                alt="Pre-requisite Mapping">
+                            <span class="dock-label">Pre-requisite Mapping</span>
+                        </span>
+                        <span class="dock-tooltip">
+                            <span class="tooltip-title">Pre-requisite Mapping</span>
+                            <span class="tooltip-meta">v__VERSION_PREREQUISITE_MAPPING__ • Web</span>
+                        </span>
+                    </button>
+                    <button class="dock-item" data-tool="active-page-utility" aria-label="Active-Page Utility">
+                        <span class="dock-surface">
+                            <img class="dock-icon" src="./src/assets/icons/active-page-utility.png"
+                                alt="Active-Page Utility">
+                            <span class="dock-label">Active-Page Utility</span>
+                        </span>
+                        <span class="dock-tooltip">
+                            <span class="tooltip-title">Active-Page Utility</span>
+                            <span class="tooltip-meta">v__VERSION_ACTIVE_PAGE_UTILITY__ • Extension</span>
+                        </span>
+                    </button>
+                    <button class="dock-item" data-tool="companion-page" aria-label="Web Tools Companion">
+                        <span class="dock-surface">
+                            <img class="dock-icon" src="./src/assets/icons/companion-page.png"
+                                alt="Web Tools Companion">
+                            <span class="dock-label">Web Tools Companion</span>
+                        </span>
+                        <span class="dock-tooltip">
+                            <span class="tooltip-title">Web Tools Companion</span>
+                            <span class="tooltip-meta">v__VERSION_WEB_TOOLS_COMPANION__ • Extension</span>
+                        </span>
+                    </button>
+                    <button class="dock-item" data-tool="pka-toolkit" aria-label="pka-toolkit" aria-disabled="false"
+                        tabindex="-1">
+                        <span class="dock-surface">
+                            <img class="dock-icon" src="./src/assets/icons/pka-toolkit.png" alt="pka-toolkit">
+                            <span class="dock-label">Tracer Toolkit</span>
+                        </span>
+                        <span class="dock-tooltip">
+                            <span class="tooltip-title">pka-toolkit</span>
+                            <span class="tooltip-meta">Coming Soon • Native, Web, CLI</span>
+                        </span>
+                    </button>
+                </nav>
+            </header>
 
-                <a class="tool-card tool-card-secondary" href="/portal-parser/">
-                    <div class="tool-badge">v1.6.2</div>
-                    <span class="tool-kicker">Parser</span>
-                    <strong>Pre-requisite Mapping</strong>
-                    <span class="tool-description">Upload a Curriculum <span class="txt-emphasis">MHTML/HTML</span> file to map pre-requisites; or use
-                        pre-mapped Curriculum. Alternatively Use Companion Extension to extract the data for you and
-                        input automatically.</span>
-                </a>
-                <!-- Bitly Link to be appended later <a class="tool-card tool-card-tertiary" href="https://chromewebstore.google.com/detail/efinkkopnpgbhdecnaoflgbjpcanahpp?utm_source=item-share-cb" target="_blank" rel="noopener"> -->
-                <a class="tool-card tool-card-tertiary" href="/active-page-utility/">
-                    <div class="tool-badge">v1.0.1</div>
-                    <span class="tool-kicker">Extension</span>
-                    <strong>Active-Page Utility</strong>
-                    <span class="tool-description">A Browser extension that spoofs your whitelisted domains to be active
-                        even if you arent actively viewing them, in turn prevents pages from detecting your activity.
-                        Supports Chromium-based browsers. <span class="txt-important">(Soon will support Gecko-based
-                            browsers)</span></span>
-                </a>
+        </div>
+        <!-- /hub-stage -->
 
-                <!-- Disable Tool Utility <a class="tool-card tool-card-tertiary disabled" href="/companion-page/" aria-disabled="true" tabindex="-1" onclick="event.preventDefault();"> -->
-                <a class="tool-card tool-card-tertiary" href="/companion-page/">
-                    <div class="tool-badge">v1.0.2</div>
-                    <span class="tool-kicker">Extension</span>
-                    <strong>Web Tools Companion</strong>
-                    <span class="tool-description">Companion to the Web Tool, that adds additional functionality to certain tools here, such as Real-Time Schedule Visualizing when you Add/Drop subjects during Enrollment on OSES.
-                        As Web Tool grows, so is the Companion, with more features to come!
-                    </span>
-                </a>
+        <!-- Preview Glassmorphic Card -->
+        <section class="hero-card" id="hero-card-panel">
+            <!-- Preview Panel -->
+            <div class="hub-preview" id="hub-preview-panel">
+                <div class="preview-content-wrap">
+                    <div class="preview-details">
+                        <span class="preview-kicker" id="prev-kicker"></span>
+                        <h2 class="preview-title" id="prev-title"></h2>
+                        <p class="preview-description" id="prev-desc"></p>
+
+                        <h3 class="features-header">Key Features</h3>
+                        <ul class="preview-features" id="prev-features"></ul>
+
+                        <div class="preview-actions">
+                            <a href="#" class="btn btn-plot" id="prev-launch-btn">
+                                <span class="iconify btn-icon" data-icon="mdi:rocket-launch-outline"></span>
+                                <span id="prev-launch-text">Launch Tool</span>
+                            </a>
+                            <div class="platform-tags" id="prev-tags"></div>
+                        </div>
+                    </div>
+
+                    <!-- Visual mockup canvas -->
+                    <div class="preview-visual">
+                        <div class="visual-canvas" id="prev-visual-canvas"></div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
