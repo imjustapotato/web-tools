@@ -1083,6 +1083,11 @@ body.theme-glassmorph {
 .hub-preview.theme-tertiary .preview-features li::before { color: var(--txt-important); }
 .hub-preview.theme-quaternary .preview-features li::before { color: var(--txt-danger); }
 
+.hub-preview .preview-features li.not-included::before {
+    content: '✗';
+    color: var(--txt-danger);
+}
+
 /* --- CSS Interactive Visual Mockups --- */
 .preview-visual {
     background: rgba(0, 0, 0, 0.38);

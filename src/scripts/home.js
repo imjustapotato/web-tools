@@ -13,59 +13,83 @@ const toolsData = {
       "Save snapshots locally or export JSON",
       "Companion extension auto-plotting support"
     ],
+    notIncluded: ["Convincing your 7 AM professor to move the class"],
     launchUrl: "/schedule-visualizer/",
     launchText: "Launch Plotter",
     theme: "theme-primary",
     previewType: "schedule",
-    disabled: false
+    disabled: false,
+    screenshots: [
+      "/src/assets/screenshots/Schedule Plotter/visualizer.png",
+      "/src/assets/screenshots/Schedule Plotter/visualizer-edit.png",
+      "/src/screenshots/plotter.png",
+      "/src/screenshots/plotter-new.png",
+      "/src/screenshots/plotter-v2.3.1.png"
+    ]
   },
   "portal-parser": {
     kicker: "Parser",
     title: "Pre-requisite Mapping",
-    description: "Upload your program curriculum HTML/MHTML files to parse and map subject prerequisites into an interactive SVG node graph. Can copy generated Mermaid code directly or use the companion extension to auto-scrape program details without manual uploads.",
+    description: "Know your curriculum pre-requisites, plan ahead towards your target subjects like Capstone, Thesis, and OJT. Extracts and visualizes the pre-requisite tree from the portal's curriculum page, highlighting locked and unlocked subjects based on your current progress. Provides a Mermaid code export for easy sharing and documentation.",
     features: [
-      "Interactive SVG graph visualization",
-      "Auto-extract curriculum from portal",
-      "Filter and highlight prerequisites",
+      "Interactive Graph visualization",
+      "Extract curriculum from portal",
+      "Highlight prerequisites",
       "Copy and paste generated Mermaid code"
     ],
+    notIncluded: ["Taking the prerequisites for you"],
     launchUrl: "/portal-parser/",
     launchText: "Launch Parser",
     theme: "theme-secondary",
     previewType: "parser",
-    disabled: false
+    disabled: false,
+    screenshots: [
+      "/src/assets/screenshots/Pre-Requisite Mapping/prereq.png",
+      "/src/assets/screenshots/Pre-Requisite Mapping/prereq-tree.png",
+      "/src/screenshots/mapping.png"
+    ]
   },
   "active-page-utility": {
     kicker: "Extension",
     title: "Active-Page Utility",
-    description: "A lightweight browser extension that spoofs whitelisted domains (specifically designed for OSES) to be active. Prevents pages from detecting inactivity or triggering automated logouts when navigating other tabs.",
+    description: "A Browser Extension that spoofs the whitelisted domains as active tabs, preventing the detection of tab switches and backgrounding. Allowing you to change tabs without those websites knowing that you ever left their page, while you are doing something else. ;)",
     features: [
       "Bypass active tab checking",
       "Custom domain whitelist filtering",
-      "Low memory background footprint",
-      "Prevents automated logout triggers"
+      "Block Tab Switch Detection",
+      "Frame host Detection for Cross Domains inside iFrames"
     ],
+    notIncluded: ["Guaranteeing you won't get called on"],
     launchUrl: "/active-page-utility/",
     launchText: "View Extension Page",
     theme: "theme-tertiary",
     previewType: "utility",
-    disabled: false
+    disabled: false,
+    screenshots: [
+      "/src/assets/screenshots/Active-Page Utility/apu.png",
+      "/src/screenshots/APU-Home.png"
+    ]
   },
   "companion-page": {
     kicker: "Extension",
     title: "Web Tools Companion",
-    description: "Companion browser extension that enhances web tools with real-time integrations. Automatically syncs OSES enrollments to the schedule plotter live, scrapes program requirements, and triggers floating Dynamic Island notifications.",
+    description: "A Companion Browser Extension that integrates with the web tools to provide enhanced features and seamless connectivity. Notably includes a live schedule sync as you add or drop subjects during enrollment, or extract those schedules from SAF and have them auto-plot in the Schedule Plotter web app.",
     features: [
       "Sync OSES schedule to plotter live",
       "Extract curriculum details in one click",
       "Floating Dynamic Island notifications",
       "Chromium and Firefox support"
     ],
+    notIncluded: ["Securing you the last slot in the good professor's section"],
     launchUrl: "/companion-page/",
     launchText: "View Companion Page",
     theme: "theme-tertiary",
     previewType: "companion",
-    disabled: false
+    disabled: false,
+    screenshots: [
+      "/src/assets/screenshots/Companion/companion.png",
+      "/src/screenshots/companion-home.png"
+    ]
   },
   "pka-toolkit": {
     kicker: "Reverse Engineering",
@@ -78,6 +102,7 @@ const toolsData = {
       "Extract and map network topologies to Graphviz DOT graphs",
       "Cross-platform GUI (Tauri 2), CLI, and Web interfaces"
     ],
+    notIncluded: ["A valid alibi for your Cisco instructor"],
     launchUrl: "/tracer-toolkit/",
     launchText: "Probably",
     theme: "theme-quaternary",
@@ -85,10 +110,10 @@ const toolsData = {
     disabled: false,
     launchDisabled: true,
     screenshots: [
-      "/src/assets/screenshots/Tracer Toolkit/tracer-status.webp",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-convert.webp",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-inject.webp",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-mod.webp"
+      "/src/assets/screenshots/Tracer Toolkit/tracer-status.png",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-convert.png",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-inject.png",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-mod.png"
     ]
   }
 };
@@ -212,7 +237,7 @@ function getMockupHTML(type) {
           <div class="browser-dots">
             <span class="dot"></span><span class="dot"></span><span class="dot"></span>
           </div>
-          <div class="browser-address">oses.feutech.edu.ph</div>
+          <div class="browser-address">feu.instructure.com</div>
         </div>
         <div class="browser-body">
           <div class="utility-pulse-ring"></div>
@@ -230,7 +255,7 @@ function getMockupHTML(type) {
       <div class="mockup-companion">
         <div class="companion-island">
           <div class="island-logo"></div>
-          <div class="island-text">Connected to OSES</div>
+          <div class="island-text">Connected to Web Tools</div>
         </div>
         <div class="companion-sync">
           <div class="sync-dot"></div>
@@ -266,9 +291,11 @@ function updatePreviewContent(toolId, data) {
   document.getElementById('prev-title').textContent = data.title;
   document.getElementById('prev-desc').textContent = data.description;
 
-  // Render features list
+  // Render features and not-included items
   const featuresList = document.getElementById('prev-features');
-  featuresList.innerHTML = data.features.map(feat => `<li>${feat}</li>`).join('');
+  const featuresHTML = data.features.map(feat => `<li>${feat}</li>`).join('');
+  const notIncludedHTML = (data.notIncluded || []).map(item => `<li class="not-included">${item}</li>`).join('');
+  featuresList.innerHTML = featuresHTML + notIncludedHTML;
 
   // Render platform badges
   const tagsContainer = document.getElementById('prev-tags');
