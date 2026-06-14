@@ -20,11 +20,11 @@ const toolsData = {
     previewType: "schedule",
     disabled: false,
     screenshots: [
-      "/src/assets/screenshots/Schedule Plotter/visualizer.png",
-      "/src/assets/screenshots/Schedule Plotter/visualizer-edit.png",
-      "/src/screenshots/plotter.png",
-      "/src/screenshots/plotter-new.png",
-      "/src/screenshots/plotter-v2.3.1.png"
+      "./src/assets/screenshots/Schedule Plotter/visualizer.png",
+      "./src/assets/screenshots/Schedule Plotter/visualizer-edit.png",
+      "./src/screenshots/plotter.png",
+      "./src/screenshots/plotter-new.png",
+      "./src/screenshots/plotter-v2.3.1.png"
     ]
   },
   "portal-parser": {
@@ -44,9 +44,9 @@ const toolsData = {
     previewType: "parser",
     disabled: false,
     screenshots: [
-      "/src/assets/screenshots/Pre-Requisite Mapping/prereq.png",
-      "/src/assets/screenshots/Pre-Requisite Mapping/prereq-tree.png",
-      "/src/screenshots/mapping.png"
+      "./src/assets/screenshots/Pre-Requisite Mapping/prereq.png",
+      "./src/assets/screenshots/Pre-Requisite Mapping/prereq-tree.png",
+      "./src/screenshots/mapping.png"
     ]
   },
   "active-page-utility": {
@@ -66,8 +66,8 @@ const toolsData = {
     previewType: "utility",
     disabled: false,
     screenshots: [
-      "/src/assets/screenshots/Active-Page Utility/apu.png",
-      "/src/screenshots/APU-Home.png"
+      "./src/assets/screenshots/Active-Page Utility/apu.png",
+      "./src/screenshots/APU-Home.png"
     ]
   },
   "companion-page": {
@@ -87,8 +87,8 @@ const toolsData = {
     previewType: "companion",
     disabled: false,
     screenshots: [
-      "/src/assets/screenshots/Companion/companion.png",
-      "/src/screenshots/companion-home.png"
+      "./src/assets/screenshots/Companion/companion.png",
+      "./src/screenshots/companion-home.png"
     ]
   },
   "pka-toolkit": {
@@ -110,10 +110,10 @@ const toolsData = {
     disabled: false,
     launchDisabled: true,
     screenshots: [
-      "/src/assets/screenshots/Tracer Toolkit/tracer-status.png",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-convert.png",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-inject.png",
-      "/src/assets/screenshots/Tracer Toolkit/tracer-mod.png"
+      "./src/assets/screenshots/Tracer Toolkit/tracer-status.png",
+      "./src/assets/screenshots/Tracer Toolkit/tracer-convert.png",
+      "./src/assets/screenshots/Tracer Toolkit/tracer-inject.png",
+      "./src/assets/screenshots/Tracer Toolkit/tracer-mod.png"
     ]
   }
 };
