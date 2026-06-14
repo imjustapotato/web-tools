@@ -17,7 +17,7 @@ Any new projects I could think of will be appended here.
 
 ### **Homepage (v2.0)**
 
-![Homepage](./src/screenshots/homepage-new.png)
+![Homepage](./public/screenshots/homepage-new.png)
 
 Reworked Theme of Homepage, and applied to some parts of the webapp.
 
@@ -25,24 +25,24 @@ Reworked Theme of Homepage, and applied to some parts of the webapp.
 
 ### **Plotter (v2.3.1)**
 
-![Schedule Plotter and Visualizer](src/screenshots/plotter-v2.3.1.png)
+![Schedule Plotter and Visualizer](./public/screenshots/schedule-plotter/plotter-v2.3.1.png)
 
 ***
 
 ### **Pre-Requisite Mapping**
 
-![Pre-Requisite Mapping](src/screenshots/mapping.png)
+![Pre-Requisite Mapping](./public/screenshots/portal-parser/mapping.png)
 
 ***
 
 ### **Active-Page Utility**
 
-![Active-Page Utility](./src/screenshots/APU-Home.png)
+![Active-Page Utility](./public/screenshots/active-page-utility/APU-Home.png)
 
 ***
 
 ### **Web Tools Companion**
-![Web Tools Companion](./src/screenshots/companion-home.png)
+![Web Tools Companion](./public/screenshots/companion/companion-home.png)
 
 # TODO:
 
