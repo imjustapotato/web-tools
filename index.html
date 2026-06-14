@@ -141,7 +141,7 @@
                 <h1>Web Tools</h1>
                 <p class="hero-copy">Pick a tool that fits your need. I will add more tools as I develop them.</p>
             </div>
-            
+
             <div class="tool-grid">
                 <!-- Dynamically populated from toolsData on page load -->
             </div>
@@ -169,7 +169,8 @@
                             </button>
                         </span>
                         <div class="dock-launch-tooltip">
-                            <a href="/schedule-visualizer/" class="dock-launch-link" aria-label="Launch Schedule Plotter Directly">
+                            <a href="/schedule-visualizer/" class="dock-launch-link"
+                                aria-label="Launch Schedule Plotter Directly">
                                 <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
                                 <span>Launch Tool</span>
                             </a>
@@ -188,7 +189,8 @@
                             </button>
                         </span>
                         <div class="dock-launch-tooltip">
-                            <a href="/portal-parser/" class="dock-launch-link" aria-label="Launch Pre-requisite Mapping Directly">
+                            <a href="/portal-parser/" class="dock-launch-link"
+                                aria-label="Launch Pre-requisite Mapping Directly">
                                 <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
                                 <span>Launch Tool</span>
                             </a>
@@ -207,7 +209,8 @@
                             </button>
                         </span>
                         <div class="dock-launch-tooltip">
-                            <a href="/active-page-utility/" class="dock-launch-link" aria-label="Launch Active-Page Utility Directly">
+                            <a href="/active-page-utility/" class="dock-launch-link"
+                                aria-label="Launch Active-Page Utility Directly">
                                 <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
                                 <span>Launch Tool</span>
                             </a>
@@ -226,7 +229,8 @@
                             </button>
                         </span>
                         <div class="dock-launch-tooltip">
-                            <a href="/companion-page/" class="dock-launch-link" aria-label="Launch Web Tools Companion Directly">
+                            <a href="/companion-page/" class="dock-launch-link"
+                                aria-label="Launch Web Tools Companion Directly">
                                 <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
                                 <span>Launch Tool</span>
                             </a>
@@ -239,20 +243,20 @@
 
                     <div class="dock-item" data-tool="pka-toolkit" aria-disabled="false" tabindex="-1">
                         <span class="dock-surface">
-                            <button class="dock-select-btn" disabled aria-label="Tracer Toolkit (Coming Soon)">
+                            <button class="dock-select-btn" aria-label="Select Tracer Toolkit">
                                 <img class="dock-icon" src="./src/assets/icons/pka-toolkit.png" alt="">
                                 <span class="dock-label">Tracer Toolkit</span>
                             </button>
                         </span>
                         <div class="dock-launch-tooltip">
-                            <a href="#" class="dock-launch-link btn-disabled" aria-disabled="true" style="pointer-events: none" aria-label="Tracer Toolkit Directly (Coming Soon)">
-                                <span class="iconify" data-icon="mdi:clock-outline" aria-hidden="true"></span>
-                                <span>Soon</span>
+                            <a href="#" class="dock-launch-link btn-disabled" aria-disabled="true" style="pointer-events: none" aria-label="Launch Tracer Toolkit Directly">
+                                <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
+                                <span>Probably</span>
                             </a>
                         </div>
                         <span class="dock-tooltip">
-                            <span class="tooltip-title">pka-toolkit</span>
-                            <span class="tooltip-meta">Coming Soon • Native, Web, CLI</span>
+                            <span class="tooltip-title">Tracer Toolkit</span>
+                            <span class="tooltip-meta">v0.6.0-beta • Native, Web, CLI</span>
                         </span>
                     </div>
                 </nav>
@@ -291,6 +295,16 @@
             </div>
         </section>
     </main>
+
+    <!-- Fullscreen Lightbox Modal -->
+    <div class="lightbox-modal" id="global-lightbox" aria-hidden="true" role="dialog" aria-label="Screenshot fullscreen preview">
+        <button class="lightbox-close-btn" id="lightbox-close" aria-label="Close fullscreen preview">
+            <span class="iconify" data-icon="mdi:close"></span>
+        </button>
+        <div class="lightbox-content">
+            <img id="lightbox-img" src="" alt="Fullscreen Screenshot Preview">
+        </div>
+    </div>
 
     <script defer src="/_vercel/insights/script.js"></script>
     <script defer src="/_vercel/speed-insights/script.js"></script>

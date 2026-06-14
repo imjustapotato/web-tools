@@ -1100,6 +1100,387 @@ body.theme-glassmorph {
     justify-content: center;
 }
 
+.visual-stack {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1000px;
+}
+
+.stack-layer {
+    position: absolute;
+    width: 85%;
+    max-width: 320px;
+    border-radius: 14px;
+    transition: transform 0.45s cubic-bezier(0.25, 1, 0.3, 1), 
+                filter 0.45s ease, 
+                opacity 0.45s ease;
+    cursor: pointer;
+    will-change: transform, filter, opacity;
+}
+
+.stack-layer.active {
+    transform: scale(1) translate(0, 0) rotate(0deg) !important;
+    z-index: 10;
+    filter: none !important;
+    opacity: 1 !important;
+    cursor: default;
+}
+
+/* Specific offsets for background cards */
+.stack-layer.layer-mockup.inactive {
+    transform: scale(0.82) translate(-50px, -15px) rotate(-3deg);
+    z-index: 5;
+    filter: blur(2px) saturate(75%) brightness(0.7);
+    opacity: 0.75;
+}
+
+.stack-layer.layer-screenshots.inactive {
+    transform: scale(0.82) translate(50px, -15px) rotate(3deg);
+    z-index: 5;
+    filter: blur(2px) saturate(75%) brightness(0.7);
+    opacity: 0.75;
+}
+
+/* Hover effects for background cards to entice clicking */
+.stack-layer.layer-mockup.inactive:hover {
+    transform: scale(0.85) translate(-60px, -20px) rotate(-4deg);
+    filter: blur(1px) saturate(90%) brightness(0.85);
+    opacity: 0.9;
+}
+
+.stack-layer.layer-screenshots.inactive:hover {
+    transform: scale(0.85) translate(60px, -20px) rotate(4deg);
+    filter: blur(1px) saturate(90%) brightness(0.85);
+    opacity: 0.9;
+}
+
+/* Disable pointer events inside background cards so the whole card is clickable to swap */
+.stack-layer.inactive * {
+    pointer-events: none !important;
+}
+
+/* Standalone mockup centered layout */
+.mockup-standalone {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Screenshot Window Frame */
+.screenshot-window {
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 14px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.screenshot-window-header {
+    background: rgba(30, 41, 59, 0.75);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 0.45rem 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.window-dots {
+    display: flex;
+    gap: 5px;
+}
+
+.window-dots .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: block;
+}
+
+.dot-red { background: #ef4444; }
+.dot-yellow { background: #f59e0b; }
+.dot-green { background: #10b981; }
+
+.window-title {
+    font-size: 0.62rem;
+    color: var(--muted);
+    font-family: monospace;
+    opacity: 0.75;
+    flex: 1;
+    text-align: center;
+    margin-right: 34px; /* offset dots width */
+}
+
+/* Carousel Container */
+.screenshot-carousel {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    background: #060913;
+}
+
+.carousel-track {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.carousel-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+    z-index: 1;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* Carousel controls */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(10, 15, 30, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    z-index: 10;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.screenshot-carousel:hover .carousel-btn {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.carousel-btn:hover {
+    background: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-50%) scale(1.1) !important;
+}
+
+.btn-prev { left: 10px; }
+.btn-next { right: 10px; }
+
+.carousel-btn .iconify {
+    width: 18px;
+    height: 18px;
+}
+
+/* Carousel dots indicators */
+.carousel-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 6px;
+    z-index: 10;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 4px 8px;
+    border-radius: 99px;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.4);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.carousel-dot.active {
+    background: var(--accent);
+    transform: scale(1.25);
+    box-shadow: 0 0 8px var(--accent);
+}
+
+/* Window Zoom Button */
+.window-zoom-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    cursor: pointer;
+    color: var(--muted);
+    opacity: 0.6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.window-zoom-btn:hover {
+    color: #fff;
+    opacity: 1;
+    transform: scale(1.15);
+}
+
+.window-zoom-btn .iconify {
+    width: 14px;
+    height: 14px;
+}
+
+/* Inactive Stack Indicator Badge */
+.inactive-indicator-badge {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.9);
+    background: rgba(15, 23, 42, 0.88);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 0.55rem 1rem;
+    border-radius: 99px;
+    color: #fff;
+    font-size: 0.72rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 100;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    white-space: nowrap;
+}
+
+.inactive-indicator-badge .iconify {
+    width: 14px;
+    height: 14px;
+}
+
+.stack-layer.inactive:hover .inactive-indicator-badge {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -50%) scale(1);
+}
+
+/* Cursor indicator for active images */
+.stack-layer.active .carousel-slide.active img {
+    cursor: zoom-in;
+}
+
+/* Fullscreen Lightbox Modal */
+.lightbox-modal {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(2, 4, 10, 0.65);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.lightbox-modal.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+.lightbox-close-btn {
+    position: absolute;
+    top: 2rem;
+    right: 2rem;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #fff;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.lightbox-close-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: scale(1.1) rotate(90deg);
+}
+
+.lightbox-close-btn .iconify {
+    width: 22px;
+    height: 22px;
+}
+
+.lightbox-content {
+    max-width: 90vw;
+    max-height: 82vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.lightbox-modal.is-open .lightbox-content {
+    transform: scale(1);
+}
+
+.lightbox-content img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
 /* 1. Schedule Mockup */
 .mockup-schedule {
     width: 100%;

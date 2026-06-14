@@ -70,18 +70,26 @@ const toolsData = {
   "pka-toolkit": {
     kicker: "Reverse Engineering",
     title: "Tracer Toolkit",
-    description: "A secure packet analysis, decryption, and protocol debugging toolkit. Supports in-memory decryption filters, low-overhead packet capture parsing, and interfaces via a cross-platform Native & Web GUI or CLI.",
+    description: "An advanced reverse engineering and analysis suite for Cisco Packet Tracer (.pka/.pkt) activities. Utilizes a high-performance Rust core to decrypt Twofish/EAX-encrypted activity files into raw XML for direct modification, bypassing manual edits on hundreds of thousands of lines of configuration. Features native/cross-platform memory injection to bypass version checks, unlock restricted interfaces, prevent activity resets, and extract network topologies into interactive graphs.",
     features: [
-      "In-memory decryption filters",
-      "Cross-platform Native & Web GUI",
-      "Interactive Command Line Interface",
-      "Low-overhead packet capture parsing"
+      "Decrypt/Encrypt .pka/.pkt activities via Twofish EAX",
+      "Process memory patches to unlock interfaces & bypass versions",
+      "Prevent session resets on username/email credential changes",
+      "Extract and map network topologies to Graphviz DOT graphs",
+      "Cross-platform GUI (Tauri 2), CLI, and Web interfaces"
     ],
-    launchUrl: "#",
-    launchText: "Coming Soon",
+    launchUrl: "/tracer-toolkit/",
+    launchText: "Probably",
     theme: "theme-quaternary",
     previewType: "toolkit",
-    disabled: true
+    disabled: false,
+    launchDisabled: true,
+    screenshots: [
+      "/src/assets/screenshots/Tracer Toolkit/tracer-status.webp",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-convert.webp",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-inject.webp",
+      "/src/assets/screenshots/Tracer Toolkit/tracer-mod.webp"
+    ]
   }
 };
 
@@ -95,6 +103,66 @@ const dockItems = document.querySelectorAll('.dock-item');
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 let isFirstSelection = true;
+let autoPeekIntervalId = null;
+let autoPeekTimeoutId1 = null;
+let autoPeekTimeoutId2 = null;
+
+// Clear any active auto-peek timers
+function stopAutoPeekTimer() {
+  if (autoPeekIntervalId) {
+    clearInterval(autoPeekIntervalId);
+    autoPeekIntervalId = null;
+  }
+  if (autoPeekTimeoutId1) {
+    clearTimeout(autoPeekTimeoutId1);
+    autoPeekTimeoutId1 = null;
+  }
+  if (autoPeekTimeoutId2) {
+    clearTimeout(autoPeekTimeoutId2);
+    autoPeekTimeoutId2 = null;
+  }
+}
+
+// Start auto-peek swapping cycle
+function startAutoPeekTimer(visualCanvas) {
+  stopAutoPeekTimer(); // Ensure no duplicates
+  
+  const stackLayers = visualCanvas.querySelectorAll('.stack-layer');
+  if (stackLayers.length < 2) return;
+  
+  const mockupLayer = visualCanvas.querySelector('.layer-mockup');
+  const screenshotsLayer = visualCanvas.querySelector('.layer-screenshots');
+  
+  function triggerSwapToScreenshots() {
+    if (!mockupLayer || !screenshotsLayer) return;
+    if (mockupLayer.classList.contains('active')) {
+      mockupLayer.classList.remove('active');
+      mockupLayer.classList.add('inactive');
+      screenshotsLayer.classList.remove('inactive');
+      screenshotsLayer.classList.add('active');
+    }
+  }
+  
+  function triggerSwapToMockup() {
+    if (!mockupLayer || !screenshotsLayer) return;
+    if (screenshotsLayer.classList.contains('active')) {
+      screenshotsLayer.classList.remove('active');
+      screenshotsLayer.classList.add('inactive');
+      mockupLayer.classList.remove('inactive');
+      mockupLayer.classList.add('active');
+    }
+  }
+
+  // First peek: swap to screenshots after 3.5s, back to mockup at 7.5s (gives user time to understand)
+  autoPeekTimeoutId1 = setTimeout(triggerSwapToScreenshots, 3500);
+  autoPeekTimeoutId2 = setTimeout(triggerSwapToMockup, 7500);
+  
+  // Recurring peeks: repeat every 18s (swap to screenshots for 4s, then back)
+  autoPeekIntervalId = setInterval(() => {
+    triggerSwapToScreenshots();
+    autoPeekTimeoutId2 = setTimeout(triggerSwapToMockup, 4000);
+  }, 18000);
+}
 
 // Custom HTML mockup renderers
 function getMockupHTML(type) {
@@ -233,7 +301,7 @@ function updatePreviewContent(toolId, data) {
   launchBtn.href = data.launchUrl;
   launchText.textContent = data.launchText;
 
-  if (data.disabled) {
+  if (data.disabled || data.launchDisabled) {
     launchBtn.classList.add('btn-disabled');
     launchBtn.setAttribute('aria-disabled', 'true');
     launchBtn.style.pointerEvents = 'none';
@@ -243,9 +311,157 @@ function updatePreviewContent(toolId, data) {
     launchBtn.style.pointerEvents = 'auto';
   }
 
-  // Render Visual Mockup
+  // Render Visual Mockup or Stack
   const visualCanvas = document.getElementById('prev-visual-canvas');
-  visualCanvas.innerHTML = getMockupHTML(data.previewType);
+  stopAutoPeekTimer(); // Always clear previous timers on swap
+  
+  if (data.screenshots && data.screenshots.length > 0) {
+    visualCanvas.innerHTML = `
+      <div class="visual-stack">
+        <!-- Mockup Layer -->
+        <div class="stack-layer layer-mockup active" data-layer="mockup">
+          ${getMockupHTML(data.previewType)}
+          <div class="inactive-indicator-badge">
+            <span class="iconify" data-icon="mdi:cursor-default-click-outline"></span>
+            <span>Click to Swap</span>
+          </div>
+        </div>
+        <!-- Screenshots Layer -->
+        <div class="stack-layer layer-screenshots inactive" data-layer="screenshots">
+          <div class="screenshot-window">
+            <div class="screenshot-window-header">
+              <div class="window-dots">
+                <span class="dot dot-red"></span><span class="dot dot-yellow"></span><span class="dot dot-green"></span>
+              </div>
+              <div class="window-title">${data.title}</div>
+              <button class="window-zoom-btn" id="screenshot-zoom-trigger" aria-label="Open fullscreen screenshot">
+                <span class="iconify" data-icon="mdi:fullscreen"></span>
+              </button>
+            </div>
+            <div class="screenshot-carousel">
+              <div class="carousel-track">
+                ${data.screenshots.map((src, idx) => `
+                  <div class="carousel-slide ${idx === 0 ? 'active' : ''}" data-slide="${idx}">
+                    <img src="${src}" alt="${data.title} Screenshot ${idx + 1}" loading="lazy">
+                  </div>
+                `).join('')}
+              </div>
+              <button class="carousel-btn btn-prev" aria-label="Previous screenshot">
+                <span class="iconify" data-icon="mdi:chevron-left"></span>
+              </button>
+              <button class="carousel-btn btn-next" aria-label="Next screenshot">
+                <span class="iconify" data-icon="mdi:chevron-right"></span>
+              </button>
+              <div class="carousel-dots">
+                ${data.screenshots.map((_, idx) => `
+                  <button class="carousel-dot ${idx === 0 ? 'active' : ''}" data-dot="${idx}" aria-label="Go to screenshot ${idx + 1}"></button>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+          <div class="inactive-indicator-badge">
+            <span class="iconify" data-icon="mdi:cursor-default-click-outline"></span>
+            <span>Click to Swap</span>
+          </div>
+        </div>
+      </div>
+    `;
+
+    // Layer Swapping Logic
+    const stackLayers = visualCanvas.querySelectorAll('.stack-layer');
+    stackLayers.forEach(layer => {
+      layer.addEventListener('click', (e) => {
+        if (layer.classList.contains('inactive')) {
+          stopAutoPeekTimer(); // Stop auto-swapping permanently once user interacts
+          stackLayers.forEach(l => {
+            l.classList.remove('active');
+            l.classList.add('inactive');
+          });
+          layer.classList.remove('inactive');
+          layer.classList.add('active');
+          e.stopPropagation();
+        }
+      });
+    });
+
+    // Carousel Slide Navigation Logic
+    const screenshotsLayer = visualCanvas.querySelector('.layer-screenshots');
+    if (screenshotsLayer) {
+      let currentSlideIndex = 0;
+      const slides = screenshotsLayer.querySelectorAll('.carousel-slide');
+      const dots = screenshotsLayer.querySelectorAll('.carousel-dot');
+      
+      function showSlide(index) {
+        if (index < 0) index = slides.length - 1;
+        if (index >= slides.length) index = 0;
+        currentSlideIndex = index;
+        
+        slides.forEach((slide, idx) => {
+          slide.classList.toggle('active', idx === currentSlideIndex);
+        });
+        dots.forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === currentSlideIndex);
+        });
+      }
+      
+      const prevBtn = screenshotsLayer.querySelector('.btn-prev');
+      const nextBtn = screenshotsLayer.querySelector('.btn-next');
+      
+      if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showSlide(currentSlideIndex - 1);
+        });
+      }
+      
+      if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showSlide(currentSlideIndex + 1);
+        });
+      }
+      
+      dots.forEach((dot, idx) => {
+        dot.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showSlide(idx);
+        });
+      });
+
+      // Fullscreen Zoom/Lightbox Triggers
+      const zoomTrigger = screenshotsLayer.querySelector('#screenshot-zoom-trigger');
+      const carouselTrack = screenshotsLayer.querySelector('.carousel-track');
+
+      function handleImageZoom(e) {
+        e.stopPropagation();
+        if (screenshotsLayer.classList.contains('active')) {
+          stopAutoPeekTimer(); // Stop peek on lightbox open
+          const activeImg = screenshotsLayer.querySelector('.carousel-slide.active img');
+          if (activeImg) {
+            openLightbox(activeImg.src);
+          }
+        }
+      }
+
+      if (zoomTrigger) {
+        zoomTrigger.addEventListener('click', handleImageZoom);
+      }
+      if (carouselTrack) {
+        carouselTrack.addEventListener('click', handleImageZoom);
+      }
+    }
+
+    // Start auto-peek teasers
+    startAutoPeekTimer(visualCanvas);
+
+  } else {
+    // Graceful degradation: render single interactive mockup
+    visualCanvas.innerHTML = `
+      <div class="mockup-standalone">
+        ${getMockupHTML(data.previewType)}
+      </div>
+    `;
+  }
 }
 
 // First selection: slide the centered stage to the top and reveal the card.
@@ -361,8 +577,9 @@ function renderMobileToolGrid() {
     }
 
     const themeName = data.theme.replace('theme-', '');
-    const disabledAttr = data.disabled ? 'aria-disabled="true" tabindex="-1"' : '';
-    const disabledClass = data.disabled ? 'disabled' : '';
+    const isCardDisabled = data.disabled || data.launchDisabled;
+    const disabledAttr = isCardDisabled ? 'aria-disabled="true" tabindex="-1"' : '';
+    const disabledClass = isCardDisabled ? 'disabled' : '';
 
     return `
       <a href="${data.launchUrl}" class="tool-card tool-card-${themeName} ${disabledClass}" ${disabledAttr} aria-label="${data.title}">
@@ -376,6 +593,45 @@ function renderMobileToolGrid() {
 
 // Initialize Mobile Grid Layout on Page Load
 renderMobileToolGrid();
+
+// Global Fullscreen Lightbox Controller
+const globalLightbox = document.getElementById('global-lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxClose = document.getElementById('lightbox-close');
+
+function openLightbox(src) {
+  if (!globalLightbox || !lightboxImg) return;
+  lightboxImg.src = src;
+  globalLightbox.classList.add('is-open');
+  globalLightbox.setAttribute('aria-hidden', 'false');
+}
+
+function closeLightbox() {
+  if (!globalLightbox || !lightboxImg) return;
+  globalLightbox.classList.remove('is-open');
+  globalLightbox.setAttribute('aria-hidden', 'true');
+  setTimeout(() => {
+    lightboxImg.src = "";
+  }, 300);
+}
+
+if (lightboxClose) {
+  lightboxClose.addEventListener('click', closeLightbox);
+}
+
+if (globalLightbox) {
+  globalLightbox.addEventListener('click', (e) => {
+    if (e.target === globalLightbox) {
+      closeLightbox();
+    }
+  });
+}
+
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && globalLightbox && globalLightbox.classList.contains('is-open')) {
+    closeLightbox();
+  }
+});
 
 // Proactively reveal page layout on load
 document.body.classList.add('page-ready');
