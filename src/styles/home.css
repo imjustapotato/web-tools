@@ -100,6 +100,10 @@ body.page-leaving {
     transform: translateY(10px);
 }
 
+#mobile-layout-container {
+    display: none;
+}
+
 .home-shell {
     position: relative;
     min-height: 100vh;
@@ -652,17 +656,142 @@ body.theme-glassmorph {
         inset 0 -1px 1px rgba(0, 0, 0, 0.25);
 }
 
-/* Dock Items: the button is a transparent shell so the tooltip can escape;
+/* Dock Items: the container is a div shell so the tooltip can escape;
    the visual glass + shimmer live on the clipped .dock-surface inside it. */
 .dock-item {
-    background: transparent;
-    border: none;
-    padding: 0;
     color: var(--muted);
-    cursor: pointer;
     position: relative;
     min-width: 140px;
     transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.dock-select-btn {
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    color: inherit;
+    font-family: inherit;
+    position: relative;
+    z-index: 2;
+}
+
+.dock-launch-tooltip {
+    position: absolute;
+    top: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(10, 15, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.45rem;
+    border-radius: 12px;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.55);
+    z-index: 200;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* CSS Bridge to keep hover active */
+.dock-launch-tooltip::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    width: 100%;
+    height: 14px;
+    background: transparent;
+}
+
+/* Arrow indicator pointing up */
+.dock-launch-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent rgba(10, 15, 30, 0.95) transparent;
+}
+
+.dock-item:hover .dock-launch-tooltip {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateX(-50%) translateY(0);
+}
+
+.dock-launch-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #fff;
+    text-decoration: none;
+    padding: 0.35rem 0.85rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    white-space: nowrap;
+}
+
+.dock-launch-link .iconify {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+.dock-launch-link.btn-disabled {
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.25) !important;
+    cursor: not-allowed;
+    pointer-events: none !important;
+}
+
+/* Color themes for the dock-launch-tooltip on hover */
+.dock-item[data-tool="schedule-plotter"] .dock-launch-link:not(.btn-disabled):hover {
+    background: linear-gradient(135deg, rgba(167, 243, 208, 0.25), rgba(82, 227, 172, 0.25));
+    border-color: rgba(82, 227, 172, 0.65);
+    color: var(--accent);
+    box-shadow: 0 0 12px rgba(82, 227, 172, 0.2);
+}
+
+.dock-item[data-tool="portal-parser"] .dock-launch-link:not(.btn-disabled):hover {
+    background: linear-gradient(135deg, rgba(207, 250, 254, 0.25), rgba(80, 215, 255, 0.25));
+    border-color: rgba(80, 215, 255, 0.65);
+    color: var(--accent-2);
+    box-shadow: 0 0 12px rgba(80, 215, 255, 0.2);
+}
+
+.dock-item[data-tool="active-page-utility"] .dock-launch-link:not(.btn-disabled):hover {
+    background: linear-gradient(135deg, rgba(254, 243, 199, 0.25), rgba(251, 191, 36, 0.25));
+    border-color: rgba(251, 191, 36, 0.65);
+    color: var(--txt-important);
+    box-shadow: 0 0 12px rgba(251, 191, 36, 0.2);
+}
+
+.dock-item[data-tool="companion-page"] .dock-launch-link:not(.btn-disabled):hover {
+    background: linear-gradient(135deg, rgba(221, 214, 254, 0.25), rgba(179, 155, 255, 0.25));
+    border-color: rgba(179, 155, 255, 0.65);
+    color: var(--accent-3);
+    box-shadow: 0 0 12px rgba(179, 155, 255, 0.2);
 }
 
 .dock-surface {
@@ -1299,9 +1428,10 @@ body.theme-glassmorph {
     }
 
     .home-shell {
-        padding: 1rem;
+        padding: 2rem 1.25rem;
         place-items: center;
         align-content: center;
+        gap: 0;
     }
 
     .aurora-curtains {
@@ -1317,50 +1447,192 @@ body.theme-glassmorph {
         height: 20vh;
     }
 
-    .hero-card {
-        width: 100%;
-        border-radius: 22px;
-        min-height: calc(100dvh - 2rem);
+    /* Hide desktop cinematic elements on mobile */
+    .hub-stage,
+    #hero-card-panel {
+        display: none !important;
+    }
+
+    /* Show mobile card grid layout */
+    #mobile-layout-container {
         display: flex;
         flex-direction: column;
-        justify-content: center;
-    }
-
-    .hub-dock {
+        align-items: center;
+        gap: 2rem;
         width: 100%;
-        max-width: 100%;
-        overflow-x: auto;
-        justify-content: flex-start;
-        padding: 0.65rem 1.25rem;
-        border-radius: 20px;
-        gap: 1rem;
-        scrollbar-width: none; /* Firefox */
-    }
-    
-    .hub-dock::-webkit-scrollbar {
-        display: none; /* Safari and Chrome */
+        animation: mobileFadeIn 0.5s ease-out;
     }
 
-    .dock-item {
-        flex-shrink: 0;
+    @keyframes mobileFadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 
-    .dock-tooltip {
-        display: none; /* Hide tooltips on mobile since we don't hover */
+    .mobile-intro {
+        width: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.85rem;
     }
-    
-    .preview-title {
-        font-size: 2rem;
+
+    .mobile-intro h1 {
+        margin: 0;
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        line-height: 1.05;
+        font-weight: 800;
+        letter-spacing: -0.05em;
+        background: linear-gradient(90deg, #f8fafc 0%, #86efac 36%, #67e8f9 68%, #c4b5fd 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 20px rgba(80, 215, 255, 0.15);
     }
-    
-    .preview-description {
-        font-size: 0.98rem;
+
+    .tool-grid {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+        width: 100%;
     }
-    
-    .hub-container.centered .hub-dock {
-        margin-top: 2.5rem;
-        margin-bottom: 2.5rem;
-        transform: none;
+
+    .tool-card {
+        text-decoration: none;
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        min-height: 180px;
+        padding: 1.5rem;
+        border-radius: 22px;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--tool-card-bg, linear-gradient(175deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.02)),
+                    rgba(15, 23, 42, 0.38));
+        backdrop-filter: blur(12px) saturate(130%);
+        -webkit-backdrop-filter: blur(12px) saturate(130%);
+        color: var(--text);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1),
+            border-color 280ms ease,
+            box-shadow 280ms ease,
+            background 280ms ease;
+        position: relative;
+        overflow: hidden;
+        isolation: isolate;
+    }
+
+    .tool-card::before {
+        content: '';
+        position: absolute;
+        inset: 0 -150%;
+        background: var(--glass-refraction);
+        opacity: 0.25;
+        pointer-events: none;
+        transition: transform 900ms cubic-bezier(0.23, 1, 0.32, 1), opacity 600ms ease;
+        z-index: -1;
+        transform: translateX(-15%);
+    }
+
+    .tool-card::after {
+        content: '';
+        position: absolute;
+        inset: auto -2rem -2rem auto;
+        width: 8rem;
+        height: 8rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.05);
+        filter: blur(8px);
+        mix-blend-mode: soft-light;
+        transition: transform 340ms cubic-bezier(0.16, 1, 0.3, 1), opacity 340ms ease;
+    }
+
+    .tool-card:hover::before {
+        transform: translateX(15%);
+        opacity: 0.5;
+    }
+
+    .tool-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.35);
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    .tool-card:hover::after {
+        transform: translate3d(-0.5rem, -0.5rem, 0) scale(1.05);
+    }
+
+    .tool-card.disabled,
+    .tool-card[aria-disabled='true'] {
+        pointer-events: none;
+        cursor: default;
+        opacity: 0.5;
+        filter: grayscale(0.8);
+    }
+
+    .tool-card-primary {
+        --tool-card-bg:
+            linear-gradient(175deg, rgba(12, 56, 52, 0.45), rgba(10, 24, 34, 0.38)),
+            radial-gradient(circle at 88% 6%, rgba(82, 227, 172, 0.32), transparent 50%),
+            radial-gradient(circle at 14% 92%, rgba(80, 215, 255, 0.14), transparent 55%);
+        border-color: rgba(82, 227, 172, 0.32);
+    }
+
+    .tool-card-secondary {
+        --tool-card-bg:
+            linear-gradient(176deg, rgba(20, 38, 72, 0.45), rgba(10, 24, 36, 0.38)),
+            radial-gradient(circle at 88% 8%, rgba(80, 215, 255, 0.32), transparent 50%),
+            radial-gradient(circle at 16% 92%, rgba(179, 155, 255, 0.16), transparent 56%);
+        border-color: rgba(80, 215, 255, 0.32);
+    }
+
+    .tool-card-tertiary {
+        --tool-card-bg:
+            linear-gradient(177deg, rgba(102, 56, 22, 0.4), rgba(12, 24, 36, 0.38)),
+            radial-gradient(circle at 86% 8%, rgba(255, 184, 108, 0.32), transparent 52%),
+            radial-gradient(circle at 18% 92%, rgba(255, 132, 66, 0.18), transparent 58%);
+        border-color: rgba(255, 184, 108, 0.45);
+    }
+
+    .tool-card-quaternary {
+        --tool-card-bg:
+            linear-gradient(177deg, rgba(72, 22, 22, 0.4), rgba(12, 24, 36, 0.38)),
+            radial-gradient(circle at 86% 8%, rgba(248, 113, 113, 0.32), transparent 52%),
+            radial-gradient(circle at 18% 92%, rgba(248, 113, 113, 0.14), transparent 58%);
+        border-color: rgba(248, 113, 113, 0.32);
+    }
+
+    .tool-badge {
+        position: absolute;
+        top: 1.25rem;
+        right: 1.25rem;
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.65rem;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: var(--muted);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        z-index: 10;
+    }
+
+    .tool-card strong {
+        display: block;
+        font-size: clamp(1.2rem, 4vw, 1.6rem);
+        line-height: 1.15;
+        color: #fff;
+    }
+
+    .tool-description {
+        margin-top: auto;
+        color: #cbd5e1;
+        line-height: 1.5;
+        font-size: 0.88rem;
     }
 }
 

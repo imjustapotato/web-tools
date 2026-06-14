@@ -134,6 +134,19 @@
 
         </div>
 
+        <!-- Mobile Layout (Visible only on mobile screen widths) -->
+        <div class="mobile-layout-wrapper" id="mobile-layout-container">
+            <div class="mobile-intro">
+                <p class="eyebrow">Kenn's Workspace</p>
+                <h1>Web Tools</h1>
+                <p class="hero-copy">Pick a tool that fits your need. I will add more tools as I develop them.</p>
+            </div>
+            
+            <div class="tool-grid">
+                <!-- Dynamically populated from toolsData on page load -->
+            </div>
+        </div>
+
         <!-- Hub Stage: groups the hero panel + dock so one transform slides them
              together (centered on load, top on select). -->
         <div class="hub-stage" id="hub-stage">
@@ -148,60 +161,100 @@
             <!-- Main Header Navigation (The Dock) -->
             <header class="hub-header" id="hub-header">
                 <nav class="hub-dock" id="hub-dock-nav" aria-label="Web Tools Dock">
-                    <button class="dock-item" data-tool="schedule-plotter" aria-label="Schedule Plotter">
+                    <div class="dock-item" data-tool="schedule-plotter">
                         <span class="dock-surface">
-                            <img class="dock-icon" src="./src/assets/icons/schedule-plotter.png" alt="Schedule Plotter">
-                            <span class="dock-label">Schedule Plotter</span>
+                            <button class="dock-select-btn" aria-label="Select Schedule Plotter">
+                                <img class="dock-icon" src="./src/assets/icons/schedule-plotter.png" alt="">
+                                <span class="dock-label">Schedule Plotter</span>
+                            </button>
                         </span>
+                        <div class="dock-launch-tooltip">
+                            <a href="/schedule-visualizer/" class="dock-launch-link" aria-label="Launch Schedule Plotter Directly">
+                                <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
+                                <span>Launch Tool</span>
+                            </a>
+                        </div>
                         <span class="dock-tooltip">
                             <span class="tooltip-title">Schedule Plotter</span>
                             <span class="tooltip-meta">v__VERSION_SCHEDULE_PLOTTER__ • Web</span>
                         </span>
-                    </button>
-                    <button class="dock-item" data-tool="portal-parser" aria-label="Pre-requisite Mapping">
+                    </div>
+
+                    <div class="dock-item" data-tool="portal-parser">
                         <span class="dock-surface">
-                            <img class="dock-icon" src="./src/assets/icons/portal-parser.png"
-                                alt="Pre-requisite Mapping">
-                            <span class="dock-label">Pre-requisite Mapping</span>
+                            <button class="dock-select-btn" aria-label="Select Pre-requisite Mapping">
+                                <img class="dock-icon" src="./src/assets/icons/portal-parser.png" alt="">
+                                <span class="dock-label">Pre-requisite Mapping</span>
+                            </button>
                         </span>
+                        <div class="dock-launch-tooltip">
+                            <a href="/portal-parser/" class="dock-launch-link" aria-label="Launch Pre-requisite Mapping Directly">
+                                <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
+                                <span>Launch Tool</span>
+                            </a>
+                        </div>
                         <span class="dock-tooltip">
                             <span class="tooltip-title">Pre-requisite Mapping</span>
                             <span class="tooltip-meta">v__VERSION_PREREQUISITE_MAPPING__ • Web</span>
                         </span>
-                    </button>
-                    <button class="dock-item" data-tool="active-page-utility" aria-label="Active-Page Utility">
+                    </div>
+
+                    <div class="dock-item" data-tool="active-page-utility">
                         <span class="dock-surface">
-                            <img class="dock-icon" src="./src/assets/icons/active-page-utility.png"
-                                alt="Active-Page Utility">
-                            <span class="dock-label">Active-Page Utility</span>
+                            <button class="dock-select-btn" aria-label="Select Active-Page Utility">
+                                <img class="dock-icon" src="./src/assets/icons/active-page-utility.png" alt="">
+                                <span class="dock-label">Active-Page Utility</span>
+                            </button>
                         </span>
+                        <div class="dock-launch-tooltip">
+                            <a href="/active-page-utility/" class="dock-launch-link" aria-label="Launch Active-Page Utility Directly">
+                                <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
+                                <span>Launch Tool</span>
+                            </a>
+                        </div>
                         <span class="dock-tooltip">
                             <span class="tooltip-title">Active-Page Utility</span>
                             <span class="tooltip-meta">v__VERSION_ACTIVE_PAGE_UTILITY__ • Extension</span>
                         </span>
-                    </button>
-                    <button class="dock-item" data-tool="companion-page" aria-label="Web Tools Companion">
+                    </div>
+
+                    <div class="dock-item" data-tool="companion-page">
                         <span class="dock-surface">
-                            <img class="dock-icon" src="./src/assets/icons/companion-page.png"
-                                alt="Web Tools Companion">
-                            <span class="dock-label">Web Tools Companion</span>
+                            <button class="dock-select-btn" aria-label="Select Web Tools Companion">
+                                <img class="dock-icon" src="./src/assets/icons/companion-page.png" alt="">
+                                <span class="dock-label">Web Tools Companion</span>
+                            </button>
                         </span>
+                        <div class="dock-launch-tooltip">
+                            <a href="/companion-page/" class="dock-launch-link" aria-label="Launch Web Tools Companion Directly">
+                                <span class="iconify" data-icon="mdi:rocket-launch-outline" aria-hidden="true"></span>
+                                <span>Launch Tool</span>
+                            </a>
+                        </div>
                         <span class="dock-tooltip">
                             <span class="tooltip-title">Web Tools Companion</span>
                             <span class="tooltip-meta">v__VERSION_WEB_TOOLS_COMPANION__ • Extension</span>
                         </span>
-                    </button>
-                    <button class="dock-item" data-tool="pka-toolkit" aria-label="pka-toolkit" aria-disabled="false"
-                        tabindex="-1">
+                    </div>
+
+                    <div class="dock-item" data-tool="pka-toolkit" aria-disabled="false" tabindex="-1">
                         <span class="dock-surface">
-                            <img class="dock-icon" src="./src/assets/icons/pka-toolkit.png" alt="pka-toolkit">
-                            <span class="dock-label">Tracer Toolkit</span>
+                            <button class="dock-select-btn" disabled aria-label="Tracer Toolkit (Coming Soon)">
+                                <img class="dock-icon" src="./src/assets/icons/pka-toolkit.png" alt="">
+                                <span class="dock-label">Tracer Toolkit</span>
+                            </button>
                         </span>
+                        <div class="dock-launch-tooltip">
+                            <a href="#" class="dock-launch-link btn-disabled" aria-disabled="true" style="pointer-events: none" aria-label="Tracer Toolkit Directly (Coming Soon)">
+                                <span class="iconify" data-icon="mdi:clock-outline" aria-hidden="true"></span>
+                                <span>Soon</span>
+                            </a>
+                        </div>
                         <span class="dock-tooltip">
                             <span class="tooltip-title">pka-toolkit</span>
                             <span class="tooltip-meta">Coming Soon • Native, Web, CLI</span>
                         </span>
-                    </button>
+                    </div>
                 </nav>
             </header>
 

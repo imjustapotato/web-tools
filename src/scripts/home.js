@@ -336,10 +336,45 @@ function selectTool(toolId) {
 }
 
 // Set up Dock Item Click Event Listeners
-dockItems.forEach(item => {
-  const toolId = item.getAttribute('data-tool');
-  item.addEventListener('click', () => selectTool(toolId));
+const dockSelectButtons = document.querySelectorAll('.dock-select-btn');
+dockSelectButtons.forEach(button => {
+  const parentItem = button.closest('.dock-item');
+  const toolId = parentItem.getAttribute('data-tool');
+  button.addEventListener('click', () => selectTool(toolId));
 });
+
+// Render Mobile Fallback Tool Grid dynamically
+function renderMobileToolGrid() {
+  const toolGrid = document.querySelector('#mobile-layout-container .tool-grid');
+  if (!toolGrid) return;
+
+  toolGrid.innerHTML = Object.keys(toolsData).map(toolId => {
+    const data = toolsData[toolId];
+    const dockItem = document.querySelector(`.dock-item[data-tool="${toolId}"]`);
+    const tooltipMeta = dockItem ? dockItem.querySelector('.tooltip-meta') : null;
+
+    let version = data.disabled ? "Coming Soon" : "v1.0.0";
+    if (tooltipMeta) {
+      const metaParts = tooltipMeta.textContent.split('•');
+      version = metaParts[0].trim();
+    }
+
+    const themeName = data.theme.replace('theme-', '');
+    const disabledAttr = data.disabled ? 'aria-disabled="true" tabindex="-1"' : '';
+    const disabledClass = data.disabled ? 'disabled' : '';
+
+    return `
+      <a href="${data.launchUrl}" class="tool-card tool-card-${themeName} ${disabledClass}" ${disabledAttr} aria-label="${data.title}">
+        <span class="tool-badge">${version}</span>
+        <strong>${data.title}</strong>
+        <span class="tool-description">${data.description}</span>
+      </a>
+    `;
+  }).join('');
+}
+
+// Initialize Mobile Grid Layout on Page Load
+renderMobileToolGrid();
 
 // Proactively reveal page layout on load
 document.body.classList.add('page-ready');
