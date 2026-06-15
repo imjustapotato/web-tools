@@ -49,6 +49,16 @@
                 </button>
             </div>
 
+            <div class="engine-selector" role="group" aria-label="Rendering engine">
+                <span class="viewport-label">Engine</span>
+                <button id="engine-legacy-btn" class="engine-btn" type="button" aria-pressed="false">
+                    Mermaid
+                </button>
+                <button id="engine-custom-btn" class="engine-btn" type="button" aria-pressed="false">
+                    Dagre/D3
+                </button>
+            </div>
+
             <div class="viewport-tools" role="group" aria-label="Viewport controls">
                 <span class="viewport-label">Viewport</span>
                 <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">-</button>
@@ -64,7 +74,7 @@
             <aside id="summary-dock" class="summary-dock is-hidden" aria-label="Fullscreen prerequisite summary">
                 <div class="summary-dock-header">
                     <h2 class="summary-dock-title">Complete the following subjects first to unlock:</h2>
-                    <button id="summary-expand-btn" class="btn btn-compact is-hidden" aria-label="Toggle indirect prerequisites">Expand</button>
+                    <button id="summary-expand-btn" class="btn btn-compact is-hidden" type="button" aria-label="Toggle indirect prerequisites">Expand</button>
                 </div>
                 <p id="summary-subject-dock" class="summary-subject"></p>
                 <ul id="summary-list-dock" class="summary-list"></ul>

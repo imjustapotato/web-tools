@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2026 Kenneth Westhle Davila (kendavila.me)
- * 
+ *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License.
@@ -8,42 +8,87 @@
 
 /**
  * Application orchestrator.
- * Manages file ingestion, heuristic parsing, Mermaid rendering, and navigation.
+ * Routes file ingestion and rendering through the active engine.
+ * All data-layer logic lives in src/core/; engine logic in src/legacy/ (and src/custom/ in v2).
  */
-import mermaid from 'mermaid';
 import gsap from 'gsap';
 import '@iconify/iconify';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
 import './companion-hook.js';
+import {
+    resetAdjacencyGraph,
+    resetGraphState,
+    setCourseTitleMap,
+    getCourseTitleMap,
+    extractCourseTitleMapFromMermaid,
+    getCourseDisplayLabel,
+    getGraphNodes,
+    getGraphEdges,
+    buildAdjacencyGraph,
+    buildAdjacencyGraphFromMermaidCode,
+    collectPrerequisiteChain,
+    buildPrerequisiteDistanceMap,
+    buildPrerequisiteEdgeDistanceMap,
+    extractCourseCodeFromNodeElement,
+    buildNodeCenterLookup,
+    resolveEdgeKey
+} from './src/core/graph-data.js';
+import { extractHtmlFromFile, parseCurriculumHtml } from './src/core/file-parser.js';
+import { initializeMermaid, buildMermaidCode, renderMermaidSvg } from './src/legacy/mermaid-engine.js';
+import { buildDagreLayout } from './src/custom/dagre-layout.js';
+import { renderDagreLayout } from './src/custom/d3-renderer.js';
+import { animateCustomNodeSelection, clearCustomAnimations } from './src/custom/animation-controller.js';
 
-/* 1. Global App Config & State */
-mermaid.initialize({
-    startOnLoad: false,
-    theme: 'base',
-    themeVariables: {
-        darkMode: true,
-        background: '#0f172a',
-        primaryColor: '#1e293b',
-        primaryTextColor: '#f8fafc',
-        primaryBorderColor: '#334155',
-        lineColor: '#94a3b8',
-        fontFamily: 'Inter, sans-serif'
-    }
-});
+/* 1. Engine Initialization */
+initializeMermaid();
 
-window.mermaid = mermaid;
-
+/* 2. Orchestration State */
 let mermaidRawCode = '';
 let selectedNodeId = null;
 let activeSelectionTimeline = null;
 let isViewTransitioning = false;
 
-// Adjacency graph: Map<courseCode, { incoming: Set<courseCode>, outgoing: Set<courseCode> }>
-let adjacencyGraph = new Map();
-let courseTitleMap = new Map();
+/* 3. Engine State */
+const ENGINE_STORAGE_KEY = 'portal_parser_active_engine';
+let activeEngine = localStorage.getItem(ENGINE_STORAGE_KEY) || 'custom';
 
-/* 2. File Ingestion (Dropzone & Input) */
+/* 4. Engine Routing */
+/**
+ * Routes a render request to the active engine.
+ * Phase 3: replace the custom branch with renderWithCustomEngine(mermaidCode).
+ */
+async function dispatchToActiveEngine(mermaidCode) {
+    if (activeEngine === 'custom') {
+        await renderWithCustomEngine(mermaidCode);
+        return;
+    }
+    await renderMermaidCode(mermaidCode);
+}
+
+function switchEngine(engineName) {
+    if (activeEngine === engineName) return;
+
+    if (activeSelectionTimeline) {
+        activeSelectionTimeline.kill();
+        activeSelectionTimeline = null;
+    }
+    selectedNodeId = null;
+
+    activeEngine = engineName;
+    localStorage.setItem(ENGINE_STORAGE_KEY, engineName);
+    updateEngineToggleUI();
+    if (mermaidRawCode) dispatchToActiveEngine(mermaidRawCode);
+}
+
+function updateEngineToggleUI() {
+    engineLegacyBtn.classList.toggle('is-active', activeEngine === 'legacy');
+    engineCustomBtn.classList.toggle('is-active', activeEngine === 'custom');
+    engineLegacyBtn.setAttribute('aria-pressed', String(activeEngine === 'legacy'));
+    engineCustomBtn.setAttribute('aria-pressed', String(activeEngine === 'custom'));
+}
+
+/* 5. File Ingestion (Dropzone & Input) */
 const dropzone = document.getElementById('dropzone');
 const fileInput = document.createElement('input');
 fileInput.type = 'file';
@@ -53,9 +98,7 @@ document.body.appendChild(fileInput);
 
 dropzone.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length) {
-        handleFile(e.target.files[0]);
-    }
+    if (e.target.files.length) handleFile(e.target.files[0]);
 });
 
 dropzone.addEventListener('dragover', (e) => {
@@ -71,47 +114,43 @@ dropzone.addEventListener('dragleave', (e) => {
 dropzone.addEventListener('drop', (e) => {
     e.preventDefault();
     dropzone.classList.remove('is-dragover');
-    if (e.dataTransfer.files.length) {
-        handleFile(e.dataTransfer.files[0]);
-    }
+    if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
 });
 
-/**
- * Processes HTML and MHTML exports.
- * Handles encoding (Base64/Quoted-Printable) to extract the raw course table.
- */
 async function handleFile(file) {
-    const text = await file.text();
-    let rawHtml = text;
-
-    const htmlPartMatch = text.match(/Content-Type:\s*text\/html([\s\S]*?)(?=\r?\n------MultipartBoundary|\r?\n--[a-zA-Z0-9=_-]+--|$)/i);
-
-    if (htmlPartMatch) {
-        const headersAndBody = htmlPartMatch[1];
-        const splitRegex = /\r?\n\r?\n([\s\S]*)/;
-        const bodyMatch = headersAndBody.match(splitRegex);
-
-        if (bodyMatch) {
-            rawHtml = bodyMatch[1];
-            if (headersAndBody.match(/Content-Transfer-Encoding:\s*base64/i)) {
-                rawHtml = atob(rawHtml.replace(/[^A-Za-z0-9+/=]/g, ''));
-            } else if (headersAndBody.match(/Content-Transfer-Encoding:\s*quoted-printable/i)) {
-                rawHtml = rawHtml.replace(/=\r?\n/g, '');
-                rawHtml = rawHtml.replace(/=([A-F0-9]{2})/ig, (m, hex) => String.fromCharCode(parseInt(hex, 16)));
-            }
-        }
-    }
-
-    parseAndRender(rawHtml);
+    const rawHtml = await extractHtmlFromFile(file);
+    await parseAndRender(rawHtml);
 }
 
-/* 3. Curriculum Presets */
+/* 6. Parsing & Engine Dispatch */
+/**
+ * Entry point for both file drop and the Companion Extension hook.
+ * Parses raw HTML into course data and dispatches to the active render engine.
+ */
+async function parseAndRender(html) {
+    const { courses, courseTitleMap: parsedTitleMap } = parseCurriculumHtml(html);
+
+    if (courses.length === 0) {
+        container.innerHTML = '<p class="status-message status-message--error">Error: Couldn\'t extract course data. Ensure this is a valid portal HTML/MHTML export.</p>';
+        return;
+    }
+
+    setCourseTitleMap(parsedTitleMap);
+    const mermaidCode = buildMermaidCode(courses);
+    await dispatchToActiveEngine(mermaidCode);
+}
+
+// Expose to window for the Companion Extension hook
+window.parseAndRender = parseAndRender;
+
+/* 7. Curriculum Presets */
 const presetButtonsContainer = document.getElementById('preset-buttons');
 const creditTooltip = document.createElement('div');
 creditTooltip.className = 'credit-tooltip';
 document.body.appendChild(creditTooltip);
 
 let creditTooltipTimeout = null;
+
 function buildPresetButtons() {
     PRESET_CURRICULA.forEach((preset) => {
         const button = document.createElement('button');
@@ -120,8 +159,7 @@ function buildPresetButtons() {
         button.type = 'button';
         button.textContent = preset.label;
         button.addEventListener('click', () => loadPresetCurriculum(preset, button));
-        
-        // Hover Tooltip for Credits
+
         button.addEventListener('mouseenter', () => {
             const credit = CURRICULA_CREDITS[preset.id] || 'Contributor';
             showCreditTooltip(credit, button);
@@ -135,20 +173,19 @@ function buildPresetButtons() {
     });
 }
 
-function showCreditTooltip(credit, targetEl) {
+function showCreditTooltip(credit, targetElement) {
     if (creditTooltipTimeout) {
         clearTimeout(creditTooltipTimeout);
         creditTooltipTimeout = null;
     }
-    
+
     creditTooltip.textContent = `Data provided by: ${credit}`;
     creditTooltip.classList.add('visible');
-    
-    // Position the tooltip centered below the button
-    const rect = targetEl.getBoundingClientRect();
+
+    const rect = targetElement.getBoundingClientRect();
     const tooltipX = rect.left + window.scrollX + (rect.width / 2);
     const tooltipY = rect.bottom + window.scrollY + 8;
-    
+
     creditTooltip.style.left = `${tooltipX}px`;
     creditTooltip.style.top = `${tooltipY}px`;
 }
@@ -166,104 +203,37 @@ async function loadPresetCurriculum(preset, button) {
     button.disabled = true;
 
     try {
-        await renderMermaidCode(preset.content.trim());
+        await dispatchToActiveEngine(preset.content.trim());
     } catch (error) {
         console.error('Preset load error:', error);
-        container.innerHTML = `<p class="status-message status-message--error">Failed to load preset curriculum.</p>`;
+        container.innerHTML = '<p class="status-message status-message--error">Failed to load preset curriculum.</p>';
     } finally {
         button.classList.remove('is-loading');
         button.disabled = false;
     }
 }
 
-/* 4. Course Table Parser (Heuristic Parsing) */
-/**
- * Extracts course data from HTML.
- * Uses heuristic column detection for robustness across portal versions.
- */
-async function parseAndRender(html) {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    let codeColumnIndex = 0;
-    let titleColumnIndex = 1;
-    let prerequisiteColumnIndex = 4;
-
-    const headers = Array.from(doc.querySelectorAll('th')).map((th) => th.innerText.trim().toUpperCase());
-    headers.forEach((header, index) => {
-        if (header.includes('CODE')) {
-            codeColumnIndex = index;
-        }
-        if (header.includes('TITLE') || header.includes('DESCRIPTION')) {
-            titleColumnIndex = index;
-        }
-        if (header.includes('PRE-REQUISITE') || header.includes('PREREQUISITE')) {
-            prerequisiteColumnIndex = index;
-        }
-    });
-
-    const courses = [];
-    const rows = Array.from(doc.querySelectorAll('tr'));
-
-    rows.forEach((row) => {
-        const cells = Array.from(row.querySelectorAll('td')).map((td) => td.innerText.trim());
-        if (cells.length > Math.max(codeColumnIndex, titleColumnIndex, prerequisiteColumnIndex)) {
-            const code = cells[codeColumnIndex];
-            const title = cells[titleColumnIndex];
-            const prerequisitesRaw = cells[prerequisiteColumnIndex];
-
-            if (/^[A-Z]{2,4}\s*\d{2,4}[A-Z]?$/.test(code)) {
-                const cleanCode = code.replace(/\s+/g, '');
-                const prerequisiteMatches = prerequisitesRaw.match(/[A-Z]{2,4}\s*\d{2,4}[A-Z]?/g);
-                const prerequisites = prerequisiteMatches ? prerequisiteMatches.map((p) => p.replace(/\s+/g, '')) : [];
-                courses.push({ code: cleanCode, title, prerequisites });
-            }
-        }
-    });
-
-    if (courses.length === 0) {
-        container.innerHTML = '<p class="status-message status-message--error">Error: Couldn\'t extract course data. Ensure this is a valid portal HTML/MHTML export.</p>';
-        return;
-    }
-
-    courseTitleMap = new Map(courses.map((course) => [course.code, course.title]));
-
-    let mermaidCode = 'graph LR\n';
-    mermaidCode += 'classDef default fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc,rx:8,ry:8;\n';
-
-    courses.forEach((course) => {
-        const safeTitle = course.title.replace(/["[\]()]/g, '');
-        mermaidCode += `${course.code}["${course.code}<br/>${safeTitle}"]\n`;
-        course.prerequisites.forEach((prerequisite) => {
-            mermaidCode += `${prerequisite} --> ${course.code}\n`;
-        });
-    });
-
-    await renderMermaidCode(mermaidCode);
-}
-
-// Expose to window for the Companion Extension hook
-window.parseAndRender = parseAndRender;
-
-/* 5. Mermaid Rendering Engine */
+/* 8. Render Orchestration (Legacy Engine) */
 const container = document.getElementById('graph-container');
 const controls = document.getElementById('controls');
+
 async function renderMermaidCode(mermaidCode) {
     mermaidRawCode = mermaidCode;
     controls.classList.remove('is-hidden');
     container.innerHTML = '<p class="status-message status-message--loading">Rendering Skill Tree...</p>';
     selectedNodeId = null;
-    adjacencyGraph = new Map();
+    resetAdjacencyGraph();
 
-    if (courseTitleMap.size === 0) {
-        courseTitleMap = extractCourseTitleMapFromMermaid(mermaidCode);
+    // For presets (no prior HTML parse), extract titles from the Mermaid node definitions
+    if (getCourseTitleMap().size === 0) {
+        setCourseTitleMap(extractCourseTitleMapFromMermaid(mermaidCode));
     }
 
     try {
-        const { svg } = await window.mermaid.render('mermaid-svg', mermaidCode);
+        const svg = await renderMermaidSvg(mermaidCode);
         container.innerHTML = svg;
         resetZoom();
-        buildAdjacencyGraph();
+        buildAdjacencyGraph(container.querySelector('svg'), mermaidRawCode);
         attachNodeClickListeners();
     } catch (err) {
         console.error('Mermaid error:', err);
@@ -271,218 +241,32 @@ async function renderMermaidCode(mermaidCode) {
     }
 }
 
-function extractCourseTitleMapFromMermaid(mermaidCode) {
-    const titleMap = new Map();
-    const nodePattern = /^([A-Z]{2,4}\d{2,4}[A-Z]?)\["(?:\1)<br\/?>(.+)"\]$/gm;
-    let nodeMatch;
+/* 9. Render Orchestration (Custom Engine) */
+async function renderWithCustomEngine(mermaidCode) {
+    mermaidRawCode = mermaidCode;
+    controls.classList.remove('is-hidden');
+    container.innerHTML = '<p class="status-message status-message--loading">Rendering Skill Tree...</p>';
+    selectedNodeId = null;
+    resetAdjacencyGraph();
 
-    while ((nodeMatch = nodePattern.exec(mermaidCode)) !== null) {
-        const code = normalizeCourseCode(nodeMatch[1]);
-        const title = nodeMatch[2]?.replace(/<[^>]+>/g, '').trim() ?? '';
-        if (code && title) {
-            titleMap.set(code, title);
-        }
+    if (getCourseTitleMap().size === 0) {
+        setCourseTitleMap(extractCourseTitleMapFromMermaid(mermaidCode));
     }
 
-    return titleMap;
+    // Build adjacency graph from code before layout — no SVG needed
+    buildAdjacencyGraphFromMermaidCode(mermaidCode);
+
+    const layoutGraph = buildDagreLayout();
+    renderDagreLayout(layoutGraph, container);
+
+    resetZoom();
+    attachNodeClickListeners();
 }
 
-function getCourseDisplayLabel(courseCode) {
-    const courseTitle = courseTitleMap.get(courseCode);
-    if (!courseTitle) {
-        return courseCode;
-    }
-
-    return `${courseCode} - ${courseTitle}`;
-}
-
-/* 6. Graph Analysis (Adjacency & Traversal) */
-function normalizeCourseCode(rawValue) {
-    if (!rawValue || typeof rawValue !== 'string') {
-        return null;
-    }
-
-    const normalizedValue = rawValue.replace(/\s+/g, '').toUpperCase();
-    const match = normalizedValue.match(/([A-Z]{2,4}\d{2,4}[A-Z]?)/);
-    return match ? match[1] : null;
-}
-
-function extractCourseCodesFromText(rawText) {
-    if (!rawText) {
-        return [];
-    }
-
-    const allMatches = rawText.toUpperCase().match(/[A-Z]{2,4}\s*\d{2,4}[A-Z]?/g);
-    if (!allMatches) {
-        return [];
-    }
-
-    return allMatches
-        .map((value) => normalizeCourseCode(value))
-        .filter(Boolean);
-}
-
-function extractCourseCodeFromNodeId(svgNodeId) {
-    if (!svgNodeId) {
-        return null;
-    }
-
-    const flowchartMatch = svgNodeId.match(/flowchart-([A-Za-z0-9_\-]+)-\d+$/i);
-    if (flowchartMatch) {
-        const normalized = normalizeCourseCode(flowchartMatch[1]);
-        if (normalized) {
-            return normalized;
-        }
-    }
-
-    const extractedFromId = extractCourseCodesFromText(svgNodeId);
-    return extractedFromId.length > 0 ? extractedFromId[0] : null;
-}
-
-function extractCourseCodeFromNodeElement(nodeElement) {
-    const fromId = extractCourseCodeFromNodeId(nodeElement?.id ?? '');
-    if (fromId) {
-        return fromId;
-    }
-
-    const labelElement = nodeElement?.querySelector('span.nodeLabel, .nodeLabel, text, tspan, foreignObject');
-    const fromLabel = normalizeCourseCode(labelElement?.textContent ?? '');
-    return fromLabel;
-}
-
-function getGraphNodes(svgElement) {
-    const nodeCandidates = svgElement.querySelectorAll('g.node, g[class*="node"]');
-    return Array.from(nodeCandidates).filter((nodeElement) => {
-        return Boolean(nodeElement.querySelector('rect, polygon, circle, ellipse'));
-    });
-}
-
-function getGraphEdges(svgElement) {
-    const edgeCandidates = svgElement.querySelectorAll('g.edge, g.edgePath, g[class*="edge"], g[id^="L-"], g[id^="L_"]');
-    const uniqueEdges = new Set();
-
-    Array.from(edgeCandidates).forEach((edgeElement) => {
-        if (edgeElement.querySelector('path')) {
-            uniqueEdges.add(edgeElement);
-        }
-    });
-
-    return Array.from(uniqueEdges);
-}
-
-function buildAdjacencyGraph() {
-    const svgElement = container.querySelector('svg');
-    if (!svgElement) {
-        return;
-    }
-
-    getGraphNodes(svgElement).forEach((nodeElement) => {
-        const courseCode = extractCourseCodeFromNodeElement(nodeElement);
-        if (courseCode && !adjacencyGraph.has(courseCode)) {
-            adjacencyGraph.set(courseCode, { incoming: new Set(), outgoing: new Set() });
-        }
-    });
-
-    const edgePattern = /^(\S+)\s+-->\s+(\S+)/gm;
-    let edgeMatch;
-    while ((edgeMatch = edgePattern.exec(mermaidRawCode)) !== null) {
-        const sourceCode = normalizeCourseCode(edgeMatch[1]);
-        const targetCode = normalizeCourseCode(edgeMatch[2]);
-
-        if (!sourceCode || !targetCode) {
-            continue;
-        }
-
-        if (!adjacencyGraph.has(sourceCode)) {
-            adjacencyGraph.set(sourceCode, { incoming: new Set(), outgoing: new Set() });
-        }
-        if (!adjacencyGraph.has(targetCode)) {
-            adjacencyGraph.set(targetCode, { incoming: new Set(), outgoing: new Set() });
-        }
-
-        adjacencyGraph.get(sourceCode).outgoing.add(targetCode);
-        adjacencyGraph.get(targetCode).incoming.add(sourceCode);
-    }
-}
-
-// Prerequisite Traversal (incoming edges only)
-/**
- * Traverses upwards from a node to find all ancestors (prerequisites).
- */
-function collectPrerequisiteChain(startCode) {
-    const visitedNodes = new Set();
-    const visitedEdges = new Set();
-
-    visitedNodes.add(startCode);
-
-    const visitedInTraversal = new Set([startCode]);
-    const stack = [startCode];
-
-    while (stack.length > 0) {
-        const currentCode = stack.pop();
-        const nodeData = adjacencyGraph.get(currentCode);
-        if (!nodeData) {
-            continue;
-        }
-
-        nodeData.incoming.forEach((prerequisiteCode) => {
-            visitedEdges.add(`${prerequisiteCode}->${currentCode}`);
-            visitedNodes.add(prerequisiteCode);
-
-            if (!visitedInTraversal.has(prerequisiteCode)) {
-                visitedInTraversal.add(prerequisiteCode);
-                stack.push(prerequisiteCode);
-            }
-        });
-    }
-
-    return { visitedNodes, visitedEdges };
-}
-
-function buildPrerequisiteDistanceMap(startCode) {
-    const distanceMap = new Map();
-    const queue = [{ code: startCode, distance: 0 }];
-    const visitedCodes = new Set([startCode]);
-
-    distanceMap.set(startCode, 0);
-
-    while (queue.length > 0) {
-        const { code: currentCode, distance } = queue.shift();
-        const nodeData = adjacencyGraph.get(currentCode);
-        if (!nodeData) {
-            continue;
-        }
-
-        nodeData.incoming.forEach((neighborCode) => {
-            if (!visitedCodes.has(neighborCode)) {
-                visitedCodes.add(neighborCode);
-                distanceMap.set(neighborCode, distance + 1);
-                queue.push({ code: neighborCode, distance: distance + 1 });
-            }
-        });
-    }
-
-    return distanceMap;
-}
-
-function getOrderedPrerequisiteList(startCode) {
-    const distanceMap = buildPrerequisiteDistanceMap(startCode);
-    return Array.from(distanceMap.entries())
-        .filter(([courseCode, distance]) => courseCode !== startCode && distance > 0)
-        .sort((left, right) => {
-            if (left[1] !== right[1]) {
-                return left[1] - right[1];
-            }
-            return left[0].localeCompare(right[0]);
-        });
-}
-
-/* 7. Interaction & Selection */
+/* 10. Interaction & Selection */
 function attachNodeClickListeners() {
     const svgElement = container.querySelector('svg');
-    if (!svgElement) {
-        return;
-    }
+    if (!svgElement) return;
 
     getGraphNodes(svgElement).forEach((nodeElement) => {
         nodeElement.style.cursor = 'pointer';
@@ -493,9 +277,7 @@ function attachNodeClickListeners() {
 function handleNodeClick(event) {
     event.stopPropagation();
 
-    if (didPan) {
-        return;
-    }
+    if (didPan) return;
 
     const nodeElement = event.currentTarget;
     const courseCode = extractCourseCodeFromNodeElement(nodeElement);
@@ -511,43 +293,57 @@ function handleNodeClick(event) {
 
     selectedNodeId = courseCode;
 
-    if (!isFullView) {
-        fullViewBtn.click();
-    }
+    if (!isFullView) fullViewBtn.click();
     openSummaryDock();
 
-    activeSelectionTimeline = animateNodeSelection(courseCode, {
-        svgElement: container.querySelector('svg'),
-        activeSelectionTimeline,
-        collectPrerequisiteChain,
-        buildPrerequisiteDistanceMap,
-        buildPrerequisiteEdgeDistanceMap,
-        getGraphNodes,
-        getGraphEdges,
-        extractCourseCodeFromNodeElement,
-        setNodeGlow,
-        getNodeTextElements,
-        buildNodeCenterLookup,
-        resolveEdgeKey,
-        getSafePathLength
-    });
+    const svgElement = container.querySelector('svg');
+
+    if (activeEngine === 'custom') {
+        activeSelectionTimeline = animateCustomNodeSelection(courseCode, svgElement, activeSelectionTimeline);
+    } else {
+        activeSelectionTimeline = animateNodeSelection(courseCode, {
+            svgElement,
+            activeSelectionTimeline,
+            collectPrerequisiteChain,
+            buildPrerequisiteDistanceMap,
+            buildPrerequisiteEdgeDistanceMap,
+            getGraphNodes,
+            getGraphEdges,
+            extractCourseCodeFromNodeElement,
+            setNodeGlow,
+            getNodeTextElements,
+            buildNodeCenterLookup,
+            resolveEdgeKey,
+            getSafePathLength
+        });
+    }
 }
 
 function clearAllHighlights() {
     const svgElement = container.querySelector('svg');
     if (!svgElement) return;
 
-    clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdges, setNodeGlow, getNodeTextElements });
+    // Kill the running selection timeline FIRST. Its glow setters are GSAP callbacks
+    // (not tweens), so the engine reset alone won't stop them — pending callbacks would
+    // otherwise re-apply glows and continue the cascade after deselect.
+    if (activeSelectionTimeline) {
+        activeSelectionTimeline.kill();
+        activeSelectionTimeline = null;
+    }
+
+    if (activeEngine === 'custom') {
+        clearCustomAnimations(svgElement);
+    } else {
+        clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdges, setNodeGlow, getNodeTextElements });
+    }
+
     selectedNodeId = null;
     closeSummaryDock();
 }
 
-/* 8. Edge Resolution Fallback */
+/* 11. SVG Animation Helpers (passed as context to nodeanimation.js) */
 function setNodeGlow(shapeElement, glowFilter) {
-    if (!shapeElement) {
-        return;
-    }
-
+    if (!shapeElement) return;
     shapeElement.style.filter = glowFilter;
 }
 
@@ -556,190 +352,31 @@ function getNodeTextElements(nodeElement) {
 }
 
 function getSafePathLength(pathElement) {
-    if (!pathElement) {
-        return 300;
-    }
+    if (!pathElement) return 300;
 
     let pathLength = 0;
     try {
         pathLength = pathElement.getTotalLength?.() ?? 0;
-    } catch (error) {
+    } catch {
         pathLength = 0;
     }
 
-    if (pathLength > 50) {
-        return pathLength;
-    }
+    if (pathLength > 50) return pathLength;
 
     try {
         const bbox = pathElement.getBBox?.();
         if (bbox) {
             const diagonal = Math.sqrt((bbox.width ** 2) + (bbox.height ** 2));
-            if (diagonal > 50) {
-                return diagonal;
-            }
+            if (diagonal > 50) return diagonal;
         }
-    } catch (error) {
+    } catch {
+        // Ignore geometry errors.
     }
 
     return 300;
 }
 
-function isKnownEdge(sourceCode, targetCode) {
-    return Boolean(adjacencyGraph.get(sourceCode)?.outgoing.has(targetCode));
-}
-
-// Edge Key Resolution
-function buildNodeCenterLookup(svgElement) {
-    const lookup = [];
-    getGraphNodes(svgElement).forEach((nodeElement) => {
-        const courseCode = extractCourseCodeFromNodeElement(nodeElement);
-        if (!courseCode) {
-            return;
-        }
-
-        const box = nodeElement.getBBox?.();
-        if (!box) {
-            return;
-        }
-
-        lookup.push({
-            courseCode,
-            x: box.x + (box.width / 2),
-            y: box.y + (box.height / 2)
-        });
-    });
-
-    return lookup;
-}
-
-function findNearestCourseCode(point, nodeCenterLookup) {
-    let closestCode = null;
-    let minDistance = Number.POSITIVE_INFINITY;
-
-    nodeCenterLookup.forEach((nodeCenter) => {
-        const distance = Math.hypot(point.x - nodeCenter.x, point.y - nodeCenter.y);
-        if (distance < minDistance) {
-            minDistance = distance;
-            closestCode = nodeCenter.courseCode;
-        }
-    });
-
-    return closestCode;
-}
-
-/**
- * Edge resolution fallback strategy.
- * 1. Check LS-/LE- class tokens (standard Mermaid flowchart).
- * 2. Check IDs/Labels for "Source --> Target" patterns.
- * 3. Final fallback: Infer source/target via geometric proximity to node centers.
- */
-function resolveEdgeKey(edgeElement, nodeCenterLookup = []) {
-    const edgePath = edgeElement.querySelector('path');
-
-    // Mermaid often exposes source/target through LS-/LE- class tokens.
-    const classTokens = `${edgeElement.getAttribute('class') ?? ''} ${edgePath?.getAttribute('class') ?? ''}`;
-    const sourceClassMatch = classTokens.match(/(?:^|\s)LS-([A-Za-z0-9_\-]+)(?=\s|$)/);
-    const targetClassMatch = classTokens.match(/(?:^|\s)LE-([A-Za-z0-9_\-]+)(?=\s|$)/);
-
-    if (sourceClassMatch && targetClassMatch) {
-        const sourceCode = normalizeCourseCode(sourceClassMatch[1]);
-        const targetCode = normalizeCourseCode(targetClassMatch[1]);
-        if (sourceCode && targetCode) {
-            return `${sourceCode}->${targetCode}`;
-        }
-    }
-
-    const rawCandidates = [
-        edgeElement.id,
-        edgePath?.id,
-        edgeElement.getAttribute('aria-label'),
-        edgeElement.getAttribute('title'),
-        edgePath?.getAttribute('aria-label'),
-        edgePath?.getAttribute('title'),
-        edgeElement.textContent
-    ].filter(Boolean);
-
-    for (const rawCandidate of rawCandidates) {
-        const arrowPattern = rawCandidate.match(/^(.+?)\s*-->\s*(.+)$/);
-        if (arrowPattern) {
-            const sourceCode = normalizeCourseCode(arrowPattern[1]);
-            const targetCode = normalizeCourseCode(arrowPattern[2]);
-            if (sourceCode && targetCode) {
-                return `${sourceCode}->${targetCode}`;
-            }
-        }
-
-        const extractedCodes = extractCourseCodesFromText(rawCandidate);
-        if (extractedCodes.length < 2) {
-            continue;
-        }
-
-        for (let index = 0; index < extractedCodes.length - 1; index += 1) {
-            const sourceCode = extractedCodes[index];
-            const targetCode = extractedCodes[index + 1];
-
-            if (isKnownEdge(sourceCode, targetCode)) {
-                return `${sourceCode}->${targetCode}`;
-            }
-        }
-
-        return `${extractedCodes[0]}->${extractedCodes[1]}`;
-    }
-
-    // Final fallback: infer source/target using path start/end proximity to node centers.
-    if (edgePath && nodeCenterLookup.length > 0) {
-        try {
-            const totalLength = edgePath.getTotalLength();
-            const startPoint = edgePath.getPointAtLength(0);
-            const endPoint = edgePath.getPointAtLength(totalLength);
-
-            const startCode = findNearestCourseCode(startPoint, nodeCenterLookup);
-            const endCode = findNearestCourseCode(endPoint, nodeCenterLookup);
-
-            if (startCode && endCode && isKnownEdge(startCode, endCode)) {
-                return `${startCode}->${endCode}`;
-            }
-        } catch (error) {
-            // Ignore geometry fallback errors.
-        }
-    }
-
-    return null;
-}
-
-function buildPrerequisiteEdgeDistanceMap(startCode, visitedEdges) {
-    const distanceMap = new Map();
-    const queue = [{ code: startCode, distance: 0 }];
-    const visitedCodes = new Set([startCode]);
-
-    while (queue.length > 0) {
-        const { code: currentCode, distance } = queue.shift();
-        const nodeData = adjacencyGraph.get(currentCode);
-        if (!nodeData) {
-            continue;
-        }
-
-        const allNeighbors = Array.from(nodeData.incoming).map((neighbor) => ({
-            neighbor,
-            edgeKey: `${neighbor}->${currentCode}`
-        }));
-
-        allNeighbors.forEach(({ neighbor, edgeKey }) => {
-            if (visitedEdges.has(edgeKey)) {
-                distanceMap.set(edgeKey, distance);
-                if (!visitedCodes.has(neighbor)) {
-                    visitedCodes.add(neighbor);
-                    queue.push({ code: neighbor, distance: distance + 1 });
-                }
-            }
-        });
-    }
-
-    return distanceMap;
-}
-
-/* 9. Summary Dock */
+/* 12. Summary Dock */
 const summaryDock = document.getElementById('summary-dock');
 const summarySubjectDock = document.getElementById('summary-subject-dock');
 const summaryListDock = document.getElementById('summary-list-dock');
@@ -754,20 +391,25 @@ function renderSummaryContent(subjectElement, listElement, selectedCode) {
     listElement.innerHTML = '';
     summaryIndirectListDock.innerHTML = '';
 
-    const directPrerequisites = Array.from(adjacencyGraph.get(selectedCode)?.incoming ?? []).sort();
+    // BFS distance map: distance 1 = direct prerequisites, 2+ = indirect
+    const distanceMap = buildPrerequisiteDistanceMap(selectedCode);
+    const directPrereqs = Array.from(distanceMap.entries())
+        .filter(([, distance]) => distance === 1)
+        .map(([code]) => code)
+        .sort();
 
     const { visitedNodes } = collectPrerequisiteChain(selectedCode);
     const indirectPrerequisites = Array.from(visitedNodes)
-        .filter(code => code !== selectedCode && !directPrerequisites.includes(code))
+        .filter((code) => code !== selectedCode && !directPrereqs.includes(code))
         .sort();
 
-    if (directPrerequisites.length === 0) {
+    if (directPrereqs.length === 0) {
         const emptyItem = document.createElement('li');
         emptyItem.className = 'summary-item is-empty';
         emptyItem.textContent = 'No prerequisites required.';
         listElement.appendChild(emptyItem);
     } else {
-        directPrerequisites.forEach((courseCode) => {
+        directPrereqs.forEach((courseCode) => {
             const item = document.createElement('li');
             item.className = 'summary-item';
             item.textContent = getCourseDisplayLabel(courseCode);
@@ -822,7 +464,7 @@ function closeSummaryDock() {
     summaryDock.classList.add('is-hidden');
 }
 
-/* 10. Pan & Zoom Logic */
+/* 13. Pan & Zoom */
 const wrapper = document.getElementById('graph-wrapper');
 const zoomInBtn = document.getElementById('zoom-in');
 const zoomOutBtn = document.getElementById('zoom-out');
@@ -836,7 +478,6 @@ let startY = 0;
 let panning = false;
 let didPan = false;
 
-
 function setTransform() {
     container.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
 }
@@ -849,9 +490,7 @@ function resetZoom() {
 }
 
 wrapper.addEventListener('mousedown', (e) => {
-    if (mermaidRawCode === '') {
-        return;
-    }
+    if (mermaidRawCode === '') return;
     e.preventDefault();
     startX = e.clientX - pointX;
     startY = e.clientY - pointY;
@@ -873,9 +512,7 @@ wrapper.addEventListener('mouseleave', () => {
 });
 
 wrapper.addEventListener('mousemove', (e) => {
-    if (!panning || mermaidRawCode === '') {
-        return;
-    }
+    if (!panning || mermaidRawCode === '') return;
     e.preventDefault();
     pointX = e.clientX - startX;
     pointY = e.clientY - startY;
@@ -884,9 +521,7 @@ wrapper.addEventListener('mousemove', (e) => {
 });
 
 wrapper.addEventListener('wheel', (e) => {
-    if (mermaidRawCode === '') {
-        return;
-    }
+    if (mermaidRawCode === '') return;
     e.preventDefault();
 
     const scaledX = (e.clientX - pointX) / scale;
@@ -919,19 +554,77 @@ zoomOutBtn.addEventListener('click', () => {
 
 zoomResetBtn.addEventListener('click', resetZoom);
 
-/* 11. Navigation & Global Controls */
+/* Touch — single finger pan, two-finger pinch zoom */
+let pinchStartDistance = 0;
+let pinchStartScale = 1;
+
+wrapper.addEventListener('touchstart', (e) => {
+    if (mermaidRawCode === '') return;
+
+    if (e.touches.length === 2) {
+        pinchStartDistance = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+        );
+        pinchStartScale = scale;
+    } else {
+        startX = e.touches[0].clientX - pointX;
+        startY = e.touches[0].clientY - pointY;
+        panning = true;
+        didPan = false;
+        wrapper.classList.add('is-panning');
+    }
+}, { passive: true });
+
+wrapper.addEventListener('touchmove', (e) => {
+    if (mermaidRawCode === '') return;
+    e.preventDefault();
+
+    if (e.touches.length === 2) {
+        const currentDistance = Math.hypot(
+            e.touches[1].clientX - e.touches[0].clientX,
+            e.touches[1].clientY - e.touches[0].clientY
+        );
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const midY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+        const scaledMidX = (midX - pointX) / scale;
+        const scaledMidY = (midY - pointY) / scale;
+
+        scale = Math.max(0.1, Math.min((pinchStartScale * currentDistance) / pinchStartDistance, 8));
+        pointX = midX - scaledMidX * scale;
+        pointY = midY - scaledMidY * scale;
+        setTransform();
+    } else if (panning) {
+        pointX = e.touches[0].clientX - startX;
+        pointY = e.touches[0].clientY - startY;
+        didPan = true;
+        setTransform();
+    }
+}, { passive: false });
+
+wrapper.addEventListener('touchend', () => {
+    panning = false;
+    wrapper.classList.remove('is-panning');
+    setTimeout(() => { didPan = false; }, 0);
+}, { passive: true });
+
+/* 14. Navigation & Global Controls */
 const copyBtn = document.getElementById('copy-btn');
 const resetBtn = document.getElementById('reset-btn');
 const fullViewBtn = document.getElementById('full-view-btn');
 const fullViewCloseBtn = document.getElementById('full-view-close');
 const deselectBtnFull = document.getElementById('deselect-btn-full');
+const engineLegacyBtn = document.getElementById('engine-legacy-btn');
+const engineCustomBtn = document.getElementById('engine-custom-btn');
+
+engineLegacyBtn.addEventListener('click', () => switchEngine('legacy'));
+engineCustomBtn.addEventListener('click', () => switchEngine('custom'));
 
 let isFullView = false;
 
 copyBtn.addEventListener('click', () => {
-    if (!mermaidRawCode) {
-        return;
-    }
+    if (!mermaidRawCode) return;
 
     const textarea = document.createElement('textarea');
     textarea.value = mermaidRawCode;
@@ -950,9 +643,7 @@ copyBtn.addEventListener('click', () => {
 });
 
 fullViewBtn.addEventListener('click', () => {
-    if (!mermaidRawCode || isViewTransitioning || isFullView) {
-        return;
-    }
+    if (!mermaidRawCode || isViewTransitioning || isFullView) return;
 
     isViewTransitioning = true;
     closeSummaryDock();
@@ -979,9 +670,7 @@ fullViewBtn.addEventListener('click', () => {
 });
 
 function closeFullView() {
-    if (!isFullView || isViewTransitioning) {
-        return;
-    }
+    if (!isFullView || isViewTransitioning) return;
 
     isViewTransitioning = true;
     closeSummaryDock();
@@ -1021,18 +710,16 @@ resetBtn.addEventListener('click', () => {
     panning = false;
     didPan = false;
     selectedNodeId = null;
-    adjacencyGraph = new Map();
-    courseTitleMap = new Map();
+    resetGraphState();
     wrapper.classList.remove('is-panning');
     gsap.set(wrapper, { clearProps: 'transform' });
     resetZoom();
 });
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && isFullView) {
-        closeFullView();
-    }
+    if (e.key === 'Escape' && isFullView) closeFullView();
 });
 
-/* 12. Initialization */
+/* 15. Initialization */
 buildPresetButtons();
+updateEngineToggleUI();

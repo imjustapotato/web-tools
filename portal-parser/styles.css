@@ -549,6 +549,7 @@ body.page-leaving {
     }
 
     .controls-group,
+    .engine-selector,
     .viewport-tools {
         width: 100%;
         justify-content: center;
@@ -579,6 +580,113 @@ body.page-leaving {
 
 .is-hidden {
     display: none !important;
+}
+
+/**
+ * Custom engine SVG nodes and edges.
+ * Mirrors the Mermaid theme variables so both engines look visually consistent.
+ */
+.custom-engine-svg {
+    display: block;
+    overflow: visible;
+}
+
+.custom-engine-svg .node {
+    cursor: pointer;
+}
+
+.custom-engine-svg .node rect {
+    transition: filter 120ms ease;
+}
+
+.custom-engine-svg .edge path {
+    transition: stroke 120ms ease, stroke-width 120ms ease;
+}
+
+/**
+ * Declarative dimming state (custom engine).
+ * Opacity is governed entirely by these classes — never by GSAP — so a node's dimmed
+ * state is purely a function of the current class state and can never get "stuck".
+ * `has-active-selection` on the root engages dimming; `--in-chain` marks the lit elements.
+ * Clearing the root class restores everything in one step.
+ */
+.custom-engine-svg .node,
+.custom-engine-svg .edge {
+    transition: opacity 300ms ease;
+}
+
+.custom-engine-svg.has-active-selection .node {
+    opacity: 0.28;
+}
+
+.custom-engine-svg.has-active-selection .node.node--in-chain {
+    opacity: 1;
+}
+
+.custom-engine-svg.has-active-selection .edge {
+    opacity: 0.1;
+}
+
+.custom-engine-svg.has-active-selection .edge.edge--in-chain {
+    opacity: 1;
+}
+
+/**
+ * Engine selector — segmented control for switching between Mermaid (legacy) and Dagre/D3 (custom).
+ * Styled as a sibling pill to viewport-tools to match the controls bar visual language.
+ */
+.engine-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border-main);
+    border-radius: 0.7rem;
+    background: var(--bg-panel-soft);
+}
+
+.engine-btn {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.38rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 0.45rem;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.engine-btn:hover:not(:disabled) {
+    background: var(--bg-control);
+    color: var(--text-main);
+}
+
+.engine-btn.is-active {
+    background: var(--bg-control);
+    border-color: var(--border-main);
+    color: var(--text-main);
+}
+
+.engine-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.engine-btn-soon {
+    font-size: 0.64rem;
+    font-weight: 700;
+    padding: 0.1rem 0.34rem;
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 0.3rem;
+    color: #a5b4fc;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 /**
