@@ -6,15 +6,7 @@
  * the Free Software Foundation, either version 3 of the License.
  */
 
-/**
- * File ingestion and heuristic HTML parsing.
- * Pure data layer — no rendering, no state mutations, no engine dependencies.
- */
-
-/**
- * Decodes an HTML or MHTML file into a raw HTML string.
- * Handles Base64 and Quoted-Printable transfer encodings for MHTML exports.
- */
+/* File ingestion and heuristic HTML parsing — MHTML decode, course extraction */
 export async function extractHtmlFromFile(file) {
     const text = await file.text();
     let rawHtml = text;
@@ -41,11 +33,7 @@ export async function extractHtmlFromFile(file) {
     return rawHtml;
 }
 
-/**
- * Parses a portal curriculum HTML document into structured course data.
- * Uses heuristic column detection for robustness across portal versions.
- * Returns the course array and a pre-built title map — no side effects.
- */
+/* Parse portal HTML into structured course data — heuristic column detection */
 export function parseCurriculumHtml(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');

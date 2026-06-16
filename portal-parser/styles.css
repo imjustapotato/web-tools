@@ -26,7 +26,7 @@
 
 /**
  * Core layout and page-level transitions.
- * Implements a subtle entrance animation for a premium first impression.
+ * Subtle entrance animation for a premium first impression.
  */
 body {
     font-family: 'Inter', sans-serif;
@@ -111,7 +111,7 @@ body {
 
 /**
  * File ingestion interface.
- * Uses dashed borders and hover states to clearly signal interaction areas.
+ * Dashed borders and hover states signal interaction areas.
  */
 .dropzone {
     width: min(100%, 48rem);
@@ -155,7 +155,7 @@ body {
 
 /**
  * Action bar and viewport tools.
- * Organizes functional controls for graph manipulation and zoom management.
+ * Organizes graph manipulation and zoom controls.
  */
 .controls {
     width: 100%;
@@ -251,8 +251,8 @@ body {
 }
 
 /**
- * Graph viewport and immersive modes.
- * Manages the transition between inline viewing and full-screen focus.
+ * Graph viewport and immersive mode.
+ * Inline-to-fullscreen transition management.
  */
 .graph-wrapper {
     flex: 1;
@@ -342,8 +342,7 @@ body {
 
 /**
  * Interactive prerequisite sidebar.
- * Employs glassmorphism (blur + transparency) to provide context without 
- * obscuring the underlying graph logic.
+ * Glassmorphism provides context without obscuring the graph.
  */
 .summary-dock {
     position: absolute;
@@ -447,7 +446,7 @@ body {
 
 /**
  * Template selection system.
- * Uses emerald accents to distinguish preset loading from user file uploads.
+ * Emerald accents distinguish preset loading from file uploads.
  */
 .btn-preset {
     border-color: rgba(52, 211, 153, 0.35);
@@ -550,6 +549,9 @@ body.page-leaving {
 
     .controls-group,
     .engine-selector,
+    .layout-options,
+    .chain-depth-options,
+    .config-actions,
     .viewport-tools {
         width: 100%;
         justify-content: center;
@@ -583,8 +585,7 @@ body.page-leaving {
 }
 
 /**
- * Custom engine SVG nodes and edges.
- * Mirrors the Mermaid theme variables so both engines look visually consistent.
+ * Custom engine SVG — mirrors Mermaid theme for visual consistency.
  */
 .custom-engine-svg {
     display: block;
@@ -604,11 +605,9 @@ body.page-leaving {
 }
 
 /**
- * Declarative dimming state (custom engine).
- * Opacity is governed entirely by these classes — never by GSAP — so a node's dimmed
- * state is purely a function of the current class state and can never get "stuck".
- * `has-active-selection` on the root engages dimming; `--in-chain` marks the lit elements.
- * Clearing the root class restores everything in one step.
+ * Declarative dimming (custom engine).
+ * Opacity governed entirely by CSS classes — never GSAP — so state can't get stuck.
+ * `has-active-selection` engages dimming; `--in-chain` marks lit elements.
  */
 .custom-engine-svg .node,
 .custom-engine-svg .edge {
@@ -632,8 +631,166 @@ body.page-leaving {
 }
 
 /**
- * Engine selector — segmented control for switching between Mermaid (legacy) and Dagre/D3 (custom).
- * Styled as a sibling pill to viewport-tools to match the controls bar visual language.
+ * Ambient flow along active chain edges.
+ * Declarative CSS — class owns dash pattern + scroll, removing it stops motion instantly.
+ * No per-frame JS, no filter on flowing edges to avoid blur re-rasterization.
+ */
+@keyframes edge-flow-scroll {
+    to { stroke-dashoffset: -36; }
+}
+
+.custom-engine-svg .edge.edge--flowing path {
+    stroke-dasharray: 8 28;
+    animation: edge-flow-scroll 0.9s linear infinite;
+}
+
+/* Reduced motion: keep active edges lit but solid and static. */
+@media (prefers-reduced-motion: reduce) {
+    .custom-engine-svg .edge.edge--flowing path {
+        animation: none;
+        stroke-dasharray: none;
+    }
+}
+
+/**
+ * Branch tracing — what a course unlocks.
+ * Declarative class state like dimming/flow, violet palette distinguishes from selection.
+ * Mutually exclusive with selection.
+ */
+
+/* Smooth the trace colour fade on node boxes */
+.custom-engine-svg .node rect {
+    transition: stroke 200ms ease, stroke-width 200ms ease;
+}
+
+/* Hover preview — brighten a node's immediate edges, no dimming */
+.custom-engine-svg .edge.edge--hover-linked path {
+    stroke: #cbd5e1;
+    stroke-width: 2;
+}
+
+/* Trace dimming — same mechanism as selection, separate root class */
+.custom-engine-svg.has-active-trace .node {
+    opacity: 0.28;
+}
+
+.custom-engine-svg.has-active-trace .node.node--in-trace {
+    opacity: 1;
+}
+
+.custom-engine-svg.has-active-trace .edge {
+    opacity: 0.1;
+}
+
+.custom-engine-svg.has-active-trace .edge.edge--in-trace {
+    opacity: 1;
+}
+
+/* Trace colour + forward flow dash (scrolls source → target, reinforcing direction) */
+.custom-engine-svg .node.node--in-trace rect {
+    stroke: #a78bfa;
+    stroke-width: 2.4;
+}
+
+.custom-engine-svg .edge.edge--in-trace path {
+    stroke: #a78bfa;
+    stroke-width: 2.5;
+    stroke-dasharray: 8 28;
+    animation: edge-flow-scroll 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .custom-engine-svg .edge.edge--in-trace path {
+        animation: none;
+        stroke-dasharray: none;
+    }
+}
+
+/**
+ * Keyboard navigation hint overlay (custom engine).
+ * Centered over graph-wrapper when ArrowLeft/ArrowRight has multiple choices.
+ */
+.key-nav-hint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px 20px;
+    z-index: 100;
+    min-width: 220px;
+    max-width: 320px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+.key-nav-hint.is-hidden { display: none; }
+
+.key-nav-hint__direction {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    margin: 0 0 10px;
+}
+
+.key-nav-hint__list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.key-nav-hint__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e2e8f0;
+    font-size: 0.85rem;
+    cursor: pointer;
+    padding: 5px 7px;
+    border-radius: 6px;
+    transition: background 120ms;
+}
+
+.key-nav-hint__item:hover { background: #334155; }
+
+.key-nav-hint__key {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 4px;
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94a3b8;
+    flex-shrink: 0;
+}
+
+.key-nav-hint__dismiss {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin: 0;
+}
+
+.key-nav-hint__dismiss kbd {
+    background: #0f172a;
+    border: 1px solid #475569;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-size: 0.65rem;
+}
+
+/**
+ * Engine selector — segmented control for Mermaid (legacy) vs Dagre/D3 (custom).
+ * Matches controls bar visual language.
  */
 .engine-selector {
     display: flex;
@@ -687,6 +844,112 @@ body.page-leaving {
     color: #a5b4fc;
     text-transform: uppercase;
     letter-spacing: 0.04em;
+}
+
+/* Layout options pill — mirrors engine-selector structure and sizing */
+.layout-options {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border-main);
+    border-radius: 0.7rem;
+    background: var(--bg-panel-soft);
+}
+
+.layout-spacing-select {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.38rem 0.5rem;
+    border: 1px solid var(--border-main);
+    border-radius: 0.45rem;
+    background: var(--bg-control);
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 1.4rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.4rem center;
+}
+
+.layout-spacing-select:focus {
+    border-color: #60a5fa;
+}
+
+/* Auto-layout sub-controls (LR/TB + spacing) — hidden as a unit in Custom mode */
+.layout-auto-controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.layout-auto-controls.is-hidden {
+    display: none;
+}
+
+/* Custom layout mode — nodes are draggable */
+.custom-engine-svg.is-custom-layout .node {
+    cursor: grab;
+}
+
+.custom-engine-svg.is-custom-layout .node:active {
+    cursor: grabbing;
+}
+
+/* Chain depth pill — same visual language as layout-options */
+.chain-depth-options {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem;
+    border: 1px solid var(--border-main);
+    border-radius: 0.7rem;
+    background: var(--bg-panel-soft);
+}
+
+.depth-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    padding: 0 0.1rem;
+}
+
+.depth-select {
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 0.38rem 0.5rem;
+    border: 1px solid var(--border-main);
+    border-radius: 0.45rem;
+    background: var(--bg-control);
+    color: var(--text-main);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 1.4rem;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2394a3b8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.4rem center;
+}
+
+.depth-select:focus {
+    border-color: #a78bfa; /* violet to match the trace color */
+}
+
+/* Config export / import pair */
+.config-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.config-import-label {
+    cursor: pointer;
 }
 
 /**

@@ -6,23 +6,12 @@
  * the Free Software Foundation, either version 3 of the License.
  */
 
-/**
- * SVG path builders shared between the renderer and the animation controller.
- * Keeping these here avoids circular imports between d3-renderer and animation-controller.
- */
+/** SVG path builders shared between renderer and animation controller — avoids circular imports */
 
 /**
- * Builds a smooth SVG path through dagre's bend-point array using quadratic
- * bezier curves. Each interior point acts as a control point whose curve passes
- * through the midpoint to the next point, eliminating sharp kinks.
- *
- * Technique: quadratic bezier through-midpoints
- *   - M  first point
- *   - Q  Pi  midpoint(Pi, Pi+1)   for each interior point
- *   - L  last point  (straight segment ensures arrowhead lands at the exact target)
- *
- * @param {Array<{x: number, y: number}>} points - Raw bend points from dagre.
- * @returns {string} SVG path d attribute value.
+ * Smooth SVG path through dagre's bend-point array using quadratic bezier.
+ * Each interior point acts as a control point whose curve passes through the
+ * midpoint to the next point, eliminating sharp kinks.
  */
 export function buildSmoothPath(points) {
     if (!points || points.length === 0) return '';
@@ -43,14 +32,39 @@ export function buildSmoothPath(points) {
     return [`M${first.x},${first.y}`, ...curves, `L${last.x},${last.y}`].join(' ');
 }
 
-/**
- * Builds a smooth path with the point order reversed.
- * Used by the animation controller to draw edges from the selected node
- * outward toward prerequisite nodes.
- *
- * @param {Array<{x: number, y: number}>} points - Raw bend points from dagre.
- * @returns {string} SVG path d attribute value, drawn in reverse direction.
- */
+/** Builds reversed smooth path — used to draw edges from selected node outward toward prereqs */
 export function buildReversedSmoothPath(points) {
     return buildSmoothPath([...points].reverse());
+}
+
+/**
+ * Finds the point on `from` rectangle's border along the ray toward `to`.
+ * Used when a node is dragged: connected edges redraw as straight lines clipped
+ * to node borders so arrowheads land on the boundary.
+ */
+export function clipSegmentToRect(from, to, halfWidth, halfHeight) {
+    const deltaX = to.x - from.x;
+    const deltaY = to.y - from.y;
+
+    // Degenerate: centers coincide — nothing to clip against
+    if (deltaX === 0 && deltaY === 0) return { x: from.x, y: from.y };
+
+    // Scale the ray so it just reaches the nearest vertical/horizontal border.
+    // The smaller scale wins — that's the side the ray exits through.
+    const scaleX = deltaX === 0 ? Infinity : halfWidth / Math.abs(deltaX);
+    const scaleY = deltaY === 0 ? Infinity : halfHeight / Math.abs(deltaY);
+    const scale = Math.min(scaleX, scaleY);
+
+    return {
+        x: from.x + deltaX * scale,
+        y: from.y + deltaY * scale
+    };
+}
+
+/** Builds straight edge path between two node geometries, clipped to both borders */
+export function buildStraightClippedEdge(sourceGeo, targetGeo) {
+    const exit = clipSegmentToRect(sourceGeo, targetGeo, sourceGeo.halfWidth, sourceGeo.halfHeight);
+    const entry = clipSegmentToRect(targetGeo, sourceGeo, targetGeo.halfWidth, targetGeo.halfHeight);
+    const points = [exit, entry];
+    return { points, d: buildSmoothPath(points) };
 }

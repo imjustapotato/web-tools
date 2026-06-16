@@ -6,11 +6,7 @@
  * the Free Software Foundation, either version 3 of the License.
  */
 
-/**
- * Graph data layer: shared state, course code utilities, SVG traversal helpers,
- * adjacency graph construction, and BFS/DFS traversal.
- * Engine-agnostic — no Mermaid or D3 imports.
- */
+/* Graph data layer — engine-agnostic: shared state, SVG traversal, BFS/DFS */
 
 /* Internal State */
 let adjacencyGraph = new Map();
@@ -175,27 +171,40 @@ export function buildAdjacencyGraphFromMermaidCode(mermaidCode) {
 }
 
 /* Graph Traversal */
-/** Traverses upward (incoming edges) from a node to collect all ancestors and edges in the chain. */
-export function collectPrerequisiteChain(startCode) {
-    const visitedNodes = new Set();
+/**
+ * BFS traversal of one direction of the dependency graph.
+ * The edge key is always oriented "SRC->TGT" (source->target) regardless of walk direction:
+ *   - 'incoming': neighbor is the prerequisite, so the edge is `neighbor->current`
+ *   - 'outgoing': neighbor is the dependent,    so the edge is `current->neighbor`
+ *
+ * @param {string} startCode - Course code to traverse from.
+ * @param {'incoming'|'outgoing'} direction - Which adjacency set to follow.
+ * @param {number} [maxDepth=Infinity] - Stop expanding nodes at this depth (1 = direct neighbors only).
+ * @returns {{ visitedNodes: Set<string>, visitedEdges: Set<string> }}
+ */
+function traverseChain(startCode, direction, maxDepth = Infinity) {
+    const visitedNodes = new Set([startCode]);
     const visitedEdges = new Set();
-    visitedNodes.add(startCode);
-
     const visitedInTraversal = new Set([startCode]);
-    const stack = [startCode];
+    const queue = [{ code: startCode, depth: 0 }];
 
-    while (stack.length > 0) {
-        const currentCode = stack.pop();
+    while (queue.length > 0) {
+        const { code: currentCode, depth } = queue.shift();
+        if (depth >= maxDepth) continue;
+
         const nodeData = adjacencyGraph.get(currentCode);
         if (!nodeData) continue;
 
-        nodeData.incoming.forEach((prerequisiteCode) => {
-            visitedEdges.add(`${prerequisiteCode}->${currentCode}`);
-            visitedNodes.add(prerequisiteCode);
+        nodeData[direction].forEach((neighborCode) => {
+            const edgeKey = direction === 'incoming'
+                ? `${neighborCode}->${currentCode}`
+                : `${currentCode}->${neighborCode}`;
+            visitedEdges.add(edgeKey);
+            visitedNodes.add(neighborCode);
 
-            if (!visitedInTraversal.has(prerequisiteCode)) {
-                visitedInTraversal.add(prerequisiteCode);
-                stack.push(prerequisiteCode);
+            if (!visitedInTraversal.has(neighborCode)) {
+                visitedInTraversal.add(neighborCode);
+                queue.push({ code: neighborCode, depth: depth + 1 });
             }
         });
     }
@@ -203,7 +212,28 @@ export function collectPrerequisiteChain(startCode) {
     return { visitedNodes, visitedEdges };
 }
 
-export function buildPrerequisiteDistanceMap(startCode) {
+/**
+ * Traverses upward (incoming edges) to collect ancestors.
+ */
+export function collectPrerequisiteChain(startCode, maxDepth = Infinity) {
+    return traverseChain(startCode, 'incoming', maxDepth);
+}
+
+/**
+ * Traverses downward (outgoing edges) to collect dependents.
+ */
+export function collectForwardDependentChain(startCode, maxDepth = Infinity) {
+    return traverseChain(startCode, 'outgoing', maxDepth);
+}
+
+/**
+ * BFS distance map from a node back to all its prerequisites.
+ *
+ * @param {string} startCode
+ * @param {number} [maxDepth=Infinity] - Stop expanding past this depth.
+ * @returns {Map<string, number>}
+ */
+export function buildPrerequisiteDistanceMap(startCode, maxDepth = Infinity) {
     const distanceMap = new Map();
     const queue = [{ code: startCode, distance: 0 }];
     const visitedCodes = new Set([startCode]);
@@ -211,6 +241,8 @@ export function buildPrerequisiteDistanceMap(startCode) {
 
     while (queue.length > 0) {
         const { code: currentCode, distance } = queue.shift();
+        if (distance >= maxDepth) continue;
+
         const nodeData = adjacencyGraph.get(currentCode);
         if (!nodeData) continue;
 
@@ -303,13 +335,7 @@ function findNearestCourseCode(point, nodeCenterLookup) {
     return closestCode;
 }
 
-/**
- * Edge resolution fallback strategy.
- * 0. Check data-source/data-target attributes (custom engine).
- * 1. Check LS-/LE- class tokens (standard Mermaid flowchart).
- * 2. Check IDs/Labels for "Source --> Target" patterns.
- * 3. Final fallback: infer source/target via geometric proximity to node centers.
- */
+/* Edge resolution: data attributes → LS/LE class tokens → label patterns → geometric proximity */
 export function resolveEdgeKey(edgeElement, nodeCenterLookup = []) {
     // Custom engine: data attributes for direct O(1) resolution
     const sourceAttr = edgeElement.getAttribute('data-source');

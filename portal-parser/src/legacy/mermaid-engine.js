@@ -8,8 +8,8 @@
 
 /**
  * Legacy Mermaid rendering engine.
- * Wraps Mermaid initialization, Mermaid code generation, and SVG rendering.
- * Preserved as the fallback engine behind the settings toggle in v2.0.0.
+ * Wraps init, code generation, and SVG rendering.
+ * Preserved as fallback engine behind the settings toggle in v2.0.0.
  */
 import mermaid from 'mermaid';
 
@@ -32,10 +32,7 @@ export function initializeMermaid() {
     window.mermaid = mermaid;
 }
 
-/**
- * Converts parsed course data into a Mermaid `graph LR` definition string.
- * Used by both the legacy render path and the Copy Mermaid Code button.
- */
+/** Converts parsed course data into Mermaid `graph LR` definition string */
 export function buildMermaidCode(courses) {
     let mermaidCode = 'graph LR\n';
     mermaidCode += 'classDef default fill:#1e293b,stroke:#334155,stroke-width:2px,color:#f8fafc,rx:8,ry:8;\n';
@@ -51,10 +48,7 @@ export function buildMermaidCode(courses) {
     return mermaidCode;
 }
 
-/**
- * Renders a Mermaid code string to an SVG string via the Mermaid API.
- * Throws on render failure — caller is responsible for error handling.
- */
+/** Renders Mermaid code string to SVG — caller handles errors */
 export async function renderMermaidSvg(mermaidCode) {
     const { svg } = await window.mermaid.render('mermaid-svg', mermaidCode);
     return svg;

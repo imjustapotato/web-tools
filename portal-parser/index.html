@@ -59,6 +59,44 @@
                 </button>
             </div>
 
+            <div id="layout-options" class="layout-options is-hidden" role="group" aria-label="Graph layout options">
+                <span class="viewport-label">Layout</span>
+                <button id="layout-mode-default" class="engine-btn" type="button" aria-pressed="true">Default</button>
+                <button id="layout-mode-custom" class="engine-btn" type="button" aria-pressed="false">Custom</button>
+                <span id="layout-auto-controls" class="layout-auto-controls">
+                    <button id="layout-dir-lr" class="engine-btn" type="button" aria-pressed="false">LR</button>
+                    <button id="layout-dir-tb" class="engine-btn" type="button" aria-pressed="false">TB</button>
+                    <select id="layout-spacing-select" class="layout-spacing-select" aria-label="Node spacing">
+                        <option value="compact">Compact</option>
+                        <option value="normal">Normal</option>
+                        <option value="spread">Spread</option>
+                    </select>
+                </span>
+                <button id="layout-reset-btn" class="btn btn-compact is-hidden" type="button">Reset Layout</button>
+            </div>
+
+            <div id="chain-depth-options" class="chain-depth-options" role="group" aria-label="Chain depth settings">
+                <span class="viewport-label">Depth</span>
+                <label class="depth-label" for="prereq-depth-select">Prereq</label>
+                <select id="prereq-depth-select" class="depth-select" aria-label="Prerequisite chain depth">
+                    <option value="1">Direct</option>
+                    <option value="2">Near</option>
+                    <option value="full">Full</option>
+                </select>
+                <label class="depth-label" for="trace-depth-select">Trace</label>
+                <select id="trace-depth-select" class="depth-select" aria-label="Forward trace depth">
+                    <option value="1">Direct</option>
+                    <option value="2">Near</option>
+                    <option value="full">Full</option>
+                </select>
+            </div>
+
+            <div class="config-actions" role="group" aria-label="Configuration export and import">
+                <button id="export-config-btn" class="btn btn-compact" type="button">Export Config</button>
+                <label class="btn btn-compact config-import-label" for="import-config-input">Import Config</label>
+                <input id="import-config-input" type="file" accept=".json" class="is-hidden" aria-label="Import configuration file">
+            </div>
+
             <div class="viewport-tools" role="group" aria-label="Viewport controls">
                 <span class="viewport-label">Viewport</span>
                 <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">-</button>
@@ -83,6 +121,12 @@
                     <ul id="summary-indirect-list-dock" class="summary-list summary-list--indirect"></ul>
                 </div>
             </aside>
+            <!-- Keyboard navigation choice overlay (custom engine only) -->
+            <div id="key-nav-hint" class="key-nav-hint is-hidden" role="dialog" aria-label="Keyboard navigation choices">
+                <p class="key-nav-hint__direction"></p>
+                <ul class="key-nav-hint__list"></ul>
+                <p class="key-nav-hint__dismiss">Press <kbd>Esc</kbd> to cancel</p>
+            </div>
             <div id="graph-container" class="graph-container">
                 <p id="status-text" class="status-text">Waiting for MHTML/HTML file...</p>
             </div>

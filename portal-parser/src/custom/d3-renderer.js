@@ -8,10 +8,10 @@
 
 /**
  * Custom engine SVG renderer.
- * Takes a dagre-positioned graph and produces an SVG element with full DOM
- * ownership — every node and edge element is directly addressable for GSAP animation.
+ * Produces an SVG from a dagre-positioned graph, with direct DOM ownership
+ * so every node/edge is addressable for GSAP animation.
  *
- * SVG structure designed for compatibility with graph-data.js selectors:
+ * Structure:
  *   - Nodes: <g class="node" data-course-code="..."> with <rect> child
  *   - Edges: <g class="edge" data-source="..." data-target="..."> with <path> child
  */
@@ -20,7 +20,7 @@ import { getCourseTitleMap } from '../core/graph-data.js';
 import { buildSmoothPath } from './path-utils.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
-const TITLE_MAX_CHARS = 26;
+const TITLE_MAX_CHARS = 40;
 
 /* Visual tokens — mirrors the Mermaid theme for visual parity */
 const STYLE = {
@@ -40,14 +40,7 @@ const STYLE = {
     font: 'Inter, sans-serif',
 };
 
-/**
- * Renders a dagre-positioned graph into `container` as a self-contained SVG.
- * Clears and replaces container contents on each call.
- *
- * @param {dagre.graphlib.Graph} layoutGraph - Output from buildDagreLayout().
- * @param {HTMLElement} container - DOM element that receives the SVG.
- * @returns {SVGElement} The root SVG element.
- */
+/** Renders dagre-positioned graph into container as a self-contained SVG */
 export function renderDagreLayout(layoutGraph, container) {
     const graphMeta = layoutGraph.graph();
     const svgWidth = (graphMeta.width ?? 0) + (graphMeta.marginx ?? 0) * 2;
@@ -99,6 +92,10 @@ function buildNodeElement(nodeData) {
     group.setAttribute('data-course-code', courseCode);
     group.setAttribute('id', `ce-node-${courseCode}`);
     group.setAttribute('transform', `translate(${x}, ${y})`);
+    // Expose dimensions so the drag re-route can clip edges to the node border
+    // without re-measuring text.
+    group.setAttribute('data-w', width);
+    group.setAttribute('data-h', height);
 
     const rect = createElement('rect');
     rect.setAttribute('x', -width / 2);

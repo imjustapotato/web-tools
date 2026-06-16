@@ -7,15 +7,14 @@
  */
 
 /**
- * This script handles all communications to my companion extension such as,
- * managing the connection handshake, status UI updates, and incoming curriculum data syncs.
+ * Handles communication with the companion extension:
+ * connection handshake, status UI updates, incoming curriculum syncs.
  */
 
 const CURRICULUM_CACHE_KEY = 'portal_parser_curriculum_cache';
 let hasLoadedFromSync = false;
 
-// Initialize the parser from cache if available
-// We use DOMContentLoaded and a small timeout to ensure the main script.js and Mermaid are ready
+// Initialize from cache — small timeout ensures script.js and Mermaid are ready
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         if (hasLoadedFromSync) return; 

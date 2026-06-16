@@ -9,15 +9,11 @@
 /**
  * Declarative dimming engine for the custom renderer.
  *
- * Dimming is expressed purely as CSS class state — NOT as imperative GSAP opacity
- * tweens. The dimmed appearance of any element is therefore a pure function of its
- * current classes, so it can never get "stuck" by an interrupted or half-killed
- * timeline: applying a selection sets membership classes, clearing it removes them,
- * and CSS transitions handle the fade in both directions.
+ * Dimming is CSS class state — NOT GSAP opacity tweens. An element's dimmed
+ * appearance is a pure function of its classes, so it can never get "stuck".
  *
- * Responsibility split:
- *   - This module owns WHAT is dimmed vs. lit (opacity).
- *   - The animation controller owns the active choreography (glow, scale, edge draw).
+ * Split: this module owns WHAT is dimmed vs lit (opacity); the animation
+ * controller owns active choreography (glow, scale, edge draw).
  */
 
 import {
@@ -31,13 +27,7 @@ const ROOT_ACTIVE_CLASS = 'has-active-selection';
 const NODE_CHAIN_CLASS = 'node--in-chain';
 const EDGE_CHAIN_CLASS = 'edge--in-chain';
 
-/**
- * Marks the prerequisite chain as lit and engages dimming on everything else.
- *
- * @param {SVGElement} svgElement
- * @param {Set<string>} chainNodeCodes - Course codes that belong to the chain.
- * @param {Set<string>} chainEdgeKeys - Edge keys ("SRC->TGT") that belong to the chain.
- */
+/** Marks prerequisite chain as lit, dims everything else */
 export function applyDimming(svgElement, chainNodeCodes, chainEdgeKeys) {
     if (!svgElement) return;
 
@@ -55,11 +45,7 @@ export function applyDimming(svgElement, chainNodeCodes, chainEdgeKeys) {
     svgElement.classList.add(ROOT_ACTIVE_CLASS);
 }
 
-/**
- * Releases all dimming. CSS transitions fade every element back to full opacity.
- *
- * @param {SVGElement} svgElement
- */
+/** Releases all dimming — CSS transitions fade everything back to full opacity */
 export function clearDimming(svgElement) {
     if (!svgElement) return;
 

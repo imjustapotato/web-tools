@@ -1,6 +1,6 @@
 /**
- * Manages graph animations using GSAP.
- * Visualizes course dependencies and selection states for clear feedback.
+ * Graph animation manager using GSAP.
+ * Visualizes course dependencies and selection states.
  */
 import gsap from 'gsap';
 
@@ -12,7 +12,7 @@ const GLOW_OTHER = 'drop-shadow(0 0 8px #fb923c)';
 
 /* 2. Global Reset Logic */
 /**
- * Resets the graph to its default visual state.
+ * Resets graph to default visual state.
  * Prevents animation artifacts when switching selections.
  */
 export function clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdges, setNodeGlow, getNodeTextElements }) {
@@ -78,8 +78,8 @@ export function clearAllNodeHighlights(svgElement, { getGraphNodes, getGraphEdge
 
 /* 3. Selection Orchestration */
 /**
- * Animates the prerequisite hierarchy for a selected course.
- * Uses staggered delays to show the directional flow of dependencies.
+ * Animates prerequisite hierarchy for a selected course.
+ * Staggered delays show directional flow of dependencies.
  */
 export function animateNodeSelection(selectedCourseCode, context) {
     const { svgElement, activeSelectionTimeline } = context;
@@ -91,8 +91,9 @@ export function animateNodeSelection(selectedCourseCode, context) {
         activeSelectionTimeline.kill();
     }
 
-    const { visitedNodes, visitedEdges } = context.collectPrerequisiteChain(selectedCourseCode);
-    const nodeDistanceMap = context.buildPrerequisiteDistanceMap(selectedCourseCode);
+    const prereqMaxDepth = context.prereqMaxDepth ?? Infinity;
+    const { visitedNodes, visitedEdges } = context.collectPrerequisiteChain(selectedCourseCode, prereqMaxDepth);
+    const nodeDistanceMap = context.buildPrerequisiteDistanceMap(selectedCourseCode, prereqMaxDepth);
     const edgeDistanceMap = context.buildPrerequisiteEdgeDistanceMap(selectedCourseCode, visitedEdges);
 
     const timeline = gsap.timeline();
@@ -118,10 +119,7 @@ export function animateNodeSelection(selectedCourseCode, context) {
 }
 
 /* 4. SVG Marker Utilities */
-/**
- * Ensures SVG markers exist for edge arrowheads.
- * Keeps marker setup isolated from animation logic.
- */
+/** Ensures SVG markers exist for edge arrowheads — isolated from animation logic */
 function ensureArrowheadMarkerExists(svgElement) {
     if (svgElement.querySelector('#arrowhead')) return;
 
@@ -147,10 +145,7 @@ function ensureArrowheadMarkerExists(svgElement) {
 }
 
 /* 5. Node State Management */
-/**
- * Transforms nodes based on their role in the current selection.
- * Distinguishes between active chain members and background nodes.
- */
+/** Transforms nodes based on role in current selection — distinguishes chain members from background */
 function animateNodesInChain(nodes, timeline, context) {
     const { 
         visitedNodes, 
@@ -177,10 +172,7 @@ function animateNodesInChain(nodes, timeline, context) {
     });
 }
 
-/**
- * Dims nodes outside the active prerequisite chain.
- * Reduces visual noise to focus on the selected path.
- */
+/** Dims nodes outside active prerequisite chain — reduces visual noise */
 function applyBackgroundNodeState(nodeElement, shape, textElements, timeline, setNodeGlow) {
     nodeElement.classList.remove('node-selected');
     setNodeGlow(shape, 'none');
@@ -205,10 +197,7 @@ function applyBackgroundNodeState(nodeElement, shape, textElements, timeline, se
     }
 }
 
-/**
- * Highlights nodes within the active chain.
- * Staggers animations based on distance to simulate dependency flow.
- */
+/** Highlights nodes in active chain — staggers based on distance to simulate dependency flow */
 function applyActiveNodeState(nodeElement, shape, textElements, timeline, distance, setNodeGlow) {
     const arrivalDelay = distance <= 0 ? 0 : distance * TRAIL_STEP_SECONDS;
     const config = getActiveNodeVisualConfig(distance);
@@ -249,9 +238,7 @@ function applyActiveNodeState(nodeElement, shape, textElements, timeline, distan
     }
 }
 
-/**
- * Returns specific visual tokens based on the node's proximity to the selection.
- */
+/** Returns visual tokens based on node proximity to selection */
 function getActiveNodeVisualConfig(distance) {
     if (distance === 0) {
         return { glow: GLOW_SELECTED, scale: 1.05, stroke: '#86efac', strokeWidth: 3 };
@@ -263,9 +250,7 @@ function getActiveNodeVisualConfig(distance) {
 }
 
 /* 6. Edge State Management */
-/**
- * Animates edges to illustrate the direction of dependency.
- */
+/** Animates edges to illustrate dependency direction */
 function animateEdgesInChain(edges, timeline, context) {
     const { visitedEdges, edgeDistanceMap, resolveEdgeKey, nodeCenterLookup } = context;
 
@@ -296,9 +281,7 @@ function animateEdgesInChain(edges, timeline, context) {
     });
 }
 
-/**
- * Resets edges that are not part of the active path to a neutral state.
- */
+/** Resets edges not in the active path to neutral state */
 function applyBackgroundEdgeState(path, timeline) {
     path.style.filter = 'none';
     path.style.pointerEvents = 'none';

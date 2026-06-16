@@ -8,8 +8,8 @@
 
 /**
  * Dagre layout engine wrapper.
- * Converts the adjacency graph + title map into a dagre Graph with
- * computed x/y positions for every node and edge bend point set.
+ * Converts adjacency graph + title map into a dagre Graph with x/y positions
+ * and edge bend points.
  */
 import dagre from '@dagrejs/dagre';
 import { getAdjacencyGraph, getCourseTitleMap } from '../core/graph-data.js';
@@ -18,12 +18,9 @@ const CHAR_WIDTH_PX = 7.2;
 const NODE_HEIGHT = 54;
 const NODE_MIN_WIDTH = 140;
 const NODE_PADDING_X = 28;
-const TITLE_MAX_CHARS = 26;
+const TITLE_MAX_CHARS = 40;
 
-/**
- * Estimates node width from its label content.
- * Dagre needs static dimensions before running layout.
- */
+/** Estimates node width from label content — dagre needs dimensions before layout */
 function measureNodeWidth(courseCode, title) {
     const truncatedTitle = title.length > TITLE_MAX_CHARS
         ? `${title.slice(0, TITLE_MAX_CHARS)}…`
