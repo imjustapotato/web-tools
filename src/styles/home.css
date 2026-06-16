@@ -102,184 +102,6 @@
     animation: none;
 }
 
-/* --- Homepage specific semantic overrides --- */
-.txt-link {
-    color: var(--txt-link);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-.txt-link:hover {
-    color: var(--txt-emphasis);
-    opacity: 0.85;
-}
-
-/* --- Global Button System (Liquid Ass) its unforgettable apple, it keeps reminding me of that --- */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.75rem;
-    padding: 0.85rem 1.85rem;
-    border-radius: 99px;
-    font-weight: 700;
-    font-size: 0.95rem;
-    text-decoration: none;
-    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-    cursor: pointer;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: #040712;
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
-}
-
-.btn-icon svg,
-.btn-icon .iconify {
-    width: 22px;
-    height: 22px;
-}
-
-.btn::after {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        120deg,
-        transparent 30%,
-        rgba(255, 255, 255, 0.45) 48%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.45) 52%,
-        transparent 70%
-    );
-    transform: translateX(-100%) skewX(-15deg);
-    transition: transform 0.6s ease;
-    z-index: 1;
-    pointer-events: none;
-}
-
-.btn:hover::after {
-    transform: translateX(100%) skewX(-15deg);
-}
-
-/* --- Tool-Specific Launch Button Backgrounds (Dynamic Island Colors) --- */
-
-/* Schedule Plotter Launch Button */
-.hub-preview.theme-schedule-plotter .btn {
-    background: linear-gradient(135deg, #a7f3d0, #52e3ac);
-    color: #040712;
-    box-shadow: 
-        0 8px 24px rgba(82, 227, 172, 0.22),
-        inset 0 1px 1px rgba(255, 255, 255, 0.45);
-    border-color: rgba(82, 227, 172, 0.35);
-}
-
-.hub-preview.theme-schedule-plotter .btn:hover {
-    box-shadow: 
-        0 20px 40px rgba(82, 227, 172, 0.45),
-        inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    background: linear-gradient(135deg, #c6f6d5, #6eedb9);
-    transform: translateY(-4px) scale(1.02);
-}
-
-/* Pre-requisite Mapping Launch Button */
-.hub-preview.theme-portal-parser .btn {
-    background: linear-gradient(135deg, #cffafe, #50d7ff);
-    color: #040712;
-    box-shadow: 
-        0 8px 24px rgba(80, 215, 255, 0.22),
-        inset 0 1px 1px rgba(255, 255, 255, 0.45);
-    border-color: rgba(80, 215, 255, 0.35);
-}
-
-.hub-preview.theme-portal-parser .btn:hover {
-    box-shadow: 
-        0 20px 40px rgba(80, 215, 255, 0.45),
-        inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    background: linear-gradient(135deg, #e0f2fe, #62e2ff);
-    transform: translateY(-4px) scale(1.02);
-}
-
-/* Active-Page Utility Launch Button */
-.hub-preview.theme-active-page-utility .btn {
-    background: linear-gradient(135deg, #fef3c7, #fbbf24);
-    color: #040712;
-    box-shadow: 
-        0 8px 24px rgba(251, 191, 36, 0.22),
-        inset 0 1px 1px rgba(255, 255, 255, 0.45);
-    border-color: rgba(251, 191, 36, 0.35);
-}
-
-.hub-preview.theme-active-page-utility .btn:hover {
-    box-shadow: 
-        0 20px 40px rgba(251, 191, 36, 0.45),
-        inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    background: linear-gradient(135deg, #fffbeb, #fcd34d);
-    transform: translateY(-4px) scale(1.02);
-}
-
-/* Web Tools Companion Launch Button */
-.hub-preview.theme-companion-page .btn {
-    background: linear-gradient(135deg, #ddd6fe, #b39bff);
-    color: #040712;
-    box-shadow: 
-        0 8px 24px rgba(179, 155, 255, 0.22),
-        inset 0 1px 1px rgba(255, 255, 255, 0.45);
-    border-color: rgba(179, 155, 255, 0.35);
-}
-
-.hub-preview.theme-companion-page .btn:hover {
-    box-shadow: 
-        0 20px 40px rgba(179, 155, 255, 0.45),
-        inset 0 1px 2px rgba(255, 255, 255, 0.6);
-    background: linear-gradient(135deg, #ede9fe, #c4b5fd);
-    transform: translateY(-4px) scale(1.02);
-}
-
-.btn-chrome {
-    background: linear-gradient(135deg, rgba(103, 232, 249, 0.85), rgba(134, 239, 172, 0.85));
-    box-shadow: 
-        0 8px 24px rgba(103, 232, 249, 0.25),
-        inset 0 1px 2px rgba(255, 255, 255, 0.5),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.btn-chrome:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 
-        0 20px 40px rgba(103, 232, 249, 0.45),
-        inset 0 1px 3px rgba(255, 255, 255, 0.7);
-    background: linear-gradient(135deg, rgba(103, 232, 249, 0.95), rgba(134, 239, 172, 0.95));
-}
-
-.btn-firefox {
-    background: linear-gradient(135deg, rgba(253, 186, 116, 0.85), rgba(244, 114, 182, 0.85));
-    box-shadow: 
-        0 8px 24px rgba(253, 186, 116, 0.25),
-        inset 0 1px 2px rgba(255, 255, 255, 0.5),
-        inset 0 -1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.btn-firefox:hover {
-    transform: translateY(-4px) scale(1.02);
-    box-shadow: 
-        0 20px 40px rgba(244, 114, 182, 0.45),
-        inset 0 1px 3px rgba(255, 255, 255, 0.7);
-    background: linear-gradient(135deg, rgba(253, 186, 116, 0.95), rgba(244, 114, 182, 0.95));
-}
-
-.btn-disabled {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--muted);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    cursor: not-allowed;
-    position: relative;
-    backdrop-filter: blur(10px);
-    pointer-events: none;
-}
-
 /* --- Homepage Specific Hero Card Animations --- */
 .home-shell .hero-card {
     /* Hidden until the stage settles, then fades up via compositor-only props */
@@ -316,6 +138,55 @@
 /* Homepage-specific Typography Overrides */
 .hero-intro h1 {
     font-size: clamp(3.2rem, 5vw, 5rem);
+}
+
+/* --- Tool-Specific Launch Button Backgrounds (Dynamic Island Colors) --- */
+.hub-preview.theme-schedule-plotter .btn {
+    background: linear-gradient(135deg, #a7f3d0, #52e3ac);
+    color: #040712;
+    box-shadow: 0 8px 24px rgba(82, 227, 172, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    border-color: rgba(82, 227, 172, 0.35);
+}
+.hub-preview.theme-schedule-plotter .btn:hover {
+    background: linear-gradient(135deg, #c6f6d5, #6eedb9);
+    box-shadow: 0 20px 40px rgba(82, 227, 172, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.hub-preview.theme-portal-parser .btn {
+    background: linear-gradient(135deg, #cffafe, #50d7ff);
+    color: #040712;
+    box-shadow: 0 8px 24px rgba(80, 215, 255, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    border-color: rgba(80, 215, 255, 0.35);
+}
+.hub-preview.theme-portal-parser .btn:hover {
+    background: linear-gradient(135deg, #e0f2fe, #62e2ff);
+    box-shadow: 0 20px 40px rgba(80, 215, 255, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.hub-preview.theme-active-page-utility .btn {
+    background: linear-gradient(135deg, #fef3c7, #fbbf24);
+    color: #040712;
+    box-shadow: 0 8px 24px rgba(251, 191, 36, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    border-color: rgba(251, 191, 36, 0.35);
+}
+.hub-preview.theme-active-page-utility .btn:hover {
+    background: linear-gradient(135deg, #fffbeb, #fcd34d);
+    box-shadow: 0 20px 40px rgba(251, 191, 36, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px) scale(1.02);
+}
+
+.hub-preview.theme-companion-page .btn {
+    background: linear-gradient(135deg, #ddd6fe, #b39bff);
+    color: #040712;
+    box-shadow: 0 8px 24px rgba(179, 155, 255, 0.22), inset 0 1px 1px rgba(255, 255, 255, 0.45);
+    border-color: rgba(179, 155, 255, 0.35);
+}
+.hub-preview.theme-companion-page .btn:hover {
+    background: linear-gradient(135deg, #ede9fe, #c4b5fd);
+    box-shadow: 0 20px 40px rgba(179, 155, 255, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+    transform: translateY(-4px) scale(1.02);
 }
 
 /* --- Hub Header --- */
