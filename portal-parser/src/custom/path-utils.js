@@ -68,3 +68,130 @@ export function buildStraightClippedEdge(sourceGeo, targetGeo) {
     const points = [exit, entry];
     return { points, d: buildSmoothPath(points) };
 }
+
+// Padding added to each obstacle corner so routed edges don't hug node borders
+const EDGE_OBSTACLE_MARGIN = 12;
+
+/**
+ * Slab (parametric) segment-AABB intersection test.
+ * Returns true if segment p1→p2 crosses the interior of rect.
+ * rect = { x, y, halfWidth, halfHeight } — center + half-extents.
+ */
+function segmentIntersectsRect(p1, p2, rect) {
+    const xMin = rect.x - rect.halfWidth;
+    const xMax = rect.x + rect.halfWidth;
+    const yMin = rect.y - rect.halfHeight;
+    const yMax = rect.y + rect.halfHeight;
+    const dx = p2.x - p1.x;
+    const dy = p2.y - p1.y;
+
+    let tMin = 0;
+    let tMax = 1;
+
+    const clipSlab = (dAxis, axisMin, axisMax, start) => {
+        if (Math.abs(dAxis) < 1e-9) return start >= axisMin && start <= axisMax;
+        const t1 = (axisMin - start) / dAxis;
+        const t2 = (axisMax - start) / dAxis;
+        tMin = Math.max(tMin, Math.min(t1, t2));
+        tMax = Math.min(tMax, Math.max(t1, t2));
+        return tMin <= tMax;
+    };
+
+    return clipSlab(dx, xMin, xMax, p1.x) && clipSlab(dy, yMin, yMax, p1.y);
+}
+
+/**
+ * Dijkstra on an explicit adjacency map.
+ * waypoints = [{x,y}], graph = Map<index, [{to, cost}]>
+ * Returns an ordered {x,y} array for the shortest path, or null if unreachable.
+ */
+function shortestPath(waypoints, graph, startIndex, endIndex) {
+    const count = waypoints.length;
+    const distances = new Array(count).fill(Infinity);
+    const previous = new Array(count).fill(-1);
+    const visited = new Set();
+    distances[startIndex] = 0;
+
+    for (let step = 0; step < count; step++) {
+        let current = -1;
+        for (let i = 0; i < count; i++) {
+            if (!visited.has(i) && distances[i] < (current === -1 ? Infinity : distances[current])) {
+                current = i;
+            }
+        }
+        if (current === -1 || distances[current] === Infinity || current === endIndex) break;
+        visited.add(current);
+
+        for (const { to, cost } of (graph.get(current) ?? [])) {
+            if (!visited.has(to)) {
+                const candidate = distances[current] + cost;
+                if (candidate < distances[to]) {
+                    distances[to] = candidate;
+                    previous[to] = current;
+                }
+            }
+        }
+    }
+
+    if (distances[endIndex] === Infinity) return null;
+
+    const path = [];
+    for (let node = endIndex; node !== -1; node = previous[node]) {
+        path.unshift(waypoints[node]);
+    }
+    return path;
+}
+
+/**
+ * Like buildStraightClippedEdge, but detours around obstacle rects that the
+ * straight path crosses. Uses visibility graph + Dijkstra to find the shortest
+ * non-occluding route through padded obstacle corners.
+ *
+ * Falls back to straight if no detour is found (should not occur in practice).
+ *
+ * @param {{ x, y, halfWidth, halfHeight }} sourceGeo
+ * @param {{ x, y, halfWidth, halfHeight }} targetGeo
+ * @param {Array<{ x, y, halfWidth, halfHeight }>} obstacleGeos — every node except source + target
+ * @returns {{ points: Array<{x,y}>, d: string }}
+ */
+export function buildObstacleAwarePath(sourceGeo, targetGeo, obstacleGeos) {
+    const exit = clipSegmentToRect(sourceGeo, targetGeo, sourceGeo.halfWidth, sourceGeo.halfHeight);
+    const entry = clipSegmentToRect(targetGeo, sourceGeo, targetGeo.halfWidth, targetGeo.halfHeight);
+
+    const blocked = obstacleGeos.filter((obstacle) => segmentIntersectsRect(exit, entry, obstacle));
+    if (blocked.length === 0) {
+        return { points: [exit, entry], d: buildSmoothPath([exit, entry]) };
+    }
+
+    // Padded corners of blocked obstacles become candidate waypoints
+    const corners = blocked.flatMap((obstacle) => {
+        const px = obstacle.halfWidth + EDGE_OBSTACLE_MARGIN;
+        const py = obstacle.halfHeight + EDGE_OBSTACLE_MARGIN;
+        return [
+            { x: obstacle.x - px, y: obstacle.y - py },
+            { x: obstacle.x + px, y: obstacle.y - py },
+            { x: obstacle.x - px, y: obstacle.y + py },
+            { x: obstacle.x + px, y: obstacle.y + py },
+        ];
+    });
+
+    const waypoints = [exit, ...corners, entry];
+    const lastIndex = waypoints.length - 1;
+
+    // Visibility graph: connect pairs whose segment avoids ALL obstacles
+    const graph = new Map(waypoints.map((_, i) => [i, []]));
+    for (let i = 0; i < waypoints.length; i++) {
+        for (let j = i + 1; j < waypoints.length; j++) {
+            if (!obstacleGeos.some((o) => segmentIntersectsRect(waypoints[i], waypoints[j], o))) {
+                const cost = Math.hypot(waypoints[j].x - waypoints[i].x, waypoints[j].y - waypoints[i].y);
+                graph.get(i).push({ to: j, cost });
+                graph.get(j).push({ to: i, cost });
+            }
+        }
+    }
+
+    const path = shortestPath(waypoints, graph, 0, lastIndex);
+    if (!path) return { points: [exit, entry], d: buildSmoothPath([exit, entry]) };
+
+    return { points: path, d: buildSmoothPath(path) };
+}

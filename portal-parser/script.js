@@ -38,7 +38,7 @@ import { buildDagreLayout } from './src/custom/dagre-layout.js';
 import { renderDagreLayout } from './src/custom/d3-renderer.js';
 import { animateCustomNodeSelection, clearCustomAnimations, stripInlineVisuals } from './src/custom/animation-controller.js';
 import { applyTrace, clearTrace, applyHoverPreview, clearHoverPreview } from './src/custom/trace-engine.js';
-import { buildStraightClippedEdge } from './src/custom/path-utils.js';
+import { buildObstacleAwarePath } from './src/custom/path-utils.js';
 
 initializeMermaid();
 
@@ -159,12 +159,19 @@ function switchEngine(engineName) {
 }
 
 function updateEngineToggleUI() {
-    engineLegacyBtn.classList.toggle('is-active', activeEngine === 'legacy');
-    engineCustomBtn.classList.toggle('is-active', activeEngine === 'custom');
-    engineLegacyBtn.setAttribute('aria-pressed', String(activeEngine === 'legacy'));
-    engineCustomBtn.setAttribute('aria-pressed', String(activeEngine === 'custom'));
+    const isLegacy = activeEngine === 'legacy';
+    const isCustom = activeEngine === 'custom';
+    // Keep the inline strip and the rail's duplicated engine toggle in sync
+    for (const legacyBtn of [engineLegacyBtn, engineLegacyBtnRail]) {
+        legacyBtn.classList.toggle('is-active', isLegacy);
+        legacyBtn.setAttribute('aria-pressed', String(isLegacy));
+    }
+    for (const customBtn of [engineCustomBtn, engineCustomBtnRail]) {
+        customBtn.classList.toggle('is-active', isCustom);
+        customBtn.setAttribute('aria-pressed', String(isCustom));
+    }
     // Layout controls only apply to the custom engine
-    layoutOptionsGroup.classList.toggle('is-hidden', activeEngine !== 'custom');
+    layoutOptionsGroup.classList.toggle('is-hidden', !isCustom);
 }
 
 function updateLayoutUI() {
@@ -173,6 +180,7 @@ function updateLayoutUI() {
     layoutDirLrBtn.setAttribute('aria-pressed', String(layoutDirection === 'LR'));
     layoutDirTbBtn.setAttribute('aria-pressed', String(layoutDirection === 'TB'));
     layoutSpacingSelect.value = layoutSpacing;
+    layoutSpacingSelect._syncGlassDropdown?.();
 
     // Mode buttons + control visibility: Custom hides the auto-layout controls and reveals Reset
     const isCustom = layoutMode === 'custom';
@@ -253,6 +261,7 @@ dropzone.addEventListener('drop', (e) => {
 });
 
 async function handleFile(file) {
+    currentCurriculumName = file.name.replace(/\.(mhtml?|html)$/i, '');
     const rawHtml = await extractHtmlFromFile(file);
     await parseAndRender(rawHtml);
 }
@@ -334,6 +343,7 @@ function hideCreditTooltip() {
 async function loadPresetCurriculum(preset, button) {
     button.classList.add('is-loading');
     button.disabled = true;
+    currentCurriculumName = preset.label;
 
     try {
         await dispatchToActiveEngine(preset.content.trim());
@@ -347,12 +357,22 @@ async function loadPresetCurriculum(preset, button) {
 }
 
 /* 8. Render Orchestration (Legacy Engine) */
-const container = document.getElementById('graph-container');
-const controls = document.getElementById('controls');
+const appShell       = document.querySelector('.app-shell');
+const container      = document.getElementById('graph-container');
+const controls       = document.getElementById('controls');
+const emptyStage     = document.getElementById('empty-stage');
+const previewCardTitle = document.getElementById('preview-card-title');
+const previewExpandBtn = document.getElementById('preview-expand-btn');
+
+let currentCurriculumName = '';
 
 async function renderMermaidCode(mermaidCode) {
     mermaidRawCode = mermaidCode;
-    controls.classList.remove('is-hidden');
+
+    const wasEmpty = appShell.dataset.appState === 'empty';
+    const beforeTop = wasEmpty ? emptyStage.getBoundingClientRect().top : 0;
+
+    setAppState('loaded');
     container.innerHTML = '<p class="status-message status-message--loading">Rendering Skill Tree...</p>';
     selectedNodeId = null;
     resetAdjacencyGraph();
@@ -363,6 +383,8 @@ async function renderMermaidCode(mermaidCode) {
         container.innerHTML = svg;
         resetZoom();
         buildAdjacencyGraph(container.querySelector('svg'), mermaidRawCode);
+        updatePreviewCardMeta();
+        if (wasEmpty) animateLoadedEntry(beforeTop);
         attachNodeClickListeners();
     } catch (err) {
         console.error('Mermaid error:', err);
@@ -373,7 +395,11 @@ async function renderMermaidCode(mermaidCode) {
 /* 9. Render Orchestration (Custom Engine) */
 async function renderWithCustomEngine(mermaidCode) {
     mermaidRawCode = mermaidCode;
-    controls.classList.remove('is-hidden');
+
+    const wasEmpty = appShell.dataset.appState === 'empty';
+    const beforeTop = wasEmpty ? emptyStage.getBoundingClientRect().top : 0;
+
+    setAppState('loaded');
     container.innerHTML = '<p class="status-message status-message--loading">Rendering Skill Tree...</p>';
     selectedNodeId = null;
     resetAdjacencyGraph();
@@ -394,6 +420,10 @@ async function renderWithCustomEngine(mermaidCode) {
     });
 
     if (layoutMode === 'custom') applyCustomPositions();
+
+    fitGraphToPreviewViewBox();
+    updatePreviewCardMeta();
+    if (wasEmpty) animateLoadedEntry(beforeTop);
 
     resetZoom();
     attachNodeClickListeners();
@@ -589,17 +619,22 @@ function toggleTrace(courseCode) {
 
 function enterTrace(courseCode) {
     const { visitedNodes, visitedEdges } = collectForwardDependentChain(courseCode, parseDepthSetting(traceDepthSetting));
-    // Terminal course — nothing unlocks from here. Skip the empty dimmed state.
-    if (visitedEdges.size === 0) return;
-
-    // Trace is declarative CSS; drop selection + strip inline GSAP paint so
-    // CSS trace colour isn't overridden by leftover inline stroke.
-    if (selectedNodeId) clearAllHighlights();
     const svgElement = container.querySelector('svg');
+
+    // If already selected, this is a trace toggle — clear existing trace first to reset the view before applying new one.
+    if (selectedNodeId) clearAllHighlights();
     clearHoverPreview(svgElement);
     stripInlineVisuals(svgElement);
-    applyTrace(svgElement, visitedNodes, visitedEdges);
+    clearTrace(svgElement);
 
+    // Terminal course — nothing unlocks from here. Leave the cleared (un-dimmed) view.
+    if (visitedEdges.size === 0) {
+        tracedNodeId = null;
+        lastTraceActionAt = Date.now();
+        return;
+    }
+
+    applyTrace(svgElement, visitedNodes, visitedEdges);
     tracedNodeId = courseCode;
     lastTraceActionAt = Date.now();
 }
@@ -612,6 +647,12 @@ function exitTrace() {
 
 /* Node Dragging (Custom Layout mode — desktop mouse only) */
 
+/** Parses `translate(x, y)` from a node group's transform attribute */
+function parseNodeTranslate(nodeElement) {
+    const match = /translate\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/.exec(nodeElement.getAttribute('transform') ?? '');
+    return match ? { x: parseFloat(match[1]), y: parseFloat(match[2]) } : { x: 0, y: 0 };
+}
+
 /** Reads center + half-extents from transform and data-w/data-h attributes */
 function getNodeGeometry(svgElement, courseCode) {
     const nodeElement = svgElement.querySelector(`[data-course-code="${courseCode}"]`);
@@ -623,31 +664,43 @@ function getNodeGeometry(svgElement, courseCode) {
     return { x: translate.x, y: translate.y, halfWidth: width / 2, halfHeight: height / 2 };
 }
 
-/** Parses `translate(x, y)` from a node group's transform attribute */
-function parseNodeTranslate(nodeElement) {
-    const match = /translate\(\s*(-?[\d.]+)\s*,\s*(-?[\d.]+)\s*\)/.exec(nodeElement.getAttribute('transform') ?? '');
-    return match ? { x: parseFloat(match[1]), y: parseFloat(match[2]) } : { x: 0, y: 0 };
+/** Builds a Map<courseCode, geo> for all nodes in one DOM pass — avoids repeated per-edge queries */
+function buildAllNodeGeoMap(svgElement) {
+    const geoMap = new Map();
+    getGraphNodes(svgElement).forEach((nodeElement) => {
+        const courseCode = nodeElement.getAttribute('data-course-code');
+        if (!courseCode) return;
+        const translate = parseNodeTranslate(nodeElement);
+        const width = parseFloat(nodeElement.getAttribute('data-w')) || 0;
+        const height = parseFloat(nodeElement.getAttribute('data-h')) || 0;
+        geoMap.set(courseCode, { x: translate.x, y: translate.y, halfWidth: width / 2, halfHeight: height / 2 });
+    });
+    return geoMap;
 }
 
-/** Redraws every edge touching a node as a straight line clipped to both borders */
+/** Redraws every edge touching a node using obstacle-aware routing */
 function rerouteEdgesForNode(svgElement, courseCode) {
-    const movedGeo = getNodeGeometry(svgElement, courseCode);
-    if (!movedGeo) return;
+    const allNodeGeos = buildAllNodeGeoMap(svgElement);
+    if (!allNodeGeos.has(courseCode)) return;
 
     getGraphEdges(svgElement).forEach((edgeElement) => {
         const sourceCode = edgeElement.getAttribute('data-source');
         const targetCode = edgeElement.getAttribute('data-target');
         if (sourceCode !== courseCode && targetCode !== courseCode) return;
 
-        const sourceGeo = sourceCode === courseCode ? movedGeo : getNodeGeometry(svgElement, sourceCode);
-        const targetGeo = targetCode === courseCode ? movedGeo : getNodeGeometry(svgElement, targetCode);
+        const sourceGeo = allNodeGeos.get(sourceCode);
+        const targetGeo = allNodeGeos.get(targetCode);
         if (!sourceGeo || !targetGeo) return;
 
-        const { points, d } = buildStraightClippedEdge(sourceGeo, targetGeo);
+        const obstacleGeos = [];
+        allNodeGeos.forEach((geo, code) => {
+            if (code !== sourceCode && code !== targetCode) obstacleGeos.push(geo);
+        });
+
+        const { points, d } = buildObstacleAwarePath(sourceGeo, targetGeo, obstacleGeos);
         const path = edgeElement.querySelector('path');
         if (!path) return;
         path.setAttribute('d', d);
-        // Keep data-points in sync so selection edge-draw reverses correctly
         path.setAttribute('data-points', JSON.stringify(points));
     });
 }
@@ -870,7 +923,7 @@ function resetZoom() {
 }
 
 wrapper.addEventListener('mousedown', (e) => {
-    if (mermaidRawCode === '') return;
+    if (mermaidRawCode === '' || !isFullView) return;
     e.preventDefault();
     startX = e.clientX - pointX;
     startY = e.clientY - pointY;
@@ -892,7 +945,7 @@ wrapper.addEventListener('mouseleave', () => {
 });
 
 wrapper.addEventListener('mousemove', (e) => {
-    if (!panning || mermaidRawCode === '') return;
+    if (!panning || mermaidRawCode === '' || !isFullView) return;
     e.preventDefault();
     pointX = e.clientX - startX;
     pointY = e.clientY - startY;
@@ -901,7 +954,7 @@ wrapper.addEventListener('mousemove', (e) => {
 });
 
 wrapper.addEventListener('wheel', (e) => {
-    if (mermaidRawCode === '') return;
+    if (mermaidRawCode === '' || !isFullView) return;
     e.preventDefault();
 
     const scaledX = (e.clientX - pointX) / scale;
@@ -939,7 +992,7 @@ let pinchStartDistance = 0;
 let pinchStartScale = 1;
 
 wrapper.addEventListener('touchstart', (e) => {
-    if (mermaidRawCode === '') return;
+    if (mermaidRawCode === '' || !isFullView) return;
 
     if (e.touches.length === 2) {
         pinchStartDistance = Math.hypot(
@@ -957,7 +1010,7 @@ wrapper.addEventListener('touchstart', (e) => {
 }, { passive: true });
 
 wrapper.addEventListener('touchmove', (e) => {
-    if (mermaidRawCode === '') return;
+    if (mermaidRawCode === '' || !isFullView) return;
     e.preventDefault();
 
     if (e.touches.length === 2) {
@@ -1016,8 +1069,61 @@ const traceDepthSelect = document.getElementById('trace-depth-select');
 const exportConfigBtn = document.getElementById('export-config-btn');
 const importConfigInput = document.getElementById('import-config-input');
 
+// Full-view dock: duplicated engine + config controls (share handlers with their inline twins)
+const controlDock = document.getElementById('control-dock');
+const dockCollapseBtn = document.getElementById('dock-collapse-btn');
+const dockRevealBtn = document.getElementById('dock-reveal-btn');
+const engineLegacyBtnRail = document.getElementById('engine-legacy-btn-rail');
+const engineCustomBtnRail = document.getElementById('engine-custom-btn-rail');
+const exportConfigBtnRail = document.getElementById('export-config-btn-rail');
+const importConfigInputRail = document.getElementById('import-config-input-rail');
+
 engineLegacyBtn.addEventListener('click', () => switchEngine('legacy'));
 engineCustomBtn.addEventListener('click', () => switchEngine('custom'));
+engineLegacyBtnRail.addEventListener('click', () => switchEngine('legacy'));
+engineCustomBtnRail.addEventListener('click', () => switchEngine('custom'));
+
+/* Dock collapse / reveal — GSAP morphs the bar toward the bottom-right corner pill and back,
+   matching the file's fluid liquid-glass vocabulary. State is driven by `.is-collapsed`. */
+function setDockCollapsed(collapsed) {
+    gsap.killTweensOf([controlDock, dockRevealBtn]);
+    dockCollapseBtn.setAttribute('aria-expanded', String(!collapsed));
+
+    if (collapsed) {
+        controlDock.classList.add('is-collapsed');
+        gsap.to(controlDock, {
+            opacity: 0, scale: 0.6, y: 24, x: 40,
+            duration: 0.32, ease: 'cubic-bezier(0.4, 0, 0.6, 1)',
+            onComplete: () => {
+                dockRevealBtn.classList.remove('is-hidden');
+                gsap.fromTo(dockRevealBtn,
+                    { opacity: 0, scale: 0.4 },
+                    { opacity: 1, scale: 1, duration: 0.32, ease: 'cubic-bezier(0.34, 1.56, 0.64, 1)' }
+                );
+            }
+        });
+        return;
+    }
+
+    gsap.to(dockRevealBtn, {
+        opacity: 0, scale: 0.4, duration: 0.18, ease: 'cubic-bezier(0.4, 0, 0.6, 1)',
+        onComplete: () => {
+            dockRevealBtn.classList.add('is-hidden');
+            controlDock.classList.remove('is-collapsed');
+            gsap.fromTo(controlDock,
+                { opacity: 0, scale: 0.6, y: 24, x: 40 },
+                {
+                    opacity: 1, scale: 1, y: 0, x: 0,
+                    duration: 0.42, ease: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    onComplete: () => gsap.set(controlDock, { clearProps: 'opacity,scale,y,x' })
+                }
+            );
+        }
+    });
+}
+
+dockCollapseBtn.addEventListener('click', () => setDockCollapsed(true));
+dockRevealBtn.addEventListener('click', () => setDockCollapsed(false));
 
 function applyLayoutOption(changedDirection, changedSpacing) {
     if (changedDirection) {
@@ -1046,6 +1152,8 @@ layoutResetBtn.addEventListener('click', resetCustomLayout);
 function updateDepthUI() {
     prereqDepthSelect.value = prereqDepthSetting;
     traceDepthSelect.value = traceDepthSetting;
+    prereqDepthSelect._syncGlassDropdown?.();
+    traceDepthSelect._syncGlassDropdown?.();
 }
 
 function applyDepthOption(type, value) {
@@ -1064,6 +1172,185 @@ function applyDepthOption(type, value) {
 
 prereqDepthSelect.addEventListener('change', () => applyDepthOption('prereq', prereqDepthSelect.value));
 traceDepthSelect.addEventListener('change', () => applyDepthOption('trace', traceDepthSelect.value));
+
+/* Custom glass dropdown — progressively enhances a native <select> into a liquid-glass
+   listbox that opens upward (the dock sits at the bottom). The native <select> stays in the
+   DOM, hidden, as the single source of truth, so the existing `change` handlers keep working
+   untouched. Full keyboard a11y (Arrow/Enter/Esc/Home/End) is re-implemented on the trigger. */
+function enhanceSelectAsGlassDropdown(selectElement) {
+    if (!selectElement) return;
+    const options = Array.from(selectElement.options).map((option) => ({ value: option.value, label: option.textContent }));
+    const baseId = selectElement.id || `glass-${Math.random().toString(36).slice(2)}`;
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'glass-select';
+    selectElement.parentNode.insertBefore(wrapper, selectElement);
+    wrapper.appendChild(selectElement);
+    selectElement.classList.add('glass-select__native');
+    selectElement.setAttribute('tabindex', '-1');
+    selectElement.setAttribute('aria-hidden', 'true');
+
+    const trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'glass-select__trigger';
+    trigger.setAttribute('role', 'combobox');
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    const nativeLabel = selectElement.getAttribute('aria-label');
+    if (nativeLabel) trigger.setAttribute('aria-label', nativeLabel);
+
+    const list = document.createElement('ul');
+    list.className = 'glass-select__list is-hidden';
+    list.setAttribute('role', 'listbox');
+    list.id = `${baseId}-listbox`;
+    trigger.setAttribute('aria-controls', list.id);
+
+    const optionElements = options.map((option, index) => {
+        const item = document.createElement('li');
+        item.className = 'glass-select__option';
+        item.setAttribute('role', 'option');
+        item.id = `${baseId}-opt-${index}`;
+        item.dataset.value = option.value;
+        item.textContent = option.label;
+        item.addEventListener('click', () => commitSelection(index));
+        list.appendChild(item);
+        return item;
+    });
+
+    wrapper.appendChild(trigger);
+    wrapper.appendChild(list);
+
+    let isOpen = false;
+    let activeIndex = Math.max(0, options.findIndex((option) => option.value === selectElement.value));
+
+    function indexOfValue() {
+        return Math.max(0, options.findIndex((option) => option.value === selectElement.value));
+    }
+
+    function syncTriggerLabel() {
+        const selected = options.find((option) => option.value === selectElement.value) || options[0];
+        trigger.textContent = selected ? selected.label : '';
+        optionElements.forEach((item, index) =>
+            item.setAttribute('aria-selected', String(options[index].value === selectElement.value)));
+    }
+
+    function setActive(index) {
+        activeIndex = (index + options.length) % options.length;
+        optionElements.forEach((item, i) => item.classList.toggle('is-active', i === activeIndex));
+        trigger.setAttribute('aria-activedescendant', optionElements[activeIndex].id);
+        optionElements[activeIndex].scrollIntoView({ block: 'nearest' });
+    }
+
+    function openList() {
+        if (isOpen) return;
+        isOpen = true;
+        list.classList.remove('is-hidden');
+        trigger.setAttribute('aria-expanded', 'true');
+        setActive(indexOfValue());
+        gsap.fromTo(list,
+            { opacity: 0, scale: 0.85, y: 6 },
+            { opacity: 1, scale: 1, y: 0, duration: 0.18, ease: 'cubic-bezier(0.25, 1, 0.3, 1)' }
+        );
+        document.addEventListener('pointerdown', onOutsidePointer, true);
+    }
+
+    function closeList(returnFocus) {
+        if (!isOpen) return;
+        isOpen = false;
+        trigger.setAttribute('aria-expanded', 'false');
+        trigger.removeAttribute('aria-activedescendant');
+        document.removeEventListener('pointerdown', onOutsidePointer, true);
+        gsap.killTweensOf(list);
+        gsap.to(list, {
+            opacity: 0, scale: 0.9, duration: 0.12, ease: 'cubic-bezier(0.4, 0, 0.6, 1)',
+            onComplete: () => { list.classList.add('is-hidden'); gsap.set(list, { clearProps: 'opacity,scale,y' }); }
+        });
+        if (returnFocus) trigger.focus();
+    }
+
+    function commitSelection(index) {
+        const option = options[index];
+        if (option && selectElement.value !== option.value) {
+            selectElement.value = option.value;
+            selectElement.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncTriggerLabel();
+        closeList(true);
+    }
+
+    function onOutsidePointer(event) {
+        if (!wrapper.contains(event.target)) closeList(false);
+    }
+
+    trigger.addEventListener('click', () => (isOpen ? closeList(true) : openList()));
+    trigger.addEventListener('keydown', (event) => {
+        switch (event.key) {
+            case 'ArrowDown':
+            case 'ArrowUp':
+                event.preventDefault();
+                if (!isOpen) { openList(); break; }
+                setActive(activeIndex + (event.key === 'ArrowDown' ? 1 : -1));
+                break;
+            case 'Enter':
+            case ' ':
+                event.preventDefault();
+                if (isOpen) commitSelection(activeIndex); else openList();
+                break;
+            case 'Escape':
+                if (isOpen) { event.preventDefault(); closeList(true); }
+                break;
+            case 'Home':
+                if (isOpen) { event.preventDefault(); setActive(0); }
+                break;
+            case 'End':
+                if (isOpen) { event.preventDefault(); setActive(options.length - 1); }
+                break;
+        }
+    });
+
+    // Lets updateLayoutUI / updateDepthUI refresh the visible label after a programmatic
+    // `select.value = …` (which doesn't fire `change`), keeping the custom UI in sync.
+    selectElement._syncGlassDropdown = syncTriggerLabel;
+    syncTriggerLabel();
+}
+
+[layoutSpacingSelect, prereqDepthSelect, traceDepthSelect].forEach(enhanceSelectAsGlassDropdown);
+
+/* Generic hover/focus tooltip for icon-only buttons — shares the credit-tooltip glass look,
+   positioned above the target (the dock buttons live at the bottom of the viewport). */
+const uiTooltip = document.createElement('div');
+uiTooltip.className = 'ui-tooltip';
+document.body.appendChild(uiTooltip);
+
+function showUiTooltip(label, targetElement) {
+    uiTooltip.textContent = label;
+    uiTooltip.classList.add('visible');
+    const rect = targetElement.getBoundingClientRect();
+    uiTooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+    uiTooltip.style.top = `${rect.top + window.scrollY - uiTooltip.offsetHeight - 8}px`;
+}
+
+function hideUiTooltip() {
+    uiTooltip.classList.remove('visible');
+}
+
+function attachTooltip(element, label) {
+    if (!element || !label) return;
+    element.addEventListener('mouseenter', () => showUiTooltip(label, element));
+    element.addEventListener('mouseleave', hideUiTooltip);
+    element.addEventListener('focus', () => showUiTooltip(label, element));
+    element.addEventListener('blur', hideUiTooltip);
+}
+
+// Icon-only buttons: surface their aria-label as a hover tooltip
+[
+    exportConfigBtn, exportConfigBtnRail,
+    document.querySelector('label[for="import-config-input"]'),
+    document.querySelector('label[for="import-config-input-rail"]'),
+    document.getElementById('zoom-out'),
+    document.getElementById('zoom-in'),
+    document.getElementById('zoom-reset')
+].forEach((element) => attachTooltip(element, element && element.getAttribute('aria-label')));
 
 /* Config Export / Import */
 function exportConfig() {
@@ -1105,16 +1392,22 @@ function importConfig(jsonText) {
     if (mermaidRawCode) dispatchToActiveEngine(mermaidRawCode);
 }
 
-exportConfigBtn.addEventListener('click', exportConfig);
-importConfigInput.addEventListener('change', (event) => {
-    const file = event.target.files[0];
+// Shared by the inline strip and the rail's duplicated config input
+function handleConfigFileChange(event) {
+    const inputElement = event.target;
+    const file = inputElement.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (loadEvent) => importConfig(loadEvent.target.result);
     reader.readAsText(file);
     // Reset so the same file can be re-imported
-    importConfigInput.value = '';
-});
+    inputElement.value = '';
+}
+
+exportConfigBtn.addEventListener('click', exportConfig);
+importConfigInput.addEventListener('change', handleConfigFileChange);
+exportConfigBtnRail.addEventListener('click', exportConfig);
+importConfigInputRail.addEventListener('change', handleConfigFileChange);
 
 let isFullView = false;
 
@@ -1142,26 +1435,36 @@ fullViewBtn.addEventListener('click', () => {
 
     isViewTransitioning = true;
     closeSummaryDock();
+    setAppState('full-view');
+    // Dock always opens expanded — reset state, hide the reveal pill, clear any stale transform
+    controlDock.classList.remove('is-collapsed');
+    dockRevealBtn.classList.add('is-hidden');
+    dockCollapseBtn.setAttribute('aria-expanded', 'true');
+    gsap.set(controlDock, { clearProps: 'opacity,scale,y,x' });
 
-    wrapper.classList.add('is-fullscreen');
-    document.body.classList.add('modal-open');
-    isFullView = true;
-
-    gsap.fromTo(wrapper, {
-        opacity: 0,
-        y: '100%',
-        scale: 0.95
-    }, {
-        opacity: 1,
-        y: 0,
-        scale: 1,
-        duration: 0.35,
-        ease: 'power3.out',
-        onComplete: () => {
-            gsap.set(wrapper, { clearProps: 'opacity,y,scale' });
-            isViewTransitioning = false;
+    // Fluid settle of the dock's controls, mirroring the preview card's entry language.
+    // clearProps on completion so no inline transform lingers (kept dropdowns from opening).
+    const dockGroups = controlDock.querySelectorAll('.dock-body > *');
+    gsap.fromTo(dockGroups,
+        { opacity: 0, y: 12 },
+        {
+            opacity: 1, y: 0, duration: 0.42, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', stagger: 0.05, delay: 0.12,
+            onComplete: () => gsap.set(dockGroups, { clearProps: 'opacity,y' })
         }
-    });
+    );
+
+    gsap.fromTo(wrapper,
+        { opacity: 0, scale: 0.96, y: 16 },
+        {
+            opacity: 1, scale: 1, y: 0,
+            duration: 0.52,
+            ease: 'cubic-bezier(0.25, 1, 0.3, 1)',
+            onComplete: () => {
+                gsap.set(wrapper, { clearProps: 'opacity,scale,y' });
+                isViewTransitioning = false;
+            }
+        }
+    );
 });
 
 function closeFullView() {
@@ -1171,22 +1474,89 @@ function closeFullView() {
     closeSummaryDock();
 
     gsap.to(wrapper, {
-        opacity: 0,
-        y: 18,
-        duration: 0.22,
-        ease: 'power2.inOut',
+        opacity: 0, scale: 0.97, y: 10,
+        duration: 0.32,
+        ease: 'cubic-bezier(0.4, 0, 0.6, 1)',
         onComplete: () => {
-            wrapper.classList.remove('is-fullscreen');
-            document.body.classList.remove('modal-open');
-            isFullView = false;
+            setAppState('loaded');
+            // Full-view pan writes a CSS transform to the shared container; clear it so the preview isn't displaced
+            resetZoom();
+            fitGraphToPreviewViewBox();
             isViewTransitioning = false;
-            gsap.set(wrapper, { clearProps: 'opacity,y' });
+            gsap.set(wrapper, { clearProps: 'opacity,scale,y' });
         }
     });
 }
 
+/* App state machine — drives data-app-state on the shell; CSS responds declaratively */
+function setAppState(state) {
+    appShell.dataset.appState = state;
+    isFullView = state === 'full-view';
+    document.body.classList.toggle('modal-open', state === 'full-view');
+}
+
+/* Fits the custom-engine SVG viewBox to the actual node bounds for the preview card.
+   Uses .nodes-layer.getBBox() so padding is tight around rendered content. */
+function fitGraphToPreviewViewBox() {
+    const svgElement = container.querySelector('svg');
+    if (!svgElement) return;
+    const nodesLayer = svgElement.querySelector('.nodes-layer');
+    if (!nodesLayer) return;
+    const bbox = nodesLayer.getBBox();
+    const padding = 40;
+    svgElement.setAttribute('viewBox',
+        `${bbox.x - padding} ${bbox.y - padding} ${bbox.width + padding * 2} ${bbox.height + padding * 2}`
+    );
+}
+
+/* Populates the preview card title bar with curriculum name and graph metrics. */
+function updatePreviewCardMeta() {
+    const svgElement = container.querySelector('svg');
+    const nodeCount = svgElement ? getGraphNodes(svgElement).length : 0;
+    const edgeCount = svgElement ? getGraphEdges(svgElement).length : 0;
+    const meta = `${currentCurriculumName} · ${nodeCount} nodes · ${edgeCount} edges`;
+    previewCardTitle.textContent = meta;
+    previewCardTitle.setAttribute('title', meta);
+}
+
+/* FLIP slide-up of the empty-stage cluster + preview card reveal.
+   beforeTop is the cluster's getBoundingClientRect().top captured before setAppState changed the layout. */
+function animateLoadedEntry(beforeTop) {
+    const afterTop = emptyStage.getBoundingClientRect().top;
+    const deltaY = beforeTop - afterTop;
+
+    gsap.fromTo(emptyStage,
+        { y: deltaY },
+        { y: 0, duration: 0.42, ease: 'cubic-bezier(0.25, 1, 0.3, 1)' }
+    );
+    gsap.fromTo(wrapper,
+        { opacity: 0, y: 20 },
+        { opacity: 1, y: 0, duration: 0.52, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', delay: 0.08 }
+    );
+}
+
+/* Reverse of animateLoadedEntry — settles the cluster back into its centered position after
+   the preview card has retreated. beforeTop is captured before setAppState moves the cluster
+   from its loaded (top) position to its centered (empty) position. */
+function animateResetEntry(beforeTop) {
+    const afterTop = emptyStage.getBoundingClientRect().top;
+    const deltaY = beforeTop - afterTop;
+
+    gsap.fromTo(emptyStage,
+        { y: deltaY },
+        { y: 0, duration: 0.42, ease: 'cubic-bezier(0.4, 0, 0.6, 1)' }
+    );
+}
+
 deselectBtnFull.addEventListener('click', clearAllHighlights);
 fullViewCloseBtn.addEventListener('click', closeFullView);
+previewExpandBtn.addEventListener('click', () => fullViewBtn.click());
+
+// Whole preview card opens full view; idempotent with the expand button (fullViewBtn guards re-entry)
+wrapper.addEventListener('click', () => {
+    if (appShell.dataset.appState !== 'loaded') return;
+    fullViewBtn.click();
+});
 
 resetBtn.addEventListener('click', () => {
     if (isViewTransitioning) {
@@ -1195,29 +1565,74 @@ resetBtn.addEventListener('click', () => {
     }
 
     closeSummaryDock();
-    wrapper.classList.remove('is-fullscreen');
-    document.body.classList.remove('modal-open');
-    isFullView = false;
 
-    container.innerHTML = '<p id="status-text" class="status-text">Waiting for MHTML or HTML file...</p>';
-    controls.classList.add('is-hidden');
-    mermaidRawCode = '';
-    panning = false;
-    didPan = false;
-    selectedNodeId = null;
-    tracedNodeId = null;
-    draggingNode = null;
-    didDragNode = false;
-    dragStart = null;
-    cancelLongPress();
-    resetGraphState();
-    wrapper.classList.remove('is-panning');
-    gsap.set(wrapper, { clearProps: 'transform' });
-    resetZoom();
+    // Preview card retreats first (mirrors closeFullView's exit language), then the
+    // header/dropzone/preset cluster settles back into its centered empty-state position.
+    gsap.to(wrapper, {
+        opacity: 0, scale: 0.97, y: 10,
+        duration: 0.32,
+        ease: 'cubic-bezier(0.4, 0, 0.6, 1)',
+        onComplete: () => {
+            const beforeTop = emptyStage.getBoundingClientRect().top;
+            setAppState('empty');
+            animateResetEntry(beforeTop);
+
+            currentCurriculumName = '';
+            previewCardTitle.textContent = '';
+            container.innerHTML = '<p id="status-text" class="status-text">Waiting for MHTML or HTML file...</p>';
+            mermaidRawCode = '';
+            panning = false;
+            didPan = false;
+            selectedNodeId = null;
+            tracedNodeId = null;
+            draggingNode = null;
+            didDragNode = false;
+            dragStart = null;
+            cancelLongPress();
+            resetGraphState();
+            wrapper.classList.remove('is-panning');
+            gsap.set(wrapper, { clearProps: 'opacity,scale,y,transform' });
+            resetZoom();
+        }
+    });
 });
 
 /* Keyboard navigation hint helpers */
+
+/**
+ * Anchors the hint beside the selected node, on the side OPPOSITE the nav direction
+ * (so it never covers the candidate nodes it's letting you choose between), vertically
+ * centered on the node, clamped within #graph-wrapper bounds with a margin.
+ * Must be called after the hint's content is populated and `is-hidden` removed, since
+ * a display:none element measures as zero-size.
+ */
+function anchorKeyNavHint(direction) {
+    const svgElement = container.querySelector('svg');
+    const nodeElement = svgElement?.querySelector(`[data-course-code="${selectedNodeId}"]`);
+    if (!nodeElement) return null;
+
+    const nodeRect = nodeElement.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const hintRect = keyNavHint.getBoundingClientRect();
+
+    const margin = 16;
+    const gap = 12;
+
+    const anchorRight = direction === 'left'; // ArrowLeft (prerequisites) → hint goes right of node
+    let left = anchorRight
+        ? (nodeRect.right - wrapperRect.left) + gap
+        : (nodeRect.left - wrapperRect.left) - hintRect.width - gap;
+    let top = (nodeRect.top - wrapperRect.top) + (nodeRect.height / 2) - (hintRect.height / 2);
+
+    left = Math.min(Math.max(left, margin), wrapperRect.width - hintRect.width - margin);
+    top = Math.min(Math.max(top, margin), wrapperRect.height - hintRect.height - margin);
+
+    return { left, top, transformOrigin: anchorRight ? 'left center' : 'right center' };
+}
+
 function showKeyNavHint(choices, directionLabel, direction) {
+    const wasHidden = keyNavHint.classList.contains('is-hidden');
+
     keyNavChoices = choices;
     keyNavDirection = direction;
     keyNavHint.querySelector('.key-nav-hint__direction').textContent = directionLabel;
@@ -1233,13 +1648,54 @@ function showKeyNavHint(choices, directionLabel, direction) {
         list.appendChild(item);
     });
 
-    keyNavHint.classList.remove('is-hidden');
+    gsap.killTweensOf(keyNavHint);
+    const items = list.querySelectorAll('.key-nav-hint__item');
+
+    if (wasHidden) {
+        keyNavHint.classList.remove('is-hidden');
+        const anchor = anchorKeyNavHint(direction);
+        if (!anchor) { keyNavHint.classList.add('is-hidden'); return; }
+
+        gsap.set(keyNavHint, { left: anchor.left, top: anchor.top, transformOrigin: anchor.transformOrigin, opacity: 0, scale: 0.05, borderRadius: '50%' });
+        // Water-droplet spawn — two-stage morph (overshoot to 60% scale, settle to full size)
+        gsap.timeline()
+            .to(keyNavHint, { opacity: 1, scale: 0.6, y: -4, borderRadius: '38%', duration: 0.24, ease: 'cubic-bezier(0.34, 1.56, 0.64, 1)' })
+            .to(keyNavHint, { scale: 1, y: 0, borderRadius: '28px', duration: 0.36, ease: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
+        gsap.fromTo(items,
+            { opacity: 0, y: 8 },
+            { opacity: 1, y: 0, duration: 0.32, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', stagger: 0.05, delay: 0.18 }
+        );
+    } else {
+        const anchor = anchorKeyNavHint(direction);
+        if (!anchor) return;
+        gsap.to(keyNavHint, {
+            left: anchor.left, top: anchor.top, transformOrigin: anchor.transformOrigin,
+            duration: 0.18,
+            ease: 'cubic-bezier(0.25, 1, 0.3, 1)'
+        });
+        gsap.fromTo(items,
+            { opacity: 0, y: 6 },
+            { opacity: 1, y: 0, duration: 0.28, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', stagger: 0.04 }
+        );
+    }
 }
 
 function hideKeyNavHint() {
+    if (!keyNavChoices && keyNavHint.classList.contains('is-hidden')) return;
+
     keyNavChoices = null;
     keyNavDirection = null;
-    keyNavHint?.classList.add('is-hidden');
+
+    gsap.killTweensOf(keyNavHint);
+    // Water-droplet collapse — shrinks back toward the node it spawned from
+    gsap.timeline({
+        onComplete: () => {
+            keyNavHint.classList.add('is-hidden');
+            gsap.set(keyNavHint, { clearProps: 'opacity,scale,borderRadius,left,top,transformOrigin,y' });
+        }
+    })
+        .to(keyNavHint, { scale: 0.4, borderRadius: '50%', duration: 0.192, ease: 'cubic-bezier(0.4, 0, 0.6, 1)' })
+        .to(keyNavHint, { opacity: 0, scale: 0.05, duration: 0.128, ease: 'cubic-bezier(0.4, 0, 0.6, 1)' });
 }
 
 function navigateToChoice(choiceIndex) {
