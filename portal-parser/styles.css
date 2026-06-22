@@ -458,7 +458,7 @@ body {
     transform: translateX(-50%);
     transform-origin: bottom right; /* collapse animation shrinks toward the corner pill */
     z-index: 4;
-    max-width: min(70rem, 94vw);
+    max-width: min(96rem, 96vw);
     padding: 0.7rem 1rem;
     gap: 0.85rem;
     overflow: visible; /* upward dropdowns + hover tooltips must not be clipped */
@@ -477,14 +477,24 @@ body {
 
 .dock-body {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.6rem;
     /* overflow stays visible — an overflow-x scroll box would clip the upward-opening
        dropdowns and hover tooltips (the browser forces overflow-y to match). */
     overflow: visible;
-    flex-wrap: wrap;
+}
+
+/* Two fixed rows (primary: Engine/Layout/Viewport, secondary: Depth/Config) instead of
+   relying on the browser's flex auto-wrap — that wrapped unpredictably between 2-3 rows
+   depending on the exact viewport width. nowrap makes each row's single-line width
+   deterministic; the mobile breakpoint switches to column stacking instead of wrapping. */
+.dock-row {
+    display: flex;
+    align-items: center;
     justify-content: center;
+    gap: 0.85rem;
+    flex-wrap: nowrap;
 }
 
 .dock-collapse,
@@ -536,7 +546,7 @@ body {
     flex-wrap: nowrap;
 }
 
-.control-dock .dock-body > * + * {
+.control-dock .dock-row > * + * {
     padding-left: 0.85rem;
     border-left: 1px solid var(--glass-border);
 }
@@ -817,32 +827,46 @@ body.page-leaving {
         max-height: calc(100% - 3.7rem);
     }
 
-    /* Rail becomes a bottom sheet on narrow screens; collapse slides it down to a tab */
-    [data-app-state="full-view"] .control-rail {
-        top: auto;
+    /* Control dock becomes a full-width bottom sheet on narrow screens; collapse/reveal
+       (script.js setDockCollapsed) is unchanged — only the expanded-state layout differs. */
+    [data-app-state="full-view"] .control-dock {
         left: 0;
         right: 0;
         bottom: 0;
+        transform: none;
         width: 100%;
+        max-width: 100%;
         max-height: 55vh;
-        padding: 2.5rem 1rem 1rem;
+        overflow-y: auto;
+        padding: 1rem;
         border-left: 0;
-        border-top: 1px solid var(--glass-border);
+        border-right: 0;
+        border-bottom: 0;
+        border-radius: var(--tool-card-radius, 28px) var(--tool-card-radius, 28px) 0 0;
         box-shadow: 0 -12px 30px rgba(2, 6, 23, 0.4);
     }
 
-    .control-rail.is-collapsed {
-        transform: translateY(calc(100% - 2.5rem));
+    /* Even Row 1 (Engine/Layout/Viewport) needs to stack vertically at this width */
+    .control-dock .dock-row {
+        flex-direction: column;
+        align-items: stretch;
     }
 
-    .control-rail .rail-toggle {
-        top: 0.5rem;
-        left: 50%;
-        transform: translateX(-50%) rotate(90deg);
+    .control-dock .dock-row > * + * {
+        padding-left: 0;
+        border-left: 0;
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--glass-border);
     }
 
-    .control-rail.is-collapsed .rail-toggle {
-        transform: translateX(-50%) rotate(-90deg);
+    /* Matches the desktop nowrap rule's specificity (styles.css ~538-546) so groups with
+       many buttons (e.g. Layout) wrap their own buttons instead of overflowing the sheet. */
+    .control-dock .engine-selector,
+    .control-dock .layout-options,
+    .control-dock .chain-depth-options,
+    .control-dock .config-actions,
+    .control-dock .viewport-tools {
+        flex-wrap: wrap;
     }
 
     .graph-wrapper {
@@ -979,6 +1003,137 @@ body.page-leaving {
         animation: none;
         stroke-dasharray: none;
     }
+}
+
+/**
+ * Subject state — companion-fed completion status (passed/active/pending/failed).
+ * Stroke-only, like trace, so it composes with the opacity-driven dimming/selection layers.
+ */
+.custom-engine-svg .node.node--passed rect {
+    stroke: #86efac;
+    stroke-width: 2.4;
+}
+
+.custom-engine-svg .node.node--active rect {
+    stroke: #60a5fa;
+    stroke-width: 2.4;
+}
+
+.custom-engine-svg .node.node--pending rect {
+    stroke: #fbbf24;
+    stroke-width: 2.4;
+}
+
+.custom-engine-svg .node.node--failed rect {
+    stroke: #f87171;
+    stroke-width: 2.4;
+}
+
+/**
+ * Node badges — corner overlays on top of the node box.
+ * Subject-state badges (top-right): colored circle + plain-SVG icon glyph, matching
+ * the node--passed/active/pending/failed palette above. Year/Term badges (top-left):
+ * neutral text pill, deliberately uncolored so it's never confused with subject state.
+ */
+.custom-engine-svg .node-badge circle {
+    stroke: #0f172a;
+    stroke-width: 1.5;
+}
+
+.custom-engine-svg .node-badge--passed circle {
+    fill: #86efac;
+}
+
+.custom-engine-svg .node-badge--active circle {
+    fill: #60a5fa;
+}
+
+.custom-engine-svg .node-badge--pending circle {
+    fill: #fbbf24;
+}
+
+.custom-engine-svg .node-badge--failed circle {
+    fill: #f87171;
+}
+
+.custom-engine-svg .node-badge--year-term rect {
+    fill: #0f172a;
+    stroke: #475569;
+    stroke-width: 1;
+}
+
+.custom-engine-svg .node-badge--year-term text {
+    fill: #e2e8f0;
+    font-size: 9px;
+    font-weight: 600;
+    font-family: Inter, sans-serif;
+}
+
+/**
+ * Year/Term grid header labels ("Year 1", "Term 1") — pan/zoom with the graph since
+ * they're plain SVG text in the same coordinate space, not a fixed overlay.
+ */
+.custom-engine-svg .grid-header-label {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+/**
+ * Subject state legend (bottom-left, full view only). Hidden until a subject-state sync
+ * has actually happened — toggled in script.js alongside the cached state-map re-apply.
+ * Icon shapes mirror subject-state-engine.js's badge primitives for visual consistency.
+ */
+.subject-state-legend {
+    display: none;
+    position: absolute;
+    bottom: 1.25rem;
+    left: 0.8rem;
+    z-index: 4;
+    flex-direction: column;
+    gap: 0.45rem;
+    padding: 0.65rem 0.85rem;
+    background: var(--glass-surface);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+    -webkit-backdrop-filter: var(--glass-blur-mid);
+    backdrop-filter: var(--glass-blur-mid);
+    box-shadow: 0 10px 26px rgba(2, 6, 23, 0.45);
+    font-size: 0.78rem;
+    color: var(--text-main);
+}
+
+[data-app-state="full-view"] .subject-state-legend:not(.is-hidden) {
+    display: flex;
+}
+
+.legend-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-icon circle {
+    stroke: #0f172a;
+    stroke-width: 1.5;
+}
+
+.legend-icon--passed circle { fill: #86efac; }
+.legend-icon--active circle { fill: #60a5fa; }
+.legend-icon--pending circle { fill: #fbbf24; }
+.legend-icon--failed circle { fill: #f87171; }
+
+.legend-icon polyline,
+.legend-icon line {
+    fill: none;
+    stroke: #0f172a;
+    stroke-width: 1.6;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.legend-icon path {
+    fill: #0f172a;
+    stroke: none;
 }
 
 /**

@@ -17,8 +17,11 @@ import {
     resetGraphState,
     setCourseTitleMap,
     getCourseTitleMap,
+    setCourseYearTermMap,
+    getCourseYearTermMap,
     getAdjacencyGraph,
     extractCourseTitleMapFromMermaid,
+    extractYearTermMapFromMermaidComments,
     getCourseDisplayLabel,
     getGraphNodes,
     getGraphEdges,
@@ -35,9 +38,12 @@ import {
 import { extractHtmlFromFile, parseCurriculumHtml } from './src/core/file-parser.js';
 import { initializeMermaid, buildMermaidCode, renderMermaidSvg } from './src/legacy/mermaid-engine.js';
 import { buildDagreLayout } from './src/custom/dagre-layout.js';
+import { buildYearTermLayout } from './src/custom/year-term-layout.js';
 import { renderDagreLayout } from './src/custom/d3-renderer.js';
 import { animateCustomNodeSelection, clearCustomAnimations, stripInlineVisuals } from './src/custom/animation-controller.js';
 import { applyTrace, clearTrace, applyHoverPreview, clearHoverPreview } from './src/custom/trace-engine.js';
+import { applySubjectState } from './src/custom/subject-state-engine.js';
+import { applyYearTermBadges, clearYearTermBadges } from './src/custom/year-term-badge.js';
 import { buildObstacleAwarePath } from './src/custom/path-utils.js';
 
 initializeMermaid();
@@ -77,9 +83,9 @@ const SPACING_PRESETS = {
     spread:  { ranksep: 180, nodesep: 90 }
 };
 
-/* 3b-i. Layout Mode — Default (dagre-locked) vs Custom (draggable, persisted snapshot) */
+/* 3b-i. Layout Mode — Default (dagre-locked) vs Custom (draggable, persisted snapshot) vs Year/Term (fixed grid) */
 const LAYOUT_MODE_STORAGE_KEY = 'portal_parser_layout_mode';
-let layoutMode = localStorage.getItem(LAYOUT_MODE_STORAGE_KEY) || 'default'; // 'default' | 'custom'
+let layoutMode = localStorage.getItem(LAYOUT_MODE_STORAGE_KEY) || 'default'; // 'default' | 'custom' | 'year-term'
 
 // Positions from the most recent dagre run — the baseline a custom snapshot freezes against
 let lastDagreBaseline = new Map();
@@ -134,12 +140,12 @@ function parseDepthSetting(setting) {
 
 /* 4. Engine Routing */
 /* Route to active engine */
-async function dispatchToActiveEngine(mermaidCode) {
+async function dispatchToActiveEngine(mermaidCode, options) {
     if (activeEngine === 'custom') {
-        await renderWithCustomEngine(mermaidCode);
+        await renderWithCustomEngine(mermaidCode, options);
         return;
     }
-    await renderMermaidCode(mermaidCode);
+    await renderMermaidCode(mermaidCode, options);
 }
 
 function switchEngine(engineName) {
@@ -155,6 +161,7 @@ function switchEngine(engineName) {
     activeEngine = engineName;
     localStorage.setItem(ENGINE_STORAGE_KEY, engineName);
     updateEngineToggleUI();
+    updateSubjectStateLegendVisibility();
     if (mermaidRawCode) dispatchToActiveEngine(mermaidRawCode);
 }
 
@@ -182,14 +189,26 @@ function updateLayoutUI() {
     layoutSpacingSelect.value = layoutSpacing;
     layoutSpacingSelect._syncGlassDropdown?.();
 
-    // Mode buttons + control visibility: Custom hides the auto-layout controls and reveals Reset
+    // Mode buttons + control visibility: Custom hides the auto-layout controls and reveals Reset;
+    // Year/Term needs neither (it's a fixed grid, not a dagre-direction/spacing concern)
     const isCustom = layoutMode === 'custom';
-    layoutModeDefaultBtn.classList.toggle('is-active', !isCustom);
+    const isYearTerm = layoutMode === 'year-term';
+    layoutModeDefaultBtn.classList.toggle('is-active', !isCustom && !isYearTerm);
     layoutModeCustomBtn.classList.toggle('is-active', isCustom);
-    layoutModeDefaultBtn.setAttribute('aria-pressed', String(!isCustom));
+    layoutModeYearTermBtn.classList.toggle('is-active', isYearTerm);
+    layoutModeDefaultBtn.setAttribute('aria-pressed', String(!isCustom && !isYearTerm));
     layoutModeCustomBtn.setAttribute('aria-pressed', String(isCustom));
-    layoutAutoControls.classList.toggle('is-hidden', isCustom);
+    layoutModeYearTermBtn.setAttribute('aria-pressed', String(isYearTerm));
+    layoutAutoControls.classList.toggle('is-hidden', isCustom || isYearTerm);
     layoutResetBtn.classList.toggle('is-hidden', !isCustom);
+
+    // Year/Term mode requires year/term data — unavailable only for legacy mermaid imports
+    // with no source year/term info (uploaded HTML and presets both supply it)
+    const hasYearTermData = getCourseYearTermMap().size > 0;
+    layoutModeYearTermBtn.disabled = !hasYearTermData;
+    layoutModeYearTermBtn.title = hasYearTermData
+        ? ''
+        : 'This curriculum has no year/term data available';
 }
 
 /* Toggle between dagre-locked and custom draggable layout */
@@ -268,7 +287,7 @@ async function handleFile(file) {
 
 /* 6. Parsing & Engine Dispatch */
 async function parseAndRender(html) {
-    const { courses, courseTitleMap: parsedTitleMap } = parseCurriculumHtml(html);
+    const { courses, courseTitleMap: parsedTitleMap, courseYearTermMap: parsedYearTermMap } = parseCurriculumHtml(html);
 
     if (courses.length === 0) {
         container.innerHTML = '<p class="status-message status-message--error">Error: Couldn\'t extract course data. Ensure this is a valid portal HTML/MHTML export.</p>';
@@ -276,14 +295,29 @@ async function parseAndRender(html) {
     }
 
     const mermaidCode = buildMermaidCode(courses);
-    await dispatchToActiveEngine(mermaidCode);
+    await dispatchToActiveEngine(mermaidCode, { yearTermMap: parsedYearTermMap });
     // Render functions extract titles from mermaid (safe for presets); restore the
     // richer HTML-parsed map after so dock labels preserve parens and other special chars.
     setCourseTitleMap(parsedTitleMap);
+    setCourseYearTermMap(parsedYearTermMap);
+    updateLayoutUI();
 }
 
 // Expose to window for the Companion Extension hook
 window.parseAndRender = parseAndRender;
+
+// Cached so subject-state badges survive a layout-mode/engine switch without a fresh
+// companion sync — re-applied after every custom-engine render (see renderWithCustomEngine).
+let lastSubjectStateMap = new Map();
+
+// Subject State only makes sense for the custom (Dagre/D3) engine — legacy Mermaid
+// SVG nodes don't carry the stable data-course-code attribute this relies on.
+window.applySubjectState = function (stateMap) {
+    lastSubjectStateMap = stateMap;
+    updateSubjectStateLegendVisibility();
+    if (activeEngine !== 'custom') return;
+    applySubjectState(container.querySelector('svg'), stateMap);
+};
 
 /* 7. Curriculum Presets */
 const presetButtonsContainer = document.getElementById('preset-buttons');
@@ -346,7 +380,11 @@ async function loadPresetCurriculum(preset, button) {
     currentCurriculumName = preset.label;
 
     try {
-        await dispatchToActiveEngine(preset.content.trim());
+        const presetContent = preset.content.trim();
+        // Presets carry their own year/term data via "%% FIRST YEAR - 1ST TERM" comment
+        // markers (see src/CST.txt etc.) instead of an uploaded curriculum's HTML table.
+        await dispatchToActiveEngine(presetContent, { yearTermMap: extractYearTermMapFromMermaidComments(presetContent) });
+        updateLayoutUI();
     } catch (error) {
         console.error('Preset load error:', error);
         container.innerHTML = '<p class="status-message status-message--error">Failed to load preset curriculum.</p>';
@@ -366,7 +404,7 @@ const previewExpandBtn = document.getElementById('preview-expand-btn');
 
 let currentCurriculumName = '';
 
-async function renderMermaidCode(mermaidCode) {
+async function renderMermaidCode(mermaidCode, { yearTermMap } = {}) {
     mermaidRawCode = mermaidCode;
 
     const wasEmpty = appShell.dataset.appState === 'empty';
@@ -377,6 +415,9 @@ async function renderMermaidCode(mermaidCode) {
     selectedNodeId = null;
     resetAdjacencyGraph();
     setCourseTitleMap(extractCourseTitleMapFromMermaid(mermaidCode));
+    // Omitting yearTermMap means "same graph, just re-rendering" (engine/settings toggle) — preserve
+    // whatever's already set. Callers loading genuinely new graph data must pass an explicit map.
+    setCourseYearTermMap(yearTermMap ?? getCourseYearTermMap());
 
     try {
         const svg = await renderMermaidSvg(mermaidCode);
@@ -393,7 +434,7 @@ async function renderMermaidCode(mermaidCode) {
 }
 
 /* 9. Render Orchestration (Custom Engine) */
-async function renderWithCustomEngine(mermaidCode) {
+async function renderWithCustomEngine(mermaidCode, { yearTermMap } = {}) {
     mermaidRawCode = mermaidCode;
 
     const wasEmpty = appShell.dataset.appState === 'empty';
@@ -404,13 +445,30 @@ async function renderWithCustomEngine(mermaidCode) {
     selectedNodeId = null;
     resetAdjacencyGraph();
     setCourseTitleMap(extractCourseTitleMapFromMermaid(mermaidCode));
+    // Omitting yearTermMap means "same graph, just re-rendering" (layout/engine/settings toggle) —
+    // preserve whatever's already set. Callers loading genuinely new graph data must pass an explicit map.
+    setCourseYearTermMap(yearTermMap ?? getCourseYearTermMap());
 
     // Build adjacency graph from code before layout — no SVG needed
     buildAdjacencyGraphFromMermaidCode(mermaidCode);
 
     const spacing = SPACING_PRESETS[layoutSpacing] ?? SPACING_PRESETS.normal;
-    const layoutGraph = buildDagreLayout({ rankdir: layoutDirection, ...spacing });
+    const layoutGraph = (layoutMode === 'year-term' && getCourseYearTermMap().size > 0)
+        ? buildYearTermLayout()
+        : buildDagreLayout({ rankdir: layoutDirection, ...spacing });
     renderDagreLayout(layoutGraph, container);
+    if (layoutMode === 'year-term') rerouteAllEdges(container.querySelector('svg'));
+
+    // Re-apply badges on every render — they don't survive a fresh SVG build otherwise.
+    // Year/Term badges are redundant once grid position already conveys year/term.
+    const svgElement = container.querySelector('svg');
+    if (layoutMode === 'year-term') {
+        clearYearTermBadges(svgElement);
+    } else {
+        applyYearTermBadges(svgElement, getCourseYearTermMap());
+    }
+    if (lastSubjectStateMap.size > 0) applySubjectState(svgElement, lastSubjectStateMap);
+    updateSubjectStateLegendVisibility();
 
     // Capture dagre's positions as the baseline a custom snapshot is measured against
     lastDagreBaseline = new Map();
@@ -678,6 +736,27 @@ function buildAllNodeGeoMap(svgElement) {
     return geoMap;
 }
 
+/** Routes a single edge around every other node, writing the resulting path back to the DOM */
+function routeEdgeElement(edgeElement, allNodeGeos) {
+    const sourceCode = edgeElement.getAttribute('data-source');
+    const targetCode = edgeElement.getAttribute('data-target');
+
+    const sourceGeo = allNodeGeos.get(sourceCode);
+    const targetGeo = allNodeGeos.get(targetCode);
+    if (!sourceGeo || !targetGeo) return;
+
+    const obstacleGeos = [];
+    allNodeGeos.forEach((geo, code) => {
+        if (code !== sourceCode && code !== targetCode) obstacleGeos.push(geo);
+    });
+
+    const { points, d } = buildObstacleAwarePath(sourceGeo, targetGeo, obstacleGeos);
+    const path = edgeElement.querySelector('path');
+    if (!path) return;
+    path.setAttribute('d', d);
+    path.setAttribute('data-points', JSON.stringify(points));
+}
+
 /** Redraws every edge touching a node using obstacle-aware routing */
 function rerouteEdgesForNode(svgElement, courseCode) {
     const allNodeGeos = buildAllNodeGeoMap(svgElement);
@@ -687,22 +766,15 @@ function rerouteEdgesForNode(svgElement, courseCode) {
         const sourceCode = edgeElement.getAttribute('data-source');
         const targetCode = edgeElement.getAttribute('data-target');
         if (sourceCode !== courseCode && targetCode !== courseCode) return;
-
-        const sourceGeo = allNodeGeos.get(sourceCode);
-        const targetGeo = allNodeGeos.get(targetCode);
-        if (!sourceGeo || !targetGeo) return;
-
-        const obstacleGeos = [];
-        allNodeGeos.forEach((geo, code) => {
-            if (code !== sourceCode && code !== targetCode) obstacleGeos.push(geo);
-        });
-
-        const { points, d } = buildObstacleAwarePath(sourceGeo, targetGeo, obstacleGeos);
-        const path = edgeElement.querySelector('path');
-        if (!path) return;
-        path.setAttribute('d', d);
-        path.setAttribute('data-points', JSON.stringify(points));
+        routeEdgeElement(edgeElement, allNodeGeos);
     });
+}
+
+/** Redraws every edge in the graph using obstacle-aware routing — used after layouts that skip dagre's own edge bend points */
+function rerouteAllEdges(svgElement) {
+    if (!svgElement) return;
+    const allNodeGeos = buildAllNodeGeoMap(svgElement);
+    getGraphEdges(svgElement).forEach((edgeElement) => routeEdgeElement(edgeElement, allNodeGeos));
 }
 
 function handleNodeDragStart(event) {
@@ -806,6 +878,16 @@ function getSafePathLength(pathElement) {
     }
 
     return 300;
+}
+
+/* 11b. Subject State Legend */
+const subjectStateLegend = document.getElementById('subject-state-legend');
+
+/** Shows the legend once a subject-state sync has happened, custom engine only (badges
+    don't render for legacy Mermaid, so the legend would otherwise be left dangling). */
+function updateSubjectStateLegendVisibility() {
+    const shouldShow = activeEngine === 'custom' && lastSubjectStateMap.size > 0;
+    subjectStateLegend.classList.toggle('is-hidden', !shouldShow);
 }
 
 /* 12. Summary Dock */
@@ -1055,6 +1137,7 @@ const keyNavHint = document.getElementById('key-nav-hint');
 const layoutOptionsGroup = document.getElementById('layout-options');
 const layoutModeDefaultBtn = document.getElementById('layout-mode-default');
 const layoutModeCustomBtn = document.getElementById('layout-mode-custom');
+const layoutModeYearTermBtn = document.getElementById('layout-mode-year-term');
 const layoutAutoControls = document.getElementById('layout-auto-controls');
 const layoutDirLrBtn = document.getElementById('layout-dir-lr');
 const layoutDirTbBtn = document.getElementById('layout-dir-tb');
@@ -1146,6 +1229,7 @@ layoutSpacingSelect.addEventListener('change', () => applyLayoutOption(null, lay
 
 layoutModeDefaultBtn.addEventListener('click', () => setLayoutMode('default'));
 layoutModeCustomBtn.addEventListener('click', () => setLayoutMode('custom'));
+layoutModeYearTermBtn.addEventListener('click', () => setLayoutMode('year-term'));
 layoutResetBtn.addEventListener('click', resetCustomLayout);
 
 /* Chain Depth */
@@ -1355,12 +1439,13 @@ function attachTooltip(element, label) {
 /* Config Export / Import */
 function exportConfig() {
     const config = {
-        version: 1,
+        version: 2,
         engine: activeEngine,
         layoutDirection,
         layoutSpacing,
         prereqDepth: prereqDepthSetting,
-        traceDepth: traceDepthSetting
+        traceDepth: traceDepthSetting,
+        subjectState: Object.fromEntries(lastSubjectStateMap)
     };
     const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
     const downloadUrl = URL.createObjectURL(blob);
@@ -1386,6 +1471,9 @@ function importConfig(jsonText) {
     if (config.traceDepth) {
         traceDepthSetting = config.traceDepth;
         localStorage.setItem(TRACE_DEPTH_STORAGE_KEY, traceDepthSetting);
+    }
+    if (config.subjectState && Object.keys(config.subjectState).length > 0) {
+        window.applySubjectState(new Map(Object.entries(config.subjectState)));
     }
     updateDepthUI();
     // Re-render with the imported settings if a graph is loaded
@@ -1436,22 +1524,33 @@ fullViewBtn.addEventListener('click', () => {
     isViewTransitioning = true;
     closeSummaryDock();
     setAppState('full-view');
-    // Dock always opens expanded — reset state, hide the reveal pill, clear any stale transform
-    controlDock.classList.remove('is-collapsed');
-    dockRevealBtn.classList.add('is-hidden');
-    dockCollapseBtn.setAttribute('aria-expanded', 'true');
-    gsap.set(controlDock, { clearProps: 'opacity,scale,y,x' });
 
-    // Fluid settle of the dock's controls, mirroring the preview card's entry language.
-    // clearProps on completion so no inline transform lingers (kept dropdowns from opening).
-    const dockGroups = controlDock.querySelectorAll('.dock-body > *');
-    gsap.fromTo(dockGroups,
-        { opacity: 0, y: 12 },
-        {
-            opacity: 1, y: 0, duration: 0.42, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', stagger: 0.05, delay: 0.12,
-            onComplete: () => gsap.set(dockGroups, { clearProps: 'opacity,y' })
-        }
-    );
+    // On mobile the dock would otherwise dominate the screen on first open — start
+    // collapsed (small tab, tap to expand) instead. Desktop/laptop keep opening expanded.
+    if (window.matchMedia('(max-width: 720px)').matches) {
+        controlDock.classList.add('is-collapsed');
+        dockRevealBtn.classList.remove('is-hidden');
+        dockCollapseBtn.setAttribute('aria-expanded', 'false');
+        gsap.set(controlDock, { opacity: 0, scale: 0.6, y: 24, x: 40 });
+        gsap.set(dockRevealBtn, { opacity: 1, scale: 1 });
+    } else {
+        // Dock opens expanded — reset state, hide the reveal pill, clear any stale transform
+        controlDock.classList.remove('is-collapsed');
+        dockRevealBtn.classList.add('is-hidden');
+        dockCollapseBtn.setAttribute('aria-expanded', 'true');
+        gsap.set(controlDock, { clearProps: 'opacity,scale,y,x' });
+
+        // Fluid settle of the dock's controls, mirroring the preview card's entry language.
+        // clearProps on completion so no inline transform lingers (kept dropdowns from opening).
+        const dockGroups = controlDock.querySelectorAll('.dock-row');
+        gsap.fromTo(dockGroups,
+            { opacity: 0, y: 12 },
+            {
+                opacity: 1, y: 0, duration: 0.42, ease: 'cubic-bezier(0.25, 1, 0.3, 1)', stagger: 0.05, delay: 0.12,
+                onComplete: () => gsap.set(dockGroups, { clearProps: 'opacity,y' })
+            }
+        );
+    }
 
     gsap.fromTo(wrapper,
         { opacity: 0, scale: 0.96, y: 16 },

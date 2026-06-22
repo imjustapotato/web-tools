@@ -54,10 +54,10 @@
             <div class="engine-selector" role="group" aria-label="Rendering engine">
                 <span class="viewport-label">Engine</span>
                 <button id="engine-legacy-btn" class="engine-btn" type="button" aria-pressed="false">
-                    Mermaid
+                    Legacy
                 </button>
                 <button id="engine-custom-btn" class="engine-btn" type="button" aria-pressed="false">
-                    Dagre/D3
+                    Modern
                 </button>
             </div>
 
@@ -99,72 +99,108 @@
                     <ul id="summary-indirect-list-dock" class="summary-list summary-list--indirect"></ul>
                 </div>
             </aside>
+            <!-- Subject state legend (bottom-left); shown only once subject-state data has been synced -->
+            <aside id="subject-state-legend" class="subject-state-legend is-hidden" aria-label="Subject state legend">
+                <div class="legend-row">
+                    <svg class="legend-icon legend-icon--passed" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                        <circle r="9"></circle>
+                        <polyline points="-4,0 -1,3.5 4.5,-3.5"></polyline>
+                    </svg>
+                    <span>Passed</span>
+                </div>
+                <div class="legend-row">
+                    <svg class="legend-icon legend-icon--active" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                        <circle r="9"></circle>
+                    </svg>
+                    <span>Active</span>
+                </div>
+                <div class="legend-row">
+                    <svg class="legend-icon legend-icon--pending" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                        <circle r="9"></circle>
+                        <path d="M0,-9 A9,9 0 0 1 0,9 Z"></path>
+                    </svg>
+                    <span>Pending</span>
+                </div>
+                <div class="legend-row">
+                    <svg class="legend-icon legend-icon--failed" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                        <circle r="9"></circle>
+                        <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"></line>
+                        <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"></line>
+                    </svg>
+                    <span>Failed</span>
+                </div>
+            </aside>
             <!-- Full-view control dock (bottom-center, mac-dock style); summary dock owns the left -->
             <aside id="control-dock" class="control-dock" aria-label="Full view controls">
                 <div class="dock-body">
-                    <div class="engine-selector" role="group" aria-label="Rendering engine">
-                        <span class="viewport-label">Engine</span>
-                        <button id="engine-legacy-btn-rail" class="engine-btn" type="button" aria-pressed="false">
-                            Mermaid
-                        </button>
-                        <button id="engine-custom-btn-rail" class="engine-btn" type="button" aria-pressed="false">
-                            Dagre/D3
-                        </button>
+                    <div class="dock-row dock-row--primary">
+                        <div class="engine-selector" role="group" aria-label="Rendering engine">
+                            <span class="viewport-label">Engine</span>
+                            <button id="engine-legacy-btn-rail" class="engine-btn" type="button" aria-pressed="false">
+                                Legacy
+                            </button>
+                            <button id="engine-custom-btn-rail" class="engine-btn" type="button" aria-pressed="false">
+                                Modern
+                            </button>
+                        </div>
+
+                        <div id="layout-options" class="layout-options is-hidden" role="group" aria-label="Graph layout options">
+                            <span class="viewport-label">Layout</span>
+                            <button id="layout-mode-default" class="engine-btn" type="button" aria-pressed="true">Default</button>
+                            <button id="layout-mode-custom" class="engine-btn" type="button" aria-pressed="false">Custom</button>
+                            <button id="layout-mode-year-term" class="engine-btn" type="button" aria-pressed="false">Year/Term</button>
+                            <span id="layout-auto-controls" class="layout-auto-controls">
+                                <button id="layout-dir-lr" class="engine-btn" type="button" aria-pressed="false">LR</button>
+                                <button id="layout-dir-tb" class="engine-btn" type="button" aria-pressed="false">TB</button>
+                                <select id="layout-spacing-select" class="layout-spacing-select" aria-label="Node spacing">
+                                    <option value="compact">Compact</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="spread">Spread</option>
+                                </select>
+                            </span>
+                            <button id="layout-reset-btn" class="btn btn-compact is-hidden" type="button">Reset Layout</button>
+                        </div>
+
+                        <div class="viewport-tools" role="group" aria-label="Viewport controls">
+                            <span class="viewport-label">Viewport</span>
+                            <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">
+                                <span class="iconify" data-icon="mdi:minus" aria-hidden="true"></span>
+                            </button>
+                            <button id="zoom-reset" class="icon-btn" type="button" aria-label="Reset View">
+                                <span class="iconify" data-icon="mdi:fit-to-page-outline" aria-hidden="true"></span>
+                            </button>
+                            <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">
+                                <span class="iconify" data-icon="mdi:plus" aria-hidden="true"></span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div id="layout-options" class="layout-options is-hidden" role="group" aria-label="Graph layout options">
-                        <span class="viewport-label">Layout</span>
-                        <button id="layout-mode-default" class="engine-btn" type="button" aria-pressed="true">Default</button>
-                        <button id="layout-mode-custom" class="engine-btn" type="button" aria-pressed="false">Custom</button>
-                        <span id="layout-auto-controls" class="layout-auto-controls">
-                            <button id="layout-dir-lr" class="engine-btn" type="button" aria-pressed="false">LR</button>
-                            <button id="layout-dir-tb" class="engine-btn" type="button" aria-pressed="false">TB</button>
-                            <select id="layout-spacing-select" class="layout-spacing-select" aria-label="Node spacing">
-                                <option value="compact">Compact</option>
-                                <option value="normal">Normal</option>
-                                <option value="spread">Spread</option>
+                    <div class="dock-row dock-row--secondary">
+                        <div id="chain-depth-options" class="chain-depth-options" role="group" aria-label="Chain depth settings">
+                            <span class="viewport-label">Depth</span>
+                            <label class="depth-label" for="prereq-depth-select">Prereq</label>
+                            <select id="prereq-depth-select" class="depth-select" aria-label="Prerequisite chain depth">
+                                <option value="1">Direct</option>
+                                <option value="2">Near</option>
+                                <option value="full">Full</option>
                             </select>
-                        </span>
-                        <button id="layout-reset-btn" class="btn btn-compact is-hidden" type="button">Reset Layout</button>
-                    </div>
+                            <label class="depth-label" for="trace-depth-select">Dependent</label>
+                            <select id="trace-depth-select" class="depth-select" aria-label="Forward trace depth">
+                                <option value="1">Direct</option>
+                                <option value="2">Near</option>
+                                <option value="full">Full</option>
+                            </select>
+                        </div>
 
-                    <div id="chain-depth-options" class="chain-depth-options" role="group" aria-label="Chain depth settings">
-                        <span class="viewport-label">Depth</span>
-                        <label class="depth-label" for="prereq-depth-select">Prereq</label>
-                        <select id="prereq-depth-select" class="depth-select" aria-label="Prerequisite chain depth">
-                            <option value="1">Direct</option>
-                            <option value="2">Near</option>
-                            <option value="full">Full</option>
-                        </select>
-                        <label class="depth-label" for="trace-depth-select">Dependent</label>
-                        <select id="trace-depth-select" class="depth-select" aria-label="Forward trace depth">
-                            <option value="1">Direct</option>
-                            <option value="2">Near</option>
-                            <option value="full">Full</option>
-                        </select>
-                    </div>
-
-                    <div class="config-actions" role="group" aria-label="Configuration export and import">
-                        <button id="export-config-btn-rail" class="icon-btn" type="button" aria-label="Export Config">
-                            <span class="iconify" data-icon="mdi:tray-arrow-down" aria-hidden="true"></span>
-                        </button>
-                        <label class="icon-btn config-import-label" for="import-config-input-rail" aria-label="Import Config">
-                            <span class="iconify" data-icon="mdi:tray-arrow-up" aria-hidden="true"></span>
-                        </label>
-                        <input id="import-config-input-rail" type="file" accept=".json" class="is-hidden" aria-label="Import configuration file">
-                    </div>
-
-                    <div class="viewport-tools" role="group" aria-label="Viewport controls">
-                        <span class="viewport-label">Viewport</span>
-                        <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">
-                            <span class="iconify" data-icon="mdi:minus" aria-hidden="true"></span>
-                        </button>
-                        <button id="zoom-reset" class="icon-btn" type="button" aria-label="Reset View">
-                            <span class="iconify" data-icon="mdi:fit-to-page-outline" aria-hidden="true"></span>
-                        </button>
-                        <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">
-                            <span class="iconify" data-icon="mdi:plus" aria-hidden="true"></span>
-                        </button>
+                        <div class="config-actions" role="group" aria-label="Configuration export and import">
+                            <button id="export-config-btn-rail" class="icon-btn" type="button" aria-label="Export Config">
+                                <span class="iconify" data-icon="mdi:tray-arrow-down" aria-hidden="true"></span>
+                            </button>
+                            <label class="icon-btn config-import-label" for="import-config-input-rail" aria-label="Import Config">
+                                <span class="iconify" data-icon="mdi:tray-arrow-up" aria-hidden="true"></span>
+                            </label>
+                            <input id="import-config-input-rail" type="file" accept=".json" class="is-hidden" aria-label="Import configuration file">
+                        </div>
                     </div>
                 </div>
                 <button id="dock-collapse-btn" class="dock-collapse" type="button"

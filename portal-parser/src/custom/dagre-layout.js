@@ -15,13 +15,13 @@ import dagre from '@dagrejs/dagre';
 import { getAdjacencyGraph, getCourseTitleMap } from '../core/graph-data.js';
 
 const CHAR_WIDTH_PX = 7.2;
-const NODE_HEIGHT = 54;
+export const NODE_HEIGHT = 54;
 const NODE_MIN_WIDTH = 140;
 const NODE_PADDING_X = 28;
 const TITLE_MAX_CHARS = 40;
 
 /** Estimates node width from label content — dagre needs dimensions before layout */
-function measureNodeWidth(courseCode, title) {
+export function measureNodeWidth(courseCode, title) {
     const truncatedTitle = title.length > TITLE_MAX_CHARS
         ? `${title.slice(0, TITLE_MAX_CHARS)}…`
         : title;

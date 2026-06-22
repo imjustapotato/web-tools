@@ -6,6 +6,9 @@
  * the Free Software Foundation, either version 3 of the License.
  */
 
+import { parseSubjectStateHtml } from './src/core/file-parser.js';
+import { getAdjacencyGraph } from './src/core/graph-data.js';
+
 /**
  * Handles communication with the companion extension:
  * connection handshake, status UI updates, incoming curriculum syncs.
@@ -53,5 +56,18 @@ window.addEventListener('NETWORK_PAYLOAD_READY', (event) => {
         setTimeout(() => {
             window.location.reload();
         }, 50);
+        return;
+    }
+
+    if (dataType === 'SUBJECT_STATE' && payload) {
+        // Decorates the graph that's already rendered — no reload, and ephemeral by
+        // design: a no-op if nothing is loaded yet (nothing to color), not cached for later.
+        if (getAdjacencyGraph().size === 0 || typeof window.applySubjectState !== 'function') {
+            console.warn("[Companion Hook] No curriculum loaded yet; ignoring subject state sync.");
+            return;
+        }
+
+        console.log("[Companion Hook] Received subject state data. Applying...");
+        window.applySubjectState(parseSubjectStateHtml(payload));
     }
 });

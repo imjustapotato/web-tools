@@ -8,16 +8,24 @@
 
 /* Graph data layer — engine-agnostic: shared state, SVG traversal, BFS/DFS */
 
+import { parseYearTermHeaderRow } from './file-parser.js';
+
 /* Internal State */
 let adjacencyGraph = new Map();
 let courseTitleMap = new Map();
+let courseYearTermMap = new Map();
 
 /* State Accessors */
 export function getAdjacencyGraph() { return adjacencyGraph; }
 export function getCourseTitleMap() { return courseTitleMap; }
+export function getCourseYearTermMap() { return courseYearTermMap; }
 
 export function setCourseTitleMap(map) {
     courseTitleMap = map;
+}
+
+export function setCourseYearTermMap(map) {
+    courseYearTermMap = map;
 }
 
 /** Resets only the adjacency graph (called before each render). */
@@ -29,6 +37,7 @@ export function resetAdjacencyGraph() {
 export function resetGraphState() {
     adjacencyGraph = new Map();
     courseTitleMap = new Map();
+    courseYearTermMap = new Map();
 }
 
 /* Course Code Utilities */
@@ -86,6 +95,36 @@ export function extractCourseTitleMapFromMermaid(mermaidCode) {
     return titleMap;
 }
 
+/**
+ * Extracts year/term data from preset curriculums' "%% FIRST YEAR - 1ST TERM" comment
+ * markers, mirroring how parseCurriculumHtml reads section-header rows from real
+ * uploaded HTML. Courses are assigned whichever marker most recently preceded them.
+ */
+export function extractYearTermMapFromMermaidComments(mermaidCode) {
+    const yearTermMap = new Map();
+    let currentYear = null;
+    let currentTerm = null;
+
+    mermaidCode.split('\n').forEach((line) => {
+        const commentMatch = line.match(/^\s*%%\s*(.+)/);
+        if (commentMatch) {
+            const headerInfo = parseYearTermHeaderRow(commentMatch[1]);
+            if (headerInfo.year !== null || headerInfo.term !== null) {
+                currentYear = headerInfo.year;
+                currentTerm = headerInfo.term;
+            }
+            return;
+        }
+
+        const nodeDefMatch = line.match(/^([A-Z]{2,4}\d{2,4}[A-Z]?)\[/);
+        if (nodeDefMatch) {
+            yearTermMap.set(nodeDefMatch[1], { year: currentYear, term: currentTerm });
+        }
+    });
+
+    return yearTermMap;
+}
+
 export function getCourseDisplayLabel(courseCode) {
     const courseTitle = courseTitleMap.get(courseCode);
     return courseTitle ? `${courseCode} - ${courseTitle}` : courseCode;
@@ -93,9 +132,11 @@ export function getCourseDisplayLabel(courseCode) {
 
 /* SVG Graph Element Selectors */
 export function getGraphNodes(svgElement) {
+    // :scope > excludes layer containers (e.g. "nodes-layer", mermaid's "nodes") whose class
+    // also happens to contain the substring "node" but whose shape is several levels deep, not a direct child
     const nodeCandidates = svgElement.querySelectorAll('g.node, g[class*="node"]');
     return Array.from(nodeCandidates).filter((nodeElement) => {
-        return Boolean(nodeElement.querySelector('rect, polygon, circle, ellipse'));
+        return Boolean(nodeElement.querySelector(':scope > rect, :scope > polygon, :scope > circle, :scope > ellipse'));
     });
 }
 
@@ -104,7 +145,8 @@ export function getGraphEdges(svgElement) {
     const uniqueEdges = new Set();
 
     Array.from(edgeCandidates).forEach((edgeElement) => {
-        if (edgeElement.querySelector('path')) uniqueEdges.add(edgeElement);
+        // :scope > excludes layer containers (e.g. "edges-layer") matched by the broad substring selector above
+        if (edgeElement.querySelector(':scope > path')) uniqueEdges.add(edgeElement);
     });
 
     return Array.from(uniqueEdges);

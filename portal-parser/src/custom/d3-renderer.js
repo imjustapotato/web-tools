@@ -33,6 +33,8 @@ const STYLE = {
     codeFontWeight: '700',
     titleColor: '#94a3b8',
     titleFontSize: 10,
+    headerLabelColor: '#64748b',
+    headerLabelFontSize: 13,
     edgeStroke: '#94a3b8',
     edgeStrokeWidth: 1.5,
     arrowFill: '#94a3b8',
@@ -72,10 +74,31 @@ export function renderDagreLayout(layoutGraph, container) {
     svg.appendChild(edgesLayer);
     svg.appendChild(nodesLayer);
 
+    // Year/Term grid mode threads row/col header labels through the graph metadata
+    // (see year-term-layout.js) — absent entirely for Default mode's dagre-positioned graphs.
+    if (graphMeta.rowHeaders || graphMeta.colHeaders) {
+        svg.appendChild(buildHeadersLayer(graphMeta.rowHeaders ?? [], graphMeta.colHeaders ?? []));
+    }
+
     container.innerHTML = '';
     container.appendChild(svg);
 
     return svg;
+}
+
+/* Grid Header Labels (Year/Term mode only) */
+function buildHeadersLayer(rowHeaders, colHeaders) {
+    const headersLayer = createElement('g');
+    headersLayer.classList.add('grid-headers-layer');
+
+    [...rowHeaders, ...colHeaders].forEach(({ label, x, y }) => {
+        const text = buildText(label, y, STYLE.headerLabelColor, STYLE.headerLabelFontSize, '700');
+        text.setAttribute('x', x);
+        text.classList.add('grid-header-label');
+        headersLayer.appendChild(text);
+    });
+
+    return headersLayer;
 }
 
 /* Node Builder */
