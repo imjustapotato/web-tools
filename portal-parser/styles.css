@@ -82,13 +82,14 @@ body {
 
 .parser-page {
     padding: 2rem;
+    padding-top: 6rem; /* clearance for the fixed companion status pill */
     overflow: hidden;
 }
 
 .app-shell {
     width: min(95vw, 1400px);
     margin: 0 auto;
-    min-height: calc(100vh - 4rem);
+    min-height: calc(100vh - 8rem);
     display: flex;
     flex-direction: column;
     gap: 1rem;
@@ -99,7 +100,7 @@ body {
    height (not min-height) is required — flex free-space distribution only works against a definite height. */
 .app-shell[data-app-state="empty"] {
     justify-content: center;
-    height: calc(100vh - 4rem);
+    height: calc(100vh - 8rem);
 }
 
 [data-app-state="empty"] .graph-wrapper {
@@ -1079,16 +1080,28 @@ body.page-leaving {
 }
 
 /**
- * Subject state legend (bottom-left, full view only). Hidden until a subject-state sync
- * has actually happened — toggled in script.js alongside the cached state-map re-apply.
- * Icon shapes mirror subject-state-engine.js's badge primitives for visual consistency.
+ * Subject state legend + completion stats stack (bottom-left, full view only, custom
+ * engine only). The legend within additionally needs a subject-state sync to have actually
+ * happened — both are toggled in script.js alongside the cached state-map re-apply.
+ * Legend icon shapes mirror subject-state-engine.js's badge primitives for visual consistency.
  */
-.subject-state-legend {
+.subject-info-stack {
     display: none;
     position: absolute;
     bottom: 1.25rem;
     left: 0.8rem;
     z-index: 4;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+[data-app-state="full-view"] .subject-info-stack:not(.is-hidden) {
+    display: flex;
+}
+
+.subject-state-legend,
+.subject-stats-panel {
+    display: none;
     flex-direction: column;
     gap: 0.45rem;
     padding: 0.65rem 0.85rem;
@@ -1102,8 +1115,38 @@ body.page-leaving {
     color: var(--text-main);
 }
 
-[data-app-state="full-view"] .subject-state-legend:not(.is-hidden) {
+.subject-stats-panel {
     display: flex;
+    min-width: 13rem;
+}
+
+.subject-state-legend:not(.is-hidden) {
+    display: flex;
+}
+
+.stats-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.stats-label {
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.stats-value {
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.stats-value.is-unsynced {
+    color: var(--text-muted);
+    font-weight: 600;
+    font-style: italic;
+    font-size: 0.72rem;
+    font-variant-numeric: normal;
 }
 
 .legend-row {
@@ -1487,6 +1530,14 @@ body.page-leaving {
     transform: translateY(0) translateX(-50%);
 }
 
+.ui-tooltip.is-error {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.45);
+    white-space: normal;
+    max-width: 220px;
+    text-align: center;
+}
+
 /* Config export / import pair */
 .config-actions {
     display: flex;
@@ -1526,4 +1577,272 @@ body.page-leaving {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) translateX(-50%);
+}
+
+/**
+ * Companion Status Pill (Dynamic Island style)
+ * Ambient indicator for the Companion extension's connection health, adapted from
+ * schedule-visualizer's companion.css. Internal part classes are prefixed companion-pill-*
+ * (not the bare status-dot/status-text/etc. names) since this file already has unrelated
+ * .status-text/.status-message rules for the graph placeholder/error states.
+ */
+.companion-status-pill {
+    position: fixed;
+    top: 2.60rem;
+    left: 50%;
+    transform: translate3d(-50%, 0, 0);
+    /* Must outrank [data-app-state="full-view"] .graph-wrapper's z-index:220 — that's a
+       fixed, viewport-covering sibling in full view, not an ancestor, so this has to clear it directly. */
+    z-index: 1000;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    white-space: nowrap;
+    min-height: 2.75rem;
+    padding: 0.4rem 1.15rem;
+    border-radius: 999px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    text-decoration: none;
+    color: inherit;
+    max-width: 15rem;
+
+    transition: max-width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        padding 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        background 0.4s ease,
+        border-color 0.4s ease,
+        box-shadow 0.4s ease,
+        transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.companion-status-pill.expanded {
+    max-width: 40rem;
+    padding: 0 1.5rem;
+    background: rgba(30, 41, 59, 0.95);
+}
+
+.companion-status-pill.clickable:hover {
+    transform: translate3d(-50%, 0, 0) scale(1.02);
+    filter: brightness(1.1);
+}
+
+.companion-status-pill .companion-pill-content {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    position: relative;
+    z-index: 2;
+}
+
+.companion-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #94a3b8;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.companion-status-pill .companion-pill-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    opacity: 0;
+    max-width: 0;
+    max-height: 0;
+    margin-left: 0;
+    overflow: hidden;
+    transform: scale(0.95);
+    transition: opacity 0.3s ease,
+        max-width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        max-height 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        margin-left 0.5s cubic-bezier(0.34, 1.56, 0.64, 1),
+        transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.companion-status-pill.expanded .companion-pill-text {
+    opacity: 1;
+    max-width: 30rem;
+    max-height: 3.5rem;
+    margin-left: 0.75rem;
+    transform: scale(1);
+    padding: 0;
+    justify-content: center;
+}
+
+.companion-pill-title {
+    font-size: 0.75rem;
+    font-weight: 800;
+    line-height: 1.2;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.companion-pill-subtitle {
+    font-size: 0.65rem;
+    color: #cbd5e1;
+    line-height: 1.3;
+    margin-top: 0.1rem;
+    display: block;
+}
+
+/* Connection pending state with a neutral breathing animation */
+.companion-status-pill.status-checking {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(148, 163, 184, 0.3);
+    animation: companion-pill-breathe-slate 2.5s ease-in-out infinite;
+}
+
+.status-checking .companion-pill-title {
+    background: linear-gradient(90deg, #94a3b8, #f8fafc, #94a3b8);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: companion-pill-text-shine 2.5s linear infinite;
+}
+
+.status-checking .companion-pill-icon {
+    display: inline-block;
+    font-size: 1.1rem;
+    color: #94a3b8;
+    animation: companion-pill-spin 2s linear infinite;
+}
+
+.status-checking .companion-pill-dot {
+    display: none;
+}
+
+/* Ready state indicating the extension is linked and waiting for data */
+.companion-status-pill.status-primed {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(251, 191, 36, 0.4);
+    animation: companion-pill-breathe-amber 3s ease-in-out infinite;
+}
+
+.status-primed .companion-pill-dot {
+    background: #fbbf24;
+    box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
+}
+
+.status-primed .companion-pill-dot::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: inherit;
+    opacity: 0.4;
+    animation: companion-pill-pulse-dot 2.5s ease-out infinite;
+}
+
+.status-primed .companion-pill-title {
+    background: linear-gradient(90deg, #fbbf24, #fef08a, #fbbf24);
+    background-size: 200% auto;
+    color: transparent;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: companion-pill-text-shine 3s linear infinite;
+}
+
+.status-primed .companion-pill-icon {
+    display: none;
+}
+
+/* Error state for missing extension with clear call to action */
+.companion-status-pill.status-not-installed {
+    background: rgba(15, 23, 42, 0.95);
+    border-color: rgba(239, 68, 68, 0.4);
+    animation: companion-pill-breathe-red 2.5s ease-in-out infinite;
+}
+
+.status-not-installed .companion-pill-dot {
+    background: #ef4444;
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.status-not-installed .companion-pill-icon {
+    display: none;
+}
+
+.status-not-installed .companion-pill-title {
+    color: #fca5a5;
+}
+
+@keyframes companion-pill-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes companion-pill-text-shine {
+    to { background-position: 200% center; }
+}
+
+@keyframes companion-pill-pulse-dot {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(2.5); opacity: 0; }
+}
+
+@keyframes companion-pill-breathe-amber {
+    0%, 100% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 191, 36, 0.2), inset 0 0 10px rgba(251, 191, 36, 0.05); }
+    50% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 191, 36, 0.5), inset 0 0 20px rgba(251, 191, 36, 0.2); }
+}
+
+@keyframes companion-pill-breathe-slate {
+    0%, 100% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(148, 163, 184, 0.1), inset 0 0 10px rgba(148, 163, 184, 0.05); }
+    50% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(148, 163, 184, 0.3), inset 0 0 20px rgba(148, 163, 184, 0.15); }
+}
+
+@keyframes companion-pill-breathe-red {
+    0%, 100% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.2), inset 0 0 10px rgba(239, 68, 68, 0.05); }
+    50% { box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(239, 68, 68, 0.6), inset 0 0 20px rgba(239, 68, 68, 0.2); }
+}
+
+/* Mobile: keep the pill compact and fixed regardless of app-shell layout shifts */
+@media (max-width: 768px) {
+    .companion-status-pill {
+        position: fixed !important;
+        top: 0.75rem !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 1000 !important;
+        max-width: 92vw !important;
+        width: auto !important;
+        min-height: 2.5rem !important;
+        height: auto !important;
+        margin: 0 !important;
+        border-radius: 999px !important;
+        padding: 0.35rem 1.1rem !important;
+        justify-content: center;
+        background: rgba(15, 23, 42, 0.92) !important;
+        backdrop-filter: blur(8px) !important;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6) !important;
+    }
+
+    .companion-status-pill .companion-pill-text {
+        opacity: 1 !important;
+        max-width: 100% !important;
+        max-height: none !important;
+        margin-left: 0.75rem !important;
+        transform: none !important;
+        padding: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+    }
+
+    .companion-status-pill .companion-pill-title {
+        font-size: 0.7rem !important;
+    }
+
+    .companion-status-pill .companion-pill-subtitle {
+        font-size: 0.6rem !important;
+    }
+
+    .companion-status-pill.clickable:hover {
+        transform: translateX(-50%) !important;
+        filter: brightness(1.2);
+    }
 }

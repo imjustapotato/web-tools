@@ -55,6 +55,12 @@ export function extractCourseCodesFromText(rawText) {
     return allMatches.map((value) => normalizeCourseCode(value)).filter(Boolean);
 }
 
+/** Strips the trailing "L" lab-section marker (e.g. "CCS0003L" -> "CCS0003") so a
+    lecture/lab pair counts as one subject rather than two. */
+export function stripLabSuffix(courseCode) {
+    return courseCode && courseCode.endsWith('L') ? courseCode.slice(0, -1) : courseCode;
+}
+
 export function extractCourseCodeFromNodeId(svgNodeId) {
     if (!svgNodeId) return null;
 
