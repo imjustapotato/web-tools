@@ -9,8 +9,8 @@ import { gsap } from 'gsap';
 
 /**
  * NETWORK BRIDGE
- * Manages the TCP-like handshake protocol between the Web App and the Extension.
- * Displays a non-blocking GSAP overlay to indicate sync state, and relays validated payloads.
+ * TCP-like handshake protocol between the Web App and the Extension.
+ * Non-blocking GSAP overlay for sync state, validated payload relays.
  */
 
 const OVERLAY_ID = 'network-bridge-overlay';

@@ -1,6 +1,6 @@
 @import './aurora-utility.css';
 @import '../src/styles/aurora-background.css';
-@import '../src/styles/home.css';
+@import '../src/styles/core.css';
 @import '../src/molecule/home-fab/home-fab.css';
 
 .page-shell {
@@ -14,57 +14,6 @@
     max-width: 1200px;
     margin: 0 auto;
     isolation: isolate;
-}
-
-/* Hero typing animation. */
-.typing-container {
-    margin: 1rem 0;
-    font-size: clamp(1.2rem, 2.5vw, 1.8rem);
-    font-weight: 600;
-    color: var(--accent-2);
-    line-height: 1.45;
-    padding-bottom: 0.12em;
-    padding-top: 0.08em;
-    display: inline-flex;
-    align-items: center;
-    overflow: visible;
-}
-
-.typing-prefix {
-    color: var(--text);
-}
-
-.typing-cursor {
-    display: inline-block;
-    width: 3px;
-    height: 1.35em;
-    background-color: var(--accent-2);
-    box-shadow: 0 0 8px rgba(80, 215, 255, 0.22);
-    color: transparent;
-    animation: blink 1.1s ease-in-out infinite;
-    margin-left: 0.16em;
-    vertical-align: -0.175em;
-    will-change: opacity;
-}
-
-@keyframes blink {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    45% {
-        opacity: 0.12;
-    }
-
-    50% {
-        opacity: 0;
-    }
-
-    55% {
-        opacity: 0.12;
-    }
 }
 
 /* Hero card layout. */

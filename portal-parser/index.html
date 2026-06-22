@@ -14,57 +14,98 @@
         <span class="home-fab-label">Back to Homepage</span>
     </a>
 
-    <main class="app-shell">
-        <header class="page-header">
-            <h1 class="page-title">Pre-Requisite Mapping <span class="app-version-tag">v__VERSION_PREREQUISITE_MAPPING__</span></h1>
-            <p class="page-subtitle">
-                Drag &amp; drop your Portal
-                <code class="file-extension">.mhtml/.html</code>
-                file to map your pre-reqs.
-            </p>
-        </header>
-
-        <section id="dropzone" class="dropzone" aria-label="File upload dropzone">
-            <div class="dropzone-content">
-                <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
-                <span class="dropzone-label">Drop Program Curriculum.mhtml or html file here</span>
+    <!-- Dynamic-Island-style companion connection indicator (fixed top-center, all app states) -->
+    <a id="companion-status" href="#" class="companion-status-pill status-checking" aria-label="Companion Extension Status">
+        <div class="companion-pill-content">
+            <span class="companion-pill-dot"></span>
+            <span class="iconify companion-pill-icon" data-icon="mdi:loading" aria-hidden="true"></span>
+            <div class="companion-pill-text">
+                <strong class="companion-pill-title">Checking Connection...</strong>
+                <span class="companion-pill-subtitle" style="display: none;"></span>
             </div>
-        </section>
+        </div>
+    </a>
 
-        <section class="preset-loaders" aria-label="Preset curriculum loaders">
-            <span class="preset-label">Or load a preset:</span>
-            <div id="preset-buttons" class="preset-buttons" role="group" aria-label="Preset curriculum buttons"></div>
-        </section>
+    <main class="app-shell" data-app-state="empty">
+        <div id="empty-stage" class="empty-stage">
+            <header class="page-header">
+                <h1 class="page-title">Pre-Requisite Mapping <span class="app-version-tag">v__VERSION_PREREQUISITE_MAPPING__</span></h1>
+                <p class="page-subtitle">
+                    Drag &amp; drop your Portal
+                    <code class="file-extension">.mhtml/.html</code>
+                    file to map your pre-reqs.
+                </p>
+            </header>
 
-        <section id="controls" class="controls is-hidden" aria-label="Graph controls">
+            <section id="dropzone" class="dropzone" aria-label="File upload dropzone">
+                <div class="dropzone-content">
+                    <svg class="dropzone-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <span class="dropzone-label">Drop Program Curriculum.mhtml or html file here</span>
+                </div>
+            </section>
+
+            <section class="preset-loaders" aria-label="Preset curriculum loaders">
+                <span class="preset-label">Or load a preset:</span>
+                <div id="preset-buttons" class="preset-buttons" role="group" aria-label="Preset curriculum buttons"></div>
+            </section>
+        </div>
+
+        <section id="controls" class="controls" aria-label="Graph controls">
             <div class="controls-group">
                 <button id="copy-btn" class="btn btn-secondary" type="button">
-                    Copy Mermaid Code
+                    Copy Tree Code
                 </button>
                 <button id="full-view-btn" class="btn btn-secondary" type="button">
-                    Full Tree View
+                    Open Full View
                 </button>
                 <button id="reset-btn" class="btn btn-danger" type="button">
                     Reset App
                 </button>
             </div>
 
-            <div class="viewport-tools" role="group" aria-label="Viewport controls">
-                <span class="viewport-label">Viewport</span>
-                <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">-</button>
-                <button id="zoom-reset" class="btn btn-compact" type="button">Reset View</button>
-                <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">+</button>
+            <div class="engine-selector" role="group" aria-label="Rendering engine">
+                <span class="viewport-label">Engine</span>
+                <button id="engine-legacy-btn" class="engine-btn" type="button" aria-pressed="false">
+                    Legacy
+                </button>
+                <button id="engine-custom-btn" class="engine-btn" type="button" aria-pressed="false">
+                    Modern
+                </button>
+            </div>
+
+            <div class="config-actions" role="group" aria-label="Configuration export and import">
+                <button id="export-config-btn" class="icon-btn" type="button" aria-label="Export Config">
+                    <span class="iconify" data-icon="mdi:tray-arrow-down" aria-hidden="true"></span>
+                </button>
+                <label class="icon-btn config-import-label" for="import-config-input" aria-label="Import Config">
+                    <span class="iconify" data-icon="mdi:tray-arrow-up" aria-hidden="true"></span>
+                </label>
+                <input id="import-config-input" type="file" accept=".json" class="is-hidden" aria-label="Import configuration file">
+                <button id="export-png-btn" class="icon-btn" type="button" aria-label="Export PNG">
+                    <span class="iconify" data-icon="mdi:image-outline" aria-hidden="true"></span>
+                </button>
             </div>
         </section>
 
         <section id="graph-wrapper" class="graph-wrapper" aria-live="polite">
+            <div class="preview-card-header" id="preview-card-header" aria-hidden="true">
+                <div class="window-dots">
+                    <span class="dot dot-red"></span>
+                    <span class="dot dot-yellow"></span>
+                    <span class="dot dot-green"></span>
+                </div>
+                <span class="preview-card-title" id="preview-card-title"></span>
+                <button class="icon-btn preview-expand-btn" id="preview-expand-btn" type="button" aria-label="Open Full View">
+                    <span class="iconify" data-icon="mdi:fullscreen" aria-hidden="true"></span>
+                </button>
+            </div>
             <button id="deselect-btn-full" class="btn btn-secondary graph-deselect-btn" type="button"
                 aria-label="Deselect Node">Deselect</button>
             <button id="full-view-close" class="icon-btn graph-close-btn" type="button" aria-label="Close full tree view">x</button>
             <aside id="summary-dock" class="summary-dock is-hidden" aria-label="Fullscreen prerequisite summary">
                 <div class="summary-dock-header">
                     <h2 class="summary-dock-title">Complete the following subjects first to unlock:</h2>
-                    <button id="summary-expand-btn" class="btn btn-compact is-hidden" aria-label="Toggle indirect prerequisites">Expand</button>
+                    <button id="summary-expand-btn" class="btn btn-compact is-hidden" type="button" aria-label="Toggle indirect prerequisites">Expand</button>
                 </div>
                 <p id="summary-subject-dock" class="summary-subject"></p>
                 <ul id="summary-list-dock" class="summary-list"></ul>
@@ -73,6 +114,151 @@
                     <ul id="summary-indirect-list-dock" class="summary-list summary-list--indirect"></ul>
                 </div>
             </aside>
+            <!-- Subject state legend + completion stats (bottom-left); the stack itself is
+                 custom-engine-only, the legend within it additionally needs a synced state map -->
+            <div id="subject-info-stack" class="subject-info-stack is-hidden">
+                <aside id="subject-state-legend" class="subject-state-legend is-hidden" aria-label="Subject state legend">
+                    <div class="legend-row">
+                        <svg class="legend-icon legend-icon--passed" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                            <circle r="9"></circle>
+                            <polyline points="-4,0 -1,3.5 4.5,-3.5"></polyline>
+                        </svg>
+                        <span>Passed</span>
+                    </div>
+                    <div class="legend-row">
+                        <svg class="legend-icon legend-icon--active" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                            <circle r="9"></circle>
+                        </svg>
+                        <span>Active</span>
+                    </div>
+                    <div class="legend-row">
+                        <svg class="legend-icon legend-icon--pending" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                            <circle r="9"></circle>
+                            <path d="M0,-9 A9,9 0 0 1 0,9 Z"></path>
+                        </svg>
+                        <span>Pending</span>
+                    </div>
+                    <div class="legend-row">
+                        <svg class="legend-icon legend-icon--failed" viewBox="-10 -10 20 20" width="16" height="16" aria-hidden="true">
+                            <circle r="9"></circle>
+                            <line x1="-3.5" y1="-3.5" x2="3.5" y2="3.5"></line>
+                            <line x1="-3.5" y1="3.5" x2="3.5" y2="-3.5"></line>
+                        </svg>
+                        <span>Failed</span>
+                    </div>
+                </aside>
+                <aside id="subject-stats-panel" class="subject-stats-panel" aria-label="Subject completion statistics">
+                    <div class="stats-row">
+                        <span class="stats-label">Completed</span>
+                        <span class="stats-value" id="stats-completed">—</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">Incomplete</span>
+                        <span class="stats-value" id="stats-incomplete">—</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">Total Subjects</span>
+                        <span class="stats-value" id="stats-total">0</span>
+                    </div>
+                    <div class="stats-row">
+                        <span class="stats-label">Remaining</span>
+                        <span class="stats-value" id="stats-remaining">—</span>
+                    </div>
+                </aside>
+            </div>
+            <!-- Full-view control dock (bottom-center, mac-dock style); summary dock owns the left -->
+            <aside id="control-dock" class="control-dock" aria-label="Full view controls">
+                <div class="dock-body">
+                    <div class="dock-row dock-row--primary">
+                        <div class="engine-selector" role="group" aria-label="Rendering engine">
+                            <span class="viewport-label">Engine</span>
+                            <button id="engine-legacy-btn-rail" class="engine-btn" type="button" aria-pressed="false">
+                                Legacy
+                            </button>
+                            <button id="engine-custom-btn-rail" class="engine-btn" type="button" aria-pressed="false">
+                                Modern
+                            </button>
+                        </div>
+
+                        <div id="layout-options" class="layout-options is-hidden" role="group" aria-label="Graph layout options">
+                            <span class="viewport-label">Layout</span>
+                            <button id="layout-mode-default" class="engine-btn" type="button" aria-pressed="true">Default</button>
+                            <button id="layout-mode-custom" class="engine-btn" type="button" aria-pressed="false">Custom</button>
+                            <button id="layout-mode-year-term" class="engine-btn" type="button" aria-pressed="false">Year/Term</button>
+                            <span id="layout-auto-controls" class="layout-auto-controls">
+                                <button id="layout-dir-lr" class="engine-btn" type="button" aria-pressed="false">LR</button>
+                                <button id="layout-dir-tb" class="engine-btn" type="button" aria-pressed="false">TB</button>
+                                <select id="layout-spacing-select" class="layout-spacing-select" aria-label="Node spacing">
+                                    <option value="compact">Compact</option>
+                                    <option value="normal">Normal</option>
+                                    <option value="spread">Spread</option>
+                                </select>
+                            </span>
+                            <button id="layout-reset-btn" class="icon-btn is-hidden" type="button" aria-label="Reset Layout">
+                                <span class="iconify" data-icon="mdi:restore" aria-hidden="true"></span>
+                            </button>
+                        </div>
+
+                        <div class="viewport-tools" role="group" aria-label="Viewport controls">
+                            <span class="viewport-label">Viewport</span>
+                            <button id="zoom-out" class="icon-btn" type="button" aria-label="Zoom out">
+                                <span class="iconify" data-icon="mdi:minus" aria-hidden="true"></span>
+                            </button>
+                            <button id="zoom-reset" class="icon-btn" type="button" aria-label="Reset View">
+                                <span class="iconify" data-icon="mdi:fit-to-page-outline" aria-hidden="true"></span>
+                            </button>
+                            <button id="zoom-in" class="icon-btn" type="button" aria-label="Zoom in">
+                                <span class="iconify" data-icon="mdi:plus" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="dock-row dock-row--secondary">
+                        <div id="chain-depth-options" class="chain-depth-options" role="group" aria-label="Chain depth settings">
+                            <span class="viewport-label">Depth</span>
+                            <label class="depth-label" for="prereq-depth-select">Prereq</label>
+                            <select id="prereq-depth-select" class="depth-select" aria-label="Prerequisite chain depth">
+                                <option value="1">Direct</option>
+                                <option value="2">Near</option>
+                                <option value="full">Full</option>
+                            </select>
+                            <label class="depth-label" for="trace-depth-select">Dependent</label>
+                            <select id="trace-depth-select" class="depth-select" aria-label="Forward trace depth">
+                                <option value="1">Direct</option>
+                                <option value="2">Near</option>
+                                <option value="full">Full</option>
+                            </select>
+                        </div>
+
+                        <div class="config-actions" role="group" aria-label="Configuration export and import">
+                            <button id="export-config-btn-rail" class="icon-btn" type="button" aria-label="Export Config">
+                                <span class="iconify" data-icon="mdi:tray-arrow-down" aria-hidden="true"></span>
+                            </button>
+                            <label class="icon-btn config-import-label" for="import-config-input-rail" aria-label="Import Config">
+                                <span class="iconify" data-icon="mdi:tray-arrow-up" aria-hidden="true"></span>
+                            </label>
+                            <input id="import-config-input-rail" type="file" accept=".json" class="is-hidden" aria-label="Import configuration file">
+                            <button id="export-png-btn-rail" class="icon-btn" type="button" aria-label="Export PNG">
+                                <span class="iconify" data-icon="mdi:image-outline" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <button id="dock-collapse-btn" class="dock-collapse" type="button"
+                    aria-label="Collapse controls" aria-expanded="true">
+                    <span class="iconify" data-icon="mdi:chevron-down" aria-hidden="true"></span>
+                </button>
+            </aside>
+            <!-- Collapsed-state reveal pill, pinned to the bottom-right corner -->
+            <button id="dock-reveal-btn" class="dock-pill is-hidden" type="button" aria-label="Show controls">
+                <span class="iconify" data-icon="mdi:chevron-up" aria-hidden="true"></span>
+            </button>
+            <!-- Keyboard navigation choice overlay (custom engine only) -->
+            <div id="key-nav-hint" class="key-nav-hint is-hidden" role="dialog" aria-label="Keyboard navigation choices">
+                <p class="key-nav-hint__direction"></p>
+                <ul class="key-nav-hint__list"></ul>
+                <p class="key-nav-hint__dismiss">Press <kbd>Esc</kbd> to cancel</p>
+            </div>
             <div id="graph-container" class="graph-container">
                 <p id="status-text" class="status-text">Waiting for MHTML/HTML file...</p>
             </div>
