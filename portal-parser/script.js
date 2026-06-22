@@ -8,6 +8,7 @@
 
 /* Application orchestrator */
 import gsap from 'gsap';
+import { toBlob } from 'html-to-image';
 import '@iconify/iconify';
 import { clearAllNodeHighlights, animateNodeSelection } from './nodeanimation.js';
 import { PRESET_CURRICULA, CURRICULA_CREDITS } from './presets.js';
@@ -33,7 +34,8 @@ import {
     buildPrerequisiteEdgeDistanceMap,
     extractCourseCodeFromNodeElement,
     buildNodeCenterLookup,
-    resolveEdgeKey
+    resolveEdgeKey,
+    stripLabSuffix
 } from './src/core/graph-data.js';
 import { extractHtmlFromFile, parseCurriculumHtml } from './src/core/file-parser.js';
 import { initializeMermaid, buildMermaidCode, renderMermaidSvg } from './src/legacy/mermaid-engine.js';
@@ -42,6 +44,7 @@ import { buildYearTermLayout } from './src/custom/year-term-layout.js';
 import { renderDagreLayout } from './src/custom/d3-renderer.js';
 import { animateCustomNodeSelection, clearCustomAnimations, stripInlineVisuals } from './src/custom/animation-controller.js';
 import { applyTrace, clearTrace, applyHoverPreview, clearHoverPreview } from './src/custom/trace-engine.js';
+import { clearDimming } from './src/custom/dimming-engine.js';
 import { applySubjectState } from './src/custom/subject-state-engine.js';
 import { applyYearTermBadges, clearYearTermBadges } from './src/custom/year-term-badge.js';
 import { buildObstacleAwarePath } from './src/custom/path-utils.js';
@@ -161,7 +164,7 @@ function switchEngine(engineName) {
     activeEngine = engineName;
     localStorage.setItem(ENGINE_STORAGE_KEY, engineName);
     updateEngineToggleUI();
-    updateSubjectStateLegendVisibility();
+    updateSubjectInfoPanel();
     if (mermaidRawCode) dispatchToActiveEngine(mermaidRawCode);
 }
 
@@ -314,7 +317,7 @@ let lastSubjectStateMap = new Map();
 // SVG nodes don't carry the stable data-course-code attribute this relies on.
 window.applySubjectState = function (stateMap) {
     lastSubjectStateMap = stateMap;
-    updateSubjectStateLegendVisibility();
+    updateSubjectInfoPanel();
     if (activeEngine !== 'custom') return;
     applySubjectState(container.querySelector('svg'), stateMap);
 };
@@ -468,7 +471,7 @@ async function renderWithCustomEngine(mermaidCode, { yearTermMap } = {}) {
         applyYearTermBadges(svgElement, getCourseYearTermMap());
     }
     if (lastSubjectStateMap.size > 0) applySubjectState(svgElement, lastSubjectStateMap);
-    updateSubjectStateLegendVisibility();
+    updateSubjectInfoPanel();
 
     // Capture dagre's positions as the baseline a custom snapshot is measured against
     lastDagreBaseline = new Map();
@@ -880,14 +883,64 @@ function getSafePathLength(pathElement) {
     return 300;
 }
 
-/* 11b. Subject State Legend */
+/* 11b. Subject State Legend + Completion Stats */
+const subjectInfoStack = document.getElementById('subject-info-stack');
 const subjectStateLegend = document.getElementById('subject-state-legend');
+const statsCompletedEl = document.getElementById('stats-completed');
+const statsIncompleteEl = document.getElementById('stats-incomplete');
+const statsTotalEl = document.getElementById('stats-total');
+const statsRemainingEl = document.getElementById('stats-remaining');
 
-/** Shows the legend once a subject-state sync has happened, custom engine only (badges
-    don't render for legacy Mermaid, so the legend would otherwise be left dangling). */
-function updateSubjectStateLegendVisibility() {
-    const shouldShow = activeEngine === 'custom' && lastSubjectStateMap.size > 0;
-    subjectStateLegend.classList.toggle('is-hidden', !shouldShow);
+/** Groups every node's course code by its lecture/lab-normalized base (CCS0003 + CCS0003L
+    count once) and buckets each subject as completed/incomplete/unknown against the last
+    synced subject-state map. "Unknown" covers subjects with no entry in the map at all —
+    distinct from "incomplete" (pending/active/failed), which has a known non-passed status. */
+function computeSubjectStatistics() {
+    const subjectsByBaseCode = new Map();
+    getAdjacencyGraph().forEach((_edges, courseCode) => {
+        const baseCode = stripLabSuffix(courseCode);
+        if (!subjectsByBaseCode.has(baseCode)) subjectsByBaseCode.set(baseCode, []);
+        subjectsByBaseCode.get(baseCode).push(courseCode);
+    });
+
+    let completed = 0;
+    let incomplete = 0;
+    subjectsByBaseCode.forEach((courseCodes) => {
+        const states = courseCodes.map((code) => lastSubjectStateMap.get(code)).filter(Boolean);
+        if (states.length === 0) return; // unknown — no synced data for this subject
+        if (states.every((state) => state === 'passed')) completed += 1;
+        else incomplete += 1;
+    });
+
+    const total = subjectsByBaseCode.size;
+    return { total, completed, incomplete, remaining: total - completed };
+}
+
+/** Renders the completion-stats card; falls back to "Needs Sync Data" for every value
+    except Total (computable from the curriculum alone) until a subject-state sync happens. */
+function renderSubjectStatistics() {
+    const { total, completed, incomplete, remaining } = computeSubjectStatistics();
+    statsTotalEl.textContent = String(total);
+
+    const hasSyncedData = lastSubjectStateMap.size > 0;
+    [
+        [statsCompletedEl, completed],
+        [statsIncompleteEl, incomplete],
+        [statsRemainingEl, remaining]
+    ].forEach(([element, value]) => {
+        element.classList.toggle('is-unsynced', !hasSyncedData);
+        element.textContent = hasSyncedData ? String(value) : 'Needs Sync Data';
+    });
+}
+
+/** Shows the legend + stats stack for the custom engine only (badges don't render for legacy
+    Mermaid, so the legend would otherwise be left dangling); the legend within additionally
+    needs a subject-state sync to have actually happened, the stats card does not. */
+function updateSubjectInfoPanel() {
+    const isCustomEngine = activeEngine === 'custom';
+    subjectInfoStack.classList.toggle('is-hidden', !isCustomEngine);
+    subjectStateLegend.classList.toggle('is-hidden', !(isCustomEngine && lastSubjectStateMap.size > 0));
+    renderSubjectStatistics();
 }
 
 /* 12. Summary Dock */
@@ -1151,6 +1204,7 @@ const traceDepthSelect = document.getElementById('trace-depth-select');
 /* Config export / import */
 const exportConfigBtn = document.getElementById('export-config-btn');
 const importConfigInput = document.getElementById('import-config-input');
+const exportPngBtn = document.getElementById('export-png-btn');
 
 // Full-view dock: duplicated engine + config controls (share handlers with their inline twins)
 const controlDock = document.getElementById('control-dock');
@@ -1160,6 +1214,7 @@ const engineLegacyBtnRail = document.getElementById('engine-legacy-btn-rail');
 const engineCustomBtnRail = document.getElementById('engine-custom-btn-rail');
 const exportConfigBtnRail = document.getElementById('export-config-btn-rail');
 const importConfigInputRail = document.getElementById('import-config-input-rail');
+const exportPngBtnRail = document.getElementById('export-png-btn-rail');
 
 engineLegacyBtn.addEventListener('click', () => switchEngine('legacy'));
 engineCustomBtn.addEventListener('click', () => switchEngine('custom'));
@@ -1418,6 +1473,21 @@ function hideUiTooltip() {
     uiTooltip.classList.remove('visible');
 }
 
+let flashUiMessageTimeoutId = null;
+
+// One-off transient message (e.g. export failures) near a target element — distinct from the
+// persistent hover tooltip above, but reuses the same floating element to avoid a second UI component.
+function flashUiMessage(label, targetElement, { isError = false, durationMs = 3200 } = {}) {
+    if (flashUiMessageTimeoutId) clearTimeout(flashUiMessageTimeoutId);
+    uiTooltip.classList.toggle('is-error', isError);
+    showUiTooltip(label, targetElement);
+    flashUiMessageTimeoutId = setTimeout(() => {
+        hideUiTooltip();
+        uiTooltip.classList.remove('is-error');
+        flashUiMessageTimeoutId = null;
+    }, durationMs);
+}
+
 function attachTooltip(element, label) {
     if (!element || !label) return;
     element.addEventListener('mouseenter', () => showUiTooltip(label, element));
@@ -1431,6 +1501,8 @@ function attachTooltip(element, label) {
     exportConfigBtn, exportConfigBtnRail,
     document.querySelector('label[for="import-config-input"]'),
     document.querySelector('label[for="import-config-input-rail"]'),
+    exportPngBtn, exportPngBtnRail,
+    layoutResetBtn,
     document.getElementById('zoom-out'),
     document.getElementById('zoom-in'),
     document.getElementById('zoom-reset')
@@ -1456,9 +1528,15 @@ function exportConfig() {
     URL.revokeObjectURL(downloadUrl);
 }
 
-function importConfig(jsonText) {
+function importConfig(jsonText, triggerElement) {
     let config;
-    try { config = JSON.parse(jsonText); } catch { return; }
+    try {
+        config = JSON.parse(jsonText);
+    } catch (error) {
+        console.error('Config import error:', error);
+        flashUiMessage("Couldn't read that file — is it a valid config JSON?", triggerElement, { isError: true });
+        return;
+    }
 
     if (config.engine && config.engine !== activeEngine) switchEngine(config.engine);
     if (config.layoutDirection || config.layoutSpacing) {
@@ -1485,8 +1563,13 @@ function handleConfigFileChange(event) {
     const inputElement = event.target;
     const file = inputElement.files[0];
     if (!file) return;
+    const labelElement = document.querySelector(`label[for="${inputElement.id}"]`);
     const reader = new FileReader();
-    reader.onload = (loadEvent) => importConfig(loadEvent.target.result);
+    reader.onload = (loadEvent) => importConfig(loadEvent.target.result, labelElement);
+    reader.onerror = () => {
+        console.error('Config file read error:', reader.error);
+        flashUiMessage("Couldn't read that file.", labelElement, { isError: true });
+    };
     reader.readAsText(file);
     // Reset so the same file can be re-imported
     inputElement.value = '';
@@ -1496,6 +1579,64 @@ exportConfigBtn.addEventListener('click', exportConfig);
 importConfigInput.addEventListener('change', handleConfigFileChange);
 exportConfigBtnRail.addEventListener('click', exportConfig);
 importConfigInputRail.addEventListener('change', handleConfigFileChange);
+
+/* PNG Export */
+function buildCustomEngineCssText() {
+    const collectedRules = [];
+    const collectFromRuleList = (cssRules) => {
+        Array.from(cssRules).forEach((rule) => {
+            if (rule instanceof CSSMediaRule) {
+                collectFromRuleList(rule.cssRules);
+            } else if (rule.selectorText?.includes('custom-engine-svg')) {
+                collectedRules.push(rule.cssText);
+            }
+        });
+    };
+    Array.from(document.styleSheets).forEach((sheet) => {
+        try {
+            collectFromRuleList(sheet.cssRules);
+        } catch {
+            // Cross-origin stylesheet; none expected among this app's same-origin assets
+        }
+    });
+    return collectedRules.join('\n');
+}
+
+async function exportGraphAsPng(triggerElement) {
+    const svgElement = container.querySelector('svg');
+    if (!svgElement) return;
+
+    try {
+        // Clone first so clearing selection/trace state never touches the live, on-screen graph
+        const clonedSvg = svgElement.cloneNode(true);
+        clearDimming(clonedSvg);
+        clearTrace(clonedSvg);
+
+        if (clonedSvg.classList.contains('custom-engine-svg')) {
+            const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+            styleElement.textContent = buildCustomEngineCssText();
+            clonedSvg.insertBefore(styleElement, clonedSvg.firstChild);
+        }
+
+        // viewBox covers the full graph regardless of current zoom/pan (a CSS transform on the container, not the SVG)
+        const { width, height } = clonedSvg.viewBox.baseVal;
+        const pngBlob = await toBlob(clonedSvg, { width, height, backgroundColor: '#020617' });
+        if (!pngBlob) throw new Error('toBlob returned no image data');
+
+        const downloadUrl = URL.createObjectURL(pngBlob);
+        const anchor = document.createElement('a');
+        anchor.href = downloadUrl;
+        anchor.download = 'portal-parser-graph.png';
+        anchor.click();
+        URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+        console.error('PNG export error:', error);
+        flashUiMessage("Couldn't export image. Try again.", triggerElement, { isError: true });
+    }
+}
+
+exportPngBtn.addEventListener('click', () => exportGraphAsPng(exportPngBtn));
+exportPngBtnRail.addEventListener('click', () => exportGraphAsPng(exportPngBtnRail));
 
 let isFullView = false;
 
