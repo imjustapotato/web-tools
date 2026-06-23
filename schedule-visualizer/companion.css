@@ -46,7 +46,7 @@
     filter: brightness(1.1);
 }
 
-.companion-status-pill .status-content {
+.companion-status-pill .companion-pill-content {
     display: flex;
     align-items: center;
     height: 100%;
@@ -55,7 +55,7 @@
 }
 
 /* Collapsed label that evaporates when the pill expands (AS OF NOW I REMOVED THE LABEL BUT KEPT FOR REUSABILITY, like the dot only looks better anw)*/
-.companion-status-pill .status-content::after {
+.companion-status-pill .companion-pill-content::after {
     font-size: 0.72rem;
     font-weight: 700;
     color: #94a3b8;
@@ -77,14 +77,14 @@
 }
 
 /* Hide "Companion Status" when expanded */
-.companion-status-pill.expanded .status-content::after {
+.companion-status-pill.expanded .companion-pill-content::after {
     max-width: 0;
     opacity: 0;
     margin-left: 0;
 }
 
 /* Visual indicator for active connection or data activity */
-.status-dot {
+.companion-pill-dot {
     width: 8px;
     height: 8px;
     border-radius: 50%;
@@ -93,7 +93,7 @@
     flex-shrink: 0;
 }
 
-.companion-status-pill .status-text {
+.companion-status-pill .companion-pill-text {
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -113,7 +113,7 @@
         transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.companion-status-pill.expanded .status-text {
+.companion-status-pill.expanded .companion-pill-text {
     opacity: 1;
     max-width: 30rem;
     max-height: 3.5rem;
@@ -124,7 +124,7 @@
     justify-content: center;
 }
 
-.companion-status-pill .status-title {
+.companion-status-pill .companion-pill-title {
     font-size: 0.75rem;
     font-weight: 800;
     line-height: 1.2;
@@ -132,7 +132,7 @@
     letter-spacing: 0.02em;
 }
 
-.companion-status-pill .status-subtitle {
+.companion-status-pill .companion-pill-subtitle {
     font-size: 0.65rem;
     color: #cbd5e1;
     line-height: 1.3;
@@ -180,7 +180,7 @@
     animation: island-breathe-slate 2.5s ease-in-out infinite;
 }
 
-.status-checking .status-title {
+.status-checking .companion-pill-title {
     background: linear-gradient(90deg, #94a3b8, #f8fafc, #94a3b8);
     background-size: 200% auto;
     color: transparent;
@@ -189,14 +189,14 @@
     animation: text-shine 2.5s linear infinite;
 }
 
-.status-checking .status-icon {
+.status-checking .companion-pill-icon {
     display: inline-block;
     font-size: 1.1rem;
     color: #94a3b8;
     animation: spin 2s linear infinite;
 }
 
-.status-checking .status-dot {
+.status-checking .companion-pill-dot {
     display: none;
 }
 
@@ -207,12 +207,12 @@
     animation: island-breathe-amber 3s ease-in-out infinite;
 }
 
-.status-primed .status-dot {
+.status-primed .companion-pill-dot {
     background: #fbbf24;
     box-shadow: 0 0 8px rgba(251, 191, 36, 0.6);
 }
 
-.status-primed .status-dot::after {
+.status-primed .companion-pill-dot::after {
     content: '';
     position: absolute;
     inset: -4px;
@@ -222,7 +222,7 @@
     animation: basic-pulse-dot 2.5s ease-out infinite;
 }
 
-.status-primed .status-title {
+.status-primed .companion-pill-title {
     background: linear-gradient(90deg, #fbbf24, #fef08a, #fbbf24);
     background-size: 200% auto;
     color: transparent;
@@ -231,7 +231,7 @@
     animation: text-shine 3s linear infinite;
 }
 
-.status-primed .status-icon {
+.status-primed .companion-pill-icon {
     display: none;
 }
 
@@ -242,17 +242,17 @@
     animation: island-breathe-cyan 2s ease-in-out infinite;
 }
 
-.companion-status-pill.status-auto .status-icon {
+.companion-status-pill.status-auto .companion-pill-icon {
     display: none !important;
 }
 
-.companion-status-pill.status-auto .status-dot {
+.companion-status-pill.status-auto .companion-pill-dot {
     background: #22d3ee;
     box-shadow: 0 0 10px rgba(34, 211, 238, 0.8);
 }
 
 /* Radar pulse indicates background data capture activity */
-.companion-status-pill.status-auto .status-dot::after {
+.companion-status-pill.status-auto .companion-pill-dot::after {
     content: '';
     position: absolute;
     inset: -4px;
@@ -262,7 +262,7 @@
     animation: double-radar-pulse 1.5s ease-out infinite;
 }
 
-.companion-status-pill.status-auto .status-dot::before {
+.companion-status-pill.status-auto .companion-pill-dot::before {
     content: '';
     position: absolute;
     inset: -4px;
@@ -273,7 +273,7 @@
     animation-delay: 0.75s;
 }
 
-.status-auto .status-title {
+.status-auto .companion-pill-title {
     background: linear-gradient(90deg, #22d3ee, #cffafe, #22d3ee);
     background-size: 200% auto;
     color: transparent;
@@ -282,7 +282,7 @@
     animation: text-shine 2.5s linear infinite;
 }
 
-.status-auto .status-title::after {
+.status-auto .companion-pill-title::after {
     content: '';
     animation: typing-dots 1.5s infinite;
     -webkit-text-fill-color: #22d3ee;
@@ -315,16 +315,16 @@
     animation: island-breathe-red 2.5s ease-in-out infinite;
 }
 
-.status-not-installed .status-dot {
+.status-not-installed .companion-pill-dot {
     background: #ef4444;
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
 }
 
-.status-not-installed .status-icon {
+.status-not-installed .companion-pill-icon {
     display: none;
 }
 
-.status-not-installed .status-title {
+.status-not-installed .companion-pill-title {
     color: #fca5a5;
     /* Static color, no shine for error state */
 }
@@ -475,11 +475,11 @@
     }
 
     /* Hide the collapsed "Companion Status" text entirely on mobile to save space */
-    .companion-status-pill .status-content::after {
+    .companion-status-pill .companion-pill-content::after {
         display: none !important;
     }
 
-    .companion-status-pill .status-text {
+    .companion-status-pill .companion-pill-text {
         opacity: 1 !important;
         max-width: 100% !important;
         max-height: none !important;
@@ -491,11 +491,11 @@
         justify-content: center !important;
     }
 
-    .companion-status-pill .status-title {
+    .companion-status-pill .companion-pill-title {
         font-size: 0.7rem !important;
     }
 
-    .companion-status-pill .status-subtitle {
+    .companion-status-pill .companion-pill-subtitle {
         font-size: 0.6rem !important;
     }
 
