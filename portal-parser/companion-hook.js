@@ -28,6 +28,33 @@ let companionExpansionTimeout = null;
 let companionHoverTimeout = null;
 let companionFlashRevertTimeout = null;
 
+/* 1b. Empty-Curriculum Heads-Up (Subject State sync with nothing loaded to paint) */
+const syncEmptyToastEl = document.getElementById('sync-empty-toast');
+const syncEmptyToastCloseBtn = syncEmptyToastEl?.querySelector('.sync-empty-toast__close');
+let syncEmptyToastTimeout = null;
+
+// Surfaces a snarky heads-up when a subject state sync lands with no curriculum loaded
+function showSyncEmptyToast() {
+    if (!syncEmptyToastEl) return;
+    if (syncEmptyToastTimeout) clearTimeout(syncEmptyToastTimeout);
+
+    syncEmptyToastEl.classList.remove('is-hidden');
+    requestAnimationFrame(() => syncEmptyToastEl.classList.add('is-visible'));
+
+    syncEmptyToastTimeout = setTimeout(hideSyncEmptyToast, 4500);
+}
+
+function hideSyncEmptyToast() {
+    if (!syncEmptyToastEl) return;
+    if (syncEmptyToastTimeout) {
+        clearTimeout(syncEmptyToastTimeout);
+        syncEmptyToastTimeout = null;
+    }
+    syncEmptyToastEl.classList.remove('is-visible');
+}
+
+syncEmptyToastCloseBtn?.addEventListener('click', hideSyncEmptyToast);
+
 // Updates the visual state and messaging of the companion status pill based on connection health
 function setCompanionStatus(state) {
     if (!companionStatusEl) return;
@@ -200,6 +227,7 @@ window.addEventListener('NETWORK_PAYLOAD_READY', (event) => {
         // design: a no-op if nothing is loaded yet (nothing to color), not cached for later.
         if (getAdjacencyGraph().size === 0 || typeof window.applySubjectState !== 'function') {
             console.warn("[Companion Hook] No curriculum loaded yet; ignoring subject state sync.");
+            showSyncEmptyToast();
             return;
         }
 

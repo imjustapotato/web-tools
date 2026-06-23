@@ -26,9 +26,9 @@ const MANUAL_EXTRACT_ID = 'saf-manual-extract';
 
 /* 1. Status Pill (Dynamic Island) UI Management */
 const companionStatusEl = document.getElementById('companion-status');
-const companionStatusIcon = companionStatusEl?.querySelector('.status-icon');
-const companionStatusTitle = companionStatusEl?.querySelector('.status-title');
-const companionStatusSubtitle = companionStatusEl?.querySelector('.status-subtitle');
+const companionStatusIcon = companionStatusEl?.querySelector('.companion-pill-icon');
+const companionStatusTitle = companionStatusEl?.querySelector('.companion-pill-title');
+const companionStatusSubtitle = companionStatusEl?.querySelector('.companion-pill-subtitle');
 const headerPortalContainer = document.getElementById('header-portal-container');
 const managerStatusEl = document.getElementById('manager-status');
 

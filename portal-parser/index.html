@@ -26,6 +26,18 @@
         </div>
     </a>
 
+    <!-- Snarky heads-up when a Subject State sync arrives with no curriculum loaded to paint -->
+    <div id="sync-empty-toast" class="sync-empty-toast is-hidden" role="status">
+        <span class="iconify sync-empty-toast__icon" data-icon="mdi:ghost-outline" aria-hidden="true"></span>
+        <div class="sync-empty-toast__text">
+            <strong class="sync-empty-toast__title">Nothing to Sync Here, Chief.</strong>
+            <span class="sync-empty-toast__subtitle">There's no curriculum loaded to paint subject statuses onto. Load one first, then try again.</span>
+        </div>
+        <button type="button" class="sync-empty-toast__close" aria-label="Dismiss">
+            <span class="iconify" data-icon="mdi:close" aria-hidden="true"></span>
+        </button>
+    </div>
+
     <main class="app-shell" data-app-state="empty">
         <div id="empty-stage" class="empty-stage">
             <header class="page-header">
