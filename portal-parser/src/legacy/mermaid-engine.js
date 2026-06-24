@@ -24,7 +24,7 @@ export function initializeMermaid() {
             primaryTextColor: '#f8fafc',
             primaryBorderColor: '#334155',
             lineColor: '#94a3b8',
-            fontFamily: 'Inter, sans-serif'
+            fontFamily: "'Open Sans', sans-serif"
         }
     });
 

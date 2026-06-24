@@ -354,7 +354,17 @@ body.theme-glassmorph {
 }
 
 .hero-intro h1,
-.mobile-intro h1,
+.mobile-intro h1 {
+    margin: 0;
+    font-size: clamp(2.4rem, 5vw, 4.5rem);
+    line-height: 1.05;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    color: var(--accent-2);
+    text-shadow: 0 0 0 rgba(134, 239, 172, 0);
+    animation: heroGlow 5.8s ease-in-out infinite;
+}
+
 .hero-card h1 {
     margin: 0;
     font-size: clamp(2.4rem, 5vw, 4.5rem);

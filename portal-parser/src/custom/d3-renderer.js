@@ -39,7 +39,7 @@ const STYLE = {
     edgeStrokeWidth: 1.5,
     arrowFill: '#94a3b8',
     arrowMarkerId: 'ce-arrowhead',
-    font: 'Inter, sans-serif',
+    font: "'Open Sans', sans-serif",
 };
 
 /** Renders dagre-positioned graph into container as a self-contained SVG */
