@@ -336,7 +336,7 @@ function buildPresetButtons() {
         button.id = `preset-${preset.id}`;
         button.className = 'btn btn-preset';
         button.type = 'button';
-        button.textContent = preset.label;
+        button.innerHTML = `<span class="iconify btn-preset-icon" data-icon="${preset.icon}" aria-hidden="true"></span>${preset.label}`;
         button.addEventListener('click', () => loadPresetCurriculum(preset, button));
 
         button.addEventListener('mouseenter', () => {

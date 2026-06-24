@@ -9,17 +9,20 @@ import wmaRaw from './src/WMA.txt?raw';
 export const PRESET_CURRICULA = [
     {
         id: 'cst',
-        label: '🛡️ Cybersecurity Technology (BSIT)',
+        label: 'Cybersecurity Technology (BSIT)',
+        icon: 'mdi:shield-lock-outline',
         content: cstRaw
     },
     {
         id: 'bsce',
-        label: '🏗️ Civil Engineering (BSCE)',
+        label: 'Civil Engineering (BSCE)',
+        icon: 'mdi:office-building-outline',
         content: bsceRaw
     },
     {
         id: 'wma',
-        label: '📱 Web and Mobile Applications (BSIT)',
+        label: 'Web and Mobile Applications (BSIT)',
+        icon: 'mdi:devices',
         content: wmaRaw
     }
 ];

@@ -106,18 +106,8 @@ body.page-leaving {
     font-size: 0.85rem;
 }
 
-.title-gradient {
+.app-title-accent {
     color: #67e8f9;
-    background-image: linear-gradient(90deg, #34d399, #22d3ee);
-}
-
-@supports ((-webkit-background-clip: text) or (background-clip: text)) {
-    .title-gradient {
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        -webkit-text-fill-color: transparent;
-    }
 }
 
 .app-subtitle {
